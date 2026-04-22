@@ -117,9 +117,10 @@ export class VerifyForgotPasswordOtpComponent implements OnInit, OnDestroy {
     const otp = this.form.value.otp!;
     
     this.auth.verifyForgotPasswordOtp(this.email(), otp).subscribe({
-      next: (res) => {
+      next: () => {
+        this.loading.set(false);
         this.toast.success('Code verified successfully!');
-        this.router.navigate(['/auth/reset-password'], { queryParams: { token: res.resetToken } });
+        this.router.navigate(['/auth/reset-password'], { queryParams: { email: this.email() } });
       },
       error: err => {
         this.loading.set(false);

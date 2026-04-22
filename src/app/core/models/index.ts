@@ -33,15 +33,17 @@ export interface ErrorResponse {
 export type UserRole = 'ROLE_ADMIN' | 'ROLE_INVENTORY_MANAGER' | 'ROLE_WAREHOUSE_STAFF' | 'ROLE_PURCHASE_OFFICER';
 
 export interface User {
-  id: number;
+  id?: number;
   email: string;
   firstName: string;
   lastName: string;
-  role: UserRole;
-  active: boolean;
-  createdAt: string;
+  fullName?: string;
+  role?: UserRole | string;
+  active?: boolean;
+  createdAt?: string;
   lastLoginAt?: string;
   avatarUrl?: string;
+  phone?: string;
 }
 
 export interface AuthResponse {
@@ -58,10 +60,11 @@ export interface LoginRequest {
 }
 
 export interface RegisterRequest {
-  firstName: string;
-  lastName: string;
+  fullName: string;
   email: string;
   password: string;
+  phone: string;
+  department?: string;
 }
 
 // ── Products ──────────────────────────────────────────────────────────────────

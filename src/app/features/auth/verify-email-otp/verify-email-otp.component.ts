@@ -118,8 +118,18 @@ export class VerifyEmailOtpComponent implements OnInit, OnDestroy {
     
     this.auth.verifyEmailOtp(this.email(), otp).subscribe({
       next: () => {
+        this.loading.set(false);
         this.toast.success('Email verified successfully!');
-        this.auth.redirectAfterLogin();
+        if (this.auth.isLoggedIn()) {
+          this.auth.ensureCurrentUserLoaded().subscribe({
+            next: () => this.auth.redirectAfterLogin(true)
+          });
+          return;
+        }
+
+        this.router.navigate(['/auth/login'], {
+          queryParams: { email: this.email(), verified: '1' }
+        });
       },
       error: err => {
         this.loading.set(false);
@@ -131,17 +141,9 @@ export class VerifyEmailOtpComponent implements OnInit, OnDestroy {
   resend(): void {
     if (this.countdown() > 0) return;
     
-    this.resending.set(true);
-    this.auth.resendOtp(this.email()).subscribe({
-      next: () => {
-        this.resending.set(false);
-        this.toast.success('A new code has been sent to your email.');
-        this.startCountdown();
-      },
-      error: err => {
-        this.resending.set(false);
-        this.toast.error('Failed to send code', err.error?.message);
-      }
-    });
+    this.toast.info(
+      'Resend not available',
+      'Your current backend controller does not expose a resend registration OTP endpoint yet.'
+    );
   }
 }

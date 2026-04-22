@@ -1,29 +1,18 @@
 <div class="auth-form-card">
   <div class="auth-form-header">
     <h2>Create your account</h2>
-    <p>Join StockPro and start managing inventory</p>
+    <p>Join StockPro and verify your email to activate your account</p>
   </div>
 
   <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
-      <div class="form-group">
-        <label class="form-label">First Name</label>
-        <input type="text" class="form-control"
-               [class.is-invalid]="firstName.invalid && firstName.touched"
-               formControlName="firstName" placeholder="John" />
-        @if (firstName.invalid && firstName.touched) {
-          <div class="form-error">Required (min 2 chars)</div>
-        }
-      </div>
-      <div class="form-group">
-        <label class="form-label">Last Name</label>
-        <input type="text" class="form-control"
-               [class.is-invalid]="lastName.invalid && lastName.touched"
-               formControlName="lastName" placeholder="Doe" />
-        @if (lastName.invalid && lastName.touched) {
-          <div class="form-error">Required (min 2 chars)</div>
-        }
-      </div>
+    <div class="form-group">
+      <label class="form-label">Full Name</label>
+      <input type="text" class="form-control"
+             [class.is-invalid]="fullName.invalid && fullName.touched"
+             formControlName="fullName" placeholder="Ravi Kumar" />
+      @if (fullName.invalid && fullName.touched) {
+        <div class="form-error">Enter your full name</div>
+      }
     </div>
 
     <div class="form-group">
@@ -33,6 +22,31 @@
              formControlName="email" placeholder="you@company.com" />
       @if (email.invalid && email.touched) {
         <div class="form-error">Enter a valid email address</div>
+      }
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Phone Number</label>
+      <input type="tel" class="form-control"
+             [class.is-invalid]="phone.invalid && phone.touched"
+             formControlName="phone" placeholder="7894561232" />
+      @if (phone.invalid && phone.touched) {
+        <div class="form-error">Enter a valid phone number</div>
+      }
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Department</label>
+      <select class="form-control"
+              [class.is-invalid]="department.invalid && department.touched"
+              formControlName="department">
+        <option value="" disabled>Select your department</option>
+        <option value="Warehouse">Warehouse</option>
+        <option value="Inventory">Inventory</option>
+        <option value="Purchase">Purchase</option>
+      </select>
+      @if (department.invalid && department.touched) {
+        <div class="form-error">Select your department</div>
       }
     </div>
 
@@ -50,8 +64,8 @@
     </div>
 
     <button type="submit" class="btn btn-primary w-full" [disabled]="loading()" id="register-submit-btn">
-      @if (loading()) { <span class="spinner"></span> Creating account... }
-      @else { Create Account }
+      @if (loading()) { <span class="spinner"></span> Sending OTP... }
+      @else { Next: Verify Email }
     </button>
   </form>
 

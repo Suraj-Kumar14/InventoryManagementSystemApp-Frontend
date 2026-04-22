@@ -1,6 +1,6 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -12,10 +12,11 @@ import { ToastService } from '../../../core/services/toast.service';
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css']
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   fb      = inject(FormBuilder);
   auth    = inject(AuthService);
   router  = inject(Router);
+  route   = inject(ActivatedRoute);
   toast   = inject(ToastService);
 
   loading      = signal(false);
@@ -29,6 +30,23 @@ export class LoginComponent {
   get email()    { return this.form.get('email')!; }
   get password() { return this.form.get('password')!; }
 
+  ngOnInit(): void {
+    if (this.auth.isLoggedIn()) {
+      this.auth.redirectAfterLogin(true);
+      return;
+    }
+
+    const email = this.route.snapshot.queryParamMap.get('email');
+    const verified = this.route.snapshot.queryParamMap.get('verified');
+
+    if (email) {
+      this.form.patchValue({ email });
+    }
+    if (verified === '1') {
+      this.toast.success('Email verified successfully!', 'You can sign in now.');
+    }
+  }
+
   togglePassword(): void { this.showPassword.update(v => !v); }
 
   submit(): void {
@@ -37,9 +55,13 @@ export class LoginComponent {
 
     this.auth.login({ email: this.email.value!, password: this.password.value! }).subscribe({
       next: () => {
-        this.loading.set(false);
-        this.toast.success('Welcome back!');
-        this.auth.redirectAfterLogin();
+        this.auth.ensureCurrentUserLoaded().subscribe({
+          next: () => {
+            this.loading.set(false);
+            this.toast.success('Welcome back!');
+            this.auth.redirectAfterLogin(true);
+          }
+        });
       },
       error: (err) => {
         this.loading.set(false);
@@ -55,6 +77,6 @@ export class LoginComponent {
   }
 
   loginWithGoogle(): void {
-    window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+    window.location.assign(this.auth.getGoogleLoginUrl());
   }
 }

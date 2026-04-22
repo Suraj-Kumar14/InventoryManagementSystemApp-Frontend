@@ -12,7 +12,7 @@ export const roleGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
   const user = auth.currentUser();
   if (!user) return router.createUrlTree(['/auth/login']);
 
-  if (allowed.includes(user.role)) return true;
+  if (user.role && allowed.includes(user.role)) return true;
 
   // Redirect to dashboard with an access-denied state
   return router.createUrlTree(['/dashboard']);

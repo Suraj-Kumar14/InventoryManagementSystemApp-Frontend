@@ -27,6 +27,10 @@ export class TokenService {
     localStorage.setItem(USER_KEY, JSON.stringify(user));
   }
 
+  clearUser(): void {
+    localStorage.removeItem(USER_KEY);
+  }
+
   getUser<T>(): T | null {
     const raw = localStorage.getItem(USER_KEY);
     return raw ? (JSON.parse(raw) as T) : null;

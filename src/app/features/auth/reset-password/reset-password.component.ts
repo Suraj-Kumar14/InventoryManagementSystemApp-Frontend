@@ -80,9 +80,13 @@ export class ResetPasswordComponent {
       this.form.markAllAsTouched(); return;
     }
     this.loading.set(true);
-    const token = this.route.snapshot.queryParamMap.get('token') ?? '';
-    this.auth.resetPassword(token, this.pw.value!).subscribe({
-      next: () => { this.toast.success('Password reset!', 'You can now log in.'); this.router.navigate(['/auth/login']); },
+    const email = this.route.snapshot.queryParamMap.get('email') ?? '';
+    this.auth.resetPassword(email, this.pw.value!).subscribe({
+      next: () => {
+        this.loading.set(false);
+        this.toast.success('Password reset!', 'You can now log in.');
+        this.router.navigate(['/auth/login'], { queryParams: { email } });
+      },
       error: err => { this.loading.set(false); this.toast.error('Reset failed', err.error?.message); }
     });
   }

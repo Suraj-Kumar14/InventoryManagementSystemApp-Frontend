@@ -14,13 +14,13 @@ import { ToastService } from '../../../core/services/toast.service';
       <div class="auth-form-header">
         <div class="back-icon">🔑</div>
         <h2>Forgot password?</h2>
-        <p>Enter your email and we'll send you reset instructions.</p>
+        <p>Enter your email and we'll send you a verification code.</p>
       </div>
       @if (sent()) {
         <div class="success-box">
           <div class="success-icon">✅</div>
           <h3>Check your inbox</h3>
-          <p>We sent a password reset link to <strong>{{ form.get('email')?.value }}</strong></p>
+          <p>We sent a password reset code to <strong>{{ form.get('email')?.value }}</strong></p>
           <a routerLink="/auth/login" class="btn btn-outline w-full" style="margin-top:1rem">Back to Login</a>
         </div>
       } @else {
@@ -36,7 +36,7 @@ import { ToastService } from '../../../core/services/toast.service';
           </div>
           <button type="submit" class="btn btn-primary w-full" [disabled]="loading()">
             @if (loading()) { <span class="spinner"></span> Sending... }
-            @else { Send Reset Link }
+            @else { Send Verification Code }
           </button>
           <a routerLink="/auth/login" class="back-link">← Back to Sign In</a>
         </form>

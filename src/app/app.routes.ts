@@ -2,11 +2,14 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
 
+const loadAuthLayout = () => import('./core/layout/auth-layout/auth-layout.component').then(m => m.AuthLayoutComponent);
+const loadOauthCallback = () => import('./features/auth/oauth-callback/oauth-callback.component').then(m => m.OauthCallbackComponent);
+
 export const routes: Routes = [
   // Auth layout
   {
     path: 'auth',
-    loadComponent: () => import('./core/layout/auth-layout/auth-layout.component').then(m => m.AuthLayoutComponent),
+    loadComponent: loadAuthLayout,
     children: [
       { path: 'login',           loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent) },
       { path: 'register',        loadComponent: () => import('./features/auth/register/register.component').then(m => m.RegisterComponent) },
@@ -14,8 +17,22 @@ export const routes: Routes = [
       { path: 'forgot-password', loadComponent: () => import('./features/auth/forgot-password/forgot-password.component').then(m => m.ForgotPasswordComponent) },
       { path: 'verify-forgot-password-otp', loadComponent: () => import('./features/auth/verify-forgot-password-otp/verify-forgot-password-otp.component').then(m => m.VerifyForgotPasswordOtpComponent) },
       { path: 'reset-password',  loadComponent: () => import('./features/auth/reset-password/reset-password.component').then(m => m.ResetPasswordComponent) },
-      { path: 'oauth-callback',  loadComponent: () => import('./features/auth/oauth-callback/oauth-callback.component').then(m => m.OauthCallbackComponent) },
+      { path: 'oauth-callback',  loadComponent: loadOauthCallback },
       { path: '', redirectTo: 'login', pathMatch: 'full' }
+    ]
+  },
+  {
+    path: 'oauth-callback',
+    loadComponent: loadAuthLayout,
+    children: [
+      { path: '', loadComponent: loadOauthCallback }
+    ]
+  },
+  {
+    path: 'login/oauth2/code/google',
+    loadComponent: loadAuthLayout,
+    children: [
+      { path: '', loadComponent: loadOauthCallback }
     ]
   },
 
