@@ -1,0 +1,85 @@
+<header class="topbar" (click)="$event.stopPropagation()">
+  <!-- Page title slot -->
+  <div class="topbar-left">
+    <div class="topbar-brand">
+      <span class="welcome-text">Good day, <strong>{{ auth.currentUser()?.firstName }}</strong> 👋</span>
+    </div>
+  </div>
+
+  <div class="topbar-right">
+
+    <!-- Search shortcut -->
+    <div class="topbar-search">
+      <span class="search-icon">🔍</span>
+      <span class="search-text">Search...</span>
+      <kbd class="search-kbd">⌘K</kbd>
+    </div>
+
+    <!-- Notification bell -->
+    <div class="topbar-action" style="position:relative">
+      <button class="icon-btn" (click)="toggleNotif()" id="notif-btn" title="Notifications">
+        🔔
+        @if (unreadCount() > 0) {
+          <span class="notif-badge">{{ unreadCount() > 99 ? '99+' : unreadCount() }}</span>
+        }
+      </button>
+
+      @if (notifOpen()) {
+        <div class="dropdown notif-dropdown">
+          <div class="dropdown-header">
+            <span class="dropdown-title">Notifications</span>
+            <a routerLink="/alerts" class="dropdown-link" (click)="closeDropdowns()">View all</a>
+          </div>
+          <div class="notif-empty">
+            <span>🔔</span>
+            <p>Visit the Alert Center for all notifications</p>
+            <a routerLink="/alerts" class="btn btn-sm btn-outline" (click)="closeDropdowns()">Open Alert Center</a>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Profile menu -->
+    <div class="topbar-action" style="position:relative">
+      <button class="profile-btn" (click)="toggleProfile()" id="profile-btn">
+        <div class="profile-avatar">{{ initials }}</div>
+        <div class="profile-info hide-tablet">
+          <span class="profile-name">{{ fullName }}</span>
+          <span class="profile-role">{{ auth.currentUser()?.role }}</span>
+        </div>
+        <span class="chevron">▾</span>
+      </button>
+
+      @if (profileOpen()) {
+        <div class="dropdown profile-dropdown">
+          <div class="dropdown-user">
+            <div class="du-avatar">{{ initials }}</div>
+            <div>
+              <div class="du-name">{{ fullName }}</div>
+              <div class="du-email">{{ auth.currentUser()?.email }}</div>
+            </div>
+          </div>
+          <hr class="divider" style="margin:.5rem 0">
+          <a routerLink="/profile" class="dropdown-item" (click)="closeDropdowns()">
+            <span>👤</span> My Profile
+          </a>
+          <a routerLink="/profile" class="dropdown-item" (click)="closeDropdowns()">
+            <span>🔑</span> Change Password
+          </a>
+          <a routerLink="/admin/settings" class="dropdown-item" (click)="closeDropdowns()">
+            <span>⚙️</span> Settings
+          </a>
+          <hr class="divider" style="margin:.5rem 0">
+          <button class="dropdown-item danger" (click)="logout()">
+            <span>🚪</span> Sign Out
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+</header>
+
+<!-- Backdrop -->
+@if (profileOpen() || notifOpen()) {
+  <div class="dropdown-backdrop" (click)="closeDropdowns()"></div>
+}

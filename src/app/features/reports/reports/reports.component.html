@@ -1,0 +1,65 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Reports & Analytics</h1>
+    <p class="page-subtitle">Inventory insights and actionable data</p>
+  </div>
+  <div class="d-flex gap-2 align-center">
+    <select class="form-control" style="width:200px" [(ngModel)]="warehouseId" (change)="loadTab(activeTab())">
+      <option value="">All Warehouses</option>
+      @for (w of warehouses(); track w.id) { <option [value]="w.id">{{ w.name }}</option> }
+    </select>
+    <button class="btn btn-outline" (click)="exportCSV()" [disabled]="exporting()">
+      @if (exporting()) { <span class="spinner spinner-dark" style="width:14px;height:14px;border-width:2px"></span> }
+      @else { 📄 Export CSV }
+    </button>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="report-tabs">
+  <button class="report-tab" [class.active]="activeTab()==='low-stock'"       (click)="setTab('low-stock')">⚠️ Low Stock</button>
+  <button class="report-tab" [class.active]="activeTab()==='top-movers'"      (click)="setTab('top-movers')">🔝 Top Movers</button>
+  <button class="report-tab" [class.active]="activeTab()==='dead-stock'"      (click)="setTab('dead-stock')">💀 Dead Stock</button>
+  <button class="report-tab" [class.active]="activeTab()==='warehouse-value'" (click)="setTab('warehouse-value')">🏭 Warehouse Value</button>
+</div>
+
+@if (activeTab() === 'low-stock') {
+  <div class="report-header">
+    <span class="text-sm text-muted">{{ lowStock().length }} items below reorder point</span>
+  </div>
+  <app-data-table [columns]="lowStockCols" [data]="lowStock()" [loading]="loading()" [totalElements]="lowStock().length" [size]="lowStock().length || 1"></app-data-table>
+}
+
+@if (activeTab() === 'top-movers') {
+  <div class="report-header"><span class="text-sm text-muted">Top {{ topMovers().length }} fastest moving products</span></div>
+  <app-data-table [columns]="topMoverCols" [data]="topMovers()" [loading]="loading()" [totalElements]="topMovers().length" [size]="topMovers().length || 1"></app-data-table>
+}
+
+@if (activeTab() === 'dead-stock') {
+  <div class="report-header"><span class="text-sm text-muted">{{ deadStock().length }} items with no movement in 90+ days</span></div>
+  <app-data-table [columns]="deadStockCols" [data]="deadStock()" [loading]="loading()" [totalElements]="deadStock().length" [size]="deadStock().length || 1"></app-data-table>
+}
+
+@if (activeTab() === 'warehouse-value') {
+  <div class="report-header"><span class="text-sm text-muted">Stock valuation by warehouse</span></div>
+  @if (loading()) {
+    <div class="card" style="height:200px;display:flex;align-items:center;justify-content:center"><div class="spinner spinner-dark" style="width:32px;height:32px;border-width:3px"></div></div>
+  } @else {
+    <div class="wh-value-grid">
+      @for (wv of whValues(); track wv.warehouseId) {
+        <div class="card wh-value-card">
+          <div class="wh-val-header">
+            <span class="wh-val-icon">🏭</span>
+            <div class="wh-val-name">{{ wv.warehouseName }}</div>
+          </div>
+          <div class="wh-val-amount">₹{{ wv.totalStockValue | number:'1.0-0' }}</div>
+          <div class="wh-val-sub text-sm text-muted">{{ wv.totalProducts }} products · {{ wv.totalQuantity | number }} units</div>
+          <div class="util-bar" style="margin-top:.75rem">
+            <div class="util-fill fill-primary" [style.width.%]="wv.utilizationPercent"></div>
+          </div>
+          <div class="text-xs text-muted" style="margin-top:.375rem">{{ wv.utilizationPercent | number:'1.0-1' }}% capacity used</div>
+        </div>
+      }
+    </div>
+  }
+}

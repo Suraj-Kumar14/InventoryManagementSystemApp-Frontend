@@ -1,0 +1,10 @@
+.toolbar-card { padding: 1rem 1.25rem; margin-bottom: 1.25rem; }
+.status-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.status-tab {
+  padding: .375rem .875rem; border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-full); font-size: .8125rem; font-weight: 500;
+  background: #fff; cursor: pointer; color: var(--text-secondary);
+  transition: all var(--transition-fast); font-family: var(--font-sans);
+}
+.status-tab:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.status-tab.active { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }

@@ -1,0 +1,3 @@
+.search-box { position: relative; flex: 1; min-width: 220px; max-width: 360px; }
+.search-prefix { position: absolute; left: .75rem; top: 50%; transform: translateY(-50%); font-size: .9rem; }
+.search-box .form-control { padding-left: 2.125rem; }

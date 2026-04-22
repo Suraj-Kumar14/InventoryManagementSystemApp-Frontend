@@ -1,0 +1,39 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Stock Levels</h1>
+    <p class="page-subtitle">Real-time inventory across all warehouses</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a routerLink="/stock/transfer" class="btn btn-secondary">🔄 Transfer</a>
+    <a routerLink="/stock/adjust"   class="btn btn-secondary">✏️ Adjust</a>
+    <a routerLink="/stock/barcode"  class="btn btn-outline">🔍 Barcode</a>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="card toolbar-card">
+  <div class="d-flex gap-3 align-center flex-wrap">
+    <select class="form-control" style="width:220px"
+            (change)="onWarehouseChange($any($event.target).value)">
+      <option value="">All Warehouses</option>
+      @for (wh of warehouses(); track wh.id) {
+        <option [value]="wh.id">{{ wh.name }}</option>
+      }
+    </select>
+    <div class="legend-row">
+      <span class="badge badge-danger">Below Reorder</span>
+      <span class="badge badge-success">Sufficient</span>
+    </div>
+    <span class="text-sm text-muted">{{ totalElements() }} stock records</span>
+  </div>
+</div>
+
+<app-data-table
+  [columns]="columns"
+  [data]="stocks()"
+  [loading]="loading()"
+  [totalElements]="totalElements()"
+  [page]="page()"
+  [size]="20"
+  (pageChange)="onPageChange($event)">
+</app-data-table>

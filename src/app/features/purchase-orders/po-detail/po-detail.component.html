@@ -1,0 +1,105 @@
+@if (loading()) {
+  <div style="display:flex;align-items:center;justify-content:center;height:300px">
+    <div class="spinner spinner-dark" style="width:40px;height:40px;border-width:4px"></div>
+  </div>
+} @else if (po()) {
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">{{ po()!.poNumber }}</h1>
+      <p class="page-subtitle">{{ po()!.supplierName }} · {{ po()!.warehouseName }}</p>
+    </div>
+    <div class="d-flex gap-2">
+      @if (po()!.status === 'DRAFT') {
+        <a [routerLink]="['/purchase-orders', po()!.id, 'edit']" class="btn btn-secondary">✏️ Edit</a>
+        <button class="btn btn-primary" (click)="openAction('approve')">✅ Approve</button>
+      }
+      @if (po()!.status === 'PENDING_APPROVAL') {
+        <button class="btn btn-success" (click)="openAction('approve')">✅ Approve</button>
+        <button class="btn btn-danger" (click)="openAction('reject')">❌ Reject</button>
+      }
+      @if (po()!.status === 'APPROVED') {
+        <a [routerLink]="['/purchase-orders', po()!.id, 'receive']" class="btn btn-primary">📦 Receive Goods</a>
+        <button class="btn btn-danger" (click)="openAction('cancel')">🚫 Cancel</button>
+      }
+      <span class="badge {{ getBadgeClass(po()!.status) }}" style="font-size:.875rem;padding:.375rem .875rem">
+        {{ po()!.status.replace('_', ' ') }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Status Timeline -->
+  @if (!['CANCELLED','REJECTED'].includes(po()!.status)) {
+    <div class="card timeline-card">
+      <div class="timeline">
+        @for (step of timeline; track step.status; let i = $index) {
+          <div class="timeline-step" [class.completed]="statusIndex(po()!.status) >= i" [class.current]="statusIndex(po()!.status) === i">
+            <div class="step-dot">{{ step.icon }}</div>
+            <div class="step-label">{{ step.label }}</div>
+            @if (i < timeline.length - 1) { <div class="step-line"></div> }
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- PO Info -->
+  <div class="detail-grid">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Order Details</span></div>
+      <div class="info-list">
+        <div class="info-row"><span>PO Number</span><span class="font-semibold">{{ po()!.poNumber }}</span></div>
+        <div class="info-row"><span>Supplier</span><span>{{ po()!.supplierName }}</span></div>
+        <div class="info-row"><span>Warehouse</span><span>{{ po()!.warehouseName }}</span></div>
+        <div class="info-row"><span>Total Amount</span><span class="font-semibold text-primary-color">₹{{ po()!.totalAmount | number }}</span></div>
+        <div class="info-row"><span>Expected Delivery</span><span>{{ po()!.expectedDeliveryDate ?? '—' }}</span></div>
+        <div class="info-row"><span>Created By</span><span>{{ po()!.createdBy }}</span></div>
+        @if (po()!.approvedBy) {
+          <div class="info-row"><span>Approved By</span><span>{{ po()!.approvedBy }}</span></div>
+        }
+        @if (po()!.notes) {
+          <div class="info-row"><span>Notes</span><span>{{ po()!.notes }}</span></div>
+        }
+      </div>
+    </div>
+
+    <!-- Items -->
+    <div class="card">
+      <div class="card-header"><span class="card-title">Order Items ({{ po()!.items.length }})</span></div>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Product</th><th>SKU</th><th>Ordered</th><th>Received</th><th>Unit Price</th><th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of po()!.items; track item.id) {
+            <tr>
+              <td>{{ item.productName }}</td>
+              <td>{{ item.sku }}</td>
+              <td>{{ item.orderedQuantity }}</td>
+              <td>{{ item.receivedQuantity ?? 0 }}</td>
+              <td>₹{{ item.unitPrice | number }}</td>
+              <td class="font-semibold">₹{{ (item.orderedQuantity * item.unitPrice) | number }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}
+
+<!-- Action Modal -->
+<app-modal [open]="!!actionModal()" [title]="actionModal() === 'approve' ? 'Approve PO' : actionModal() === 'reject' ? 'Reject PO' : 'Cancel PO'" (close)="actionModal.set(null)">
+  <p class="text-muted" style="margin-bottom:1rem">
+    @if (actionModal() === 'approve') { Add optional approval notes: }
+    @else { Please provide a reason: }
+  </p>
+  <textarea class="form-control" rows="3" [(ngModel)]="actionNote"
+            [placeholder]="actionModal() === 'approve' ? 'Optional notes...' : 'Required reason...'"></textarea>
+  <div slot="footer">
+    <button class="btn btn-secondary" (click)="actionModal.set(null)">Cancel</button>
+    <button class="btn" [class]="actionModal() === 'approve' ? 'btn-success' : 'btn-danger'" [disabled]="actioning()" (click)="executeAction()">
+      @if (actioning()) { <span class="spinner"></span> } @else { Confirm }
+    </button>
+  </div>
+</app-modal>

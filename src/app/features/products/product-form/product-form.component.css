@@ -1,0 +1,7 @@
+.form-card { max-width: 900px; }
+.form-section-title {
+  font-size: .75rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--text-muted); margin-bottom: 1rem;
+}
+.form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 0 1.25rem; }
+.form-actions { display: flex; justify-content: flex-end; gap: .75rem; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-color); }

@@ -1,0 +1,41 @@
+<nav class="sidebar" [class.collapsed]="collapsed()">
+  <!-- Brand -->
+  <div class="sidebar-brand">
+    <div class="sidebar-logo">
+      <span class="logo-icon">📦</span>
+      <span class="logo-text">StockPro</span>
+    </div>
+    <button class="collapse-btn" (click)="toggleCollapse()" title="Toggle sidebar">
+      <span>{{ collapsed() ? '›' : '‹' }}</span>
+    </button>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="sidebar-nav">
+    @for (item of navItems(); track item.route) {
+      <a class="nav-item"
+         [routerLink]="item.route"
+         routerLinkActive="active"
+         [title]="collapsed() ? item.label : ''">
+        <span class="nav-icon">{{ item.icon }}</span>
+        <span class="nav-label">{{ item.label }}</span>
+        @if (item.badge && item.badge > 0) {
+          <span class="nav-badge">{{ item.badge }}</span>
+        }
+      </a>
+    }
+  </nav>
+
+  <!-- User info at bottom -->
+  <div class="sidebar-footer">
+    <a routerLink="/profile" class="sidebar-user" [title]="collapsed() ? 'Profile' : ''">
+      <div class="user-avatar">
+        {{ auth.currentUser()?.firstName?.charAt(0) | uppercase }}
+      </div>
+      <div class="user-info">
+        <div class="user-name">{{ auth.currentUser()?.firstName }} {{ auth.currentUser()?.lastName }}</div>
+        <div class="user-role">{{ auth.currentUser()?.role | titlecase }}</div>
+      </div>
+    </a>
+  </div>
+</nav>

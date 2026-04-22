@@ -1,0 +1,67 @@
+<div class="table-container">
+  <!-- Loading overlay -->
+  @if (loading) {
+    <div class="table-loading">
+      <div class="spinner spinner-dark" style="width:32px;height:32px;border-width:3px"></div>
+      <span>Loading data...</span>
+    </div>
+  }
+
+  <div style="overflow-x:auto">
+    <table class="table">
+      <thead>
+        <tr>
+          @for (col of columns; track col.key) {
+            <th [style.width]="col.width"
+                [class.sortable]="col.sortable"
+                (click)="sort(col)">
+              {{ col.label }}
+              @if (col.sortable) {
+                <span class="sort-icon">
+                  {{ sortKey === col.key ? (sortDir === 'asc' ? '↑' : '↓') : '↕' }}
+                </span>
+              }
+            </th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @if (!loading && data.length === 0) {
+          <tr>
+            <td [colSpan]="columns.length">
+              <div class="empty-state" style="padding:3rem">
+                <div class="empty-state-icon">📭</div>
+                <div class="empty-state-title">No records found</div>
+              </div>
+            </td>
+          </tr>
+        }
+        @for (row of data; track $index) {
+          <tr (click)="rowClick.emit(row)" [class.clickable]="rowClick.observed">
+            @for (col of columns; track col.key) {
+              <td [innerHTML]="getCellValue(row, col)"></td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  @if (totalPages > 1) {
+    <div class="table-pagination">
+      <span class="pagination-info">
+        Showing {{ startIndex }}–{{ endIndex }} of {{ totalElements }} results
+      </span>
+      <div class="pagination-controls">
+        <button class="page-btn" [disabled]="page === 0" (click)="goToPage(0)">«</button>
+        <button class="page-btn" [disabled]="page === 0" (click)="goToPage(page - 1)">‹</button>
+        @for (p of getPageNumbers(); track p) {
+          <button class="page-btn" [class.active]="p === page" (click)="goToPage(p)">{{ p + 1 }}</button>
+        }
+        <button class="page-btn" [disabled]="page === totalPages - 1" (click)="goToPage(page + 1)">›</button>
+        <button class="page-btn" [disabled]="page === totalPages - 1" (click)="goToPage(totalPages - 1)">»</button>
+      </div>
+    </div>
+  }
+</div>

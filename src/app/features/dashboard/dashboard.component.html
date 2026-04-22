@@ -1,0 +1,158 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-subtitle">Welcome back, {{ auth.currentUser()?.firstName }}. Here's your inventory overview.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <button class="btn btn-secondary" (click)="loadKpis()">🔄 Refresh</button>
+    <a routerLink="/reports" class="btn btn-primary">📈 Full Reports</a>
+  </div>
+</div>
+
+<!-- KPI Grid -->
+@if (loading()) {
+  <div class="kpi-grid">
+    @for (i of [1,2,3,4,5,6]; track i) {
+      <div class="stat-card"><div class="skeleton" style="width:48px;height:48px;border-radius:10px"></div><div style="flex:1"><div class="skeleton skeleton-text" style="width:60%;margin-bottom:.5rem"></div><div class="skeleton" style="height:1.75rem;width:40%"></div></div></div>
+    }
+  </div>
+} @else if (error()) {
+  <div class="error-box">
+    <span>⚠️</span>
+    <p>Failed to load dashboard data. <button class="btn btn-sm btn-outline" (click)="loadKpis()">Retry</button></p>
+  </div>
+} @else if (kpi()) {
+  <div class="kpi-grid">
+    <div class="stat-card">
+      <div class="stat-icon blue">💰</div>
+      <div class="stat-body">
+        <div class="stat-label">Total Stock Value</div>
+        <div class="stat-value">{{ formatCurrency(kpi()!.totalStockValue) }}</div>
+        <div class="stat-change" [class.up]="kpi()!.stockValueChangePercent >= 0" [class.down]="kpi()!.stockValueChangePercent < 0">
+          {{ kpi()!.stockValueChangePercent >= 0 ? '▲' : '▼' }} {{ kpi()!.stockValueChangePercent | number:'1.1-1' }}% vs last month
+        </div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon green">📦</div>
+      <div class="stat-body">
+        <div class="stat-label">Total Products</div>
+        <div class="stat-value">{{ formatNumber(kpi()!.totalProducts) }}</div>
+        <div class="stat-change">Across {{ kpi()!.totalWarehouses }} warehouses</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon orange">⚠️</div>
+      <div class="stat-body">
+        <div class="stat-label">Low Stock Items</div>
+        <div class="stat-value">{{ kpi()!.lowStockItems }}</div>
+        <a routerLink="/reports" class="stat-link">View Report →</a>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon red">💀</div>
+      <div class="stat-body">
+        <div class="stat-label">Dead Stock Items</div>
+        <div class="stat-value">{{ kpi()!.deadStockItems }}</div>
+        <a routerLink="/reports" class="stat-link">View Report →</a>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon purple">🛒</div>
+      <div class="stat-body">
+        <div class="stat-label">Open Purchase Orders</div>
+        <div class="stat-value">{{ kpi()!.openPurchaseOrders }}</div>
+        <div class="stat-change">{{ kpi()!.pendingApprovalOrders }} pending approval</div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon blue">🔄</div>
+      <div class="stat-body">
+        <div class="stat-label">Movements (30d)</div>
+        <div class="stat-value">{{ formatNumber(kpi()!.totalMovements30d) }}</div>
+        <div class="stat-change up">▲ {{ formatNumber(kpi()!.totalInboundQty30d) }} in &nbsp; ▼ {{ formatNumber(kpi()!.totalOutboundQty30d) }} out</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alerts Banner -->
+  @if ((kpi()!.lowStockItems + kpi()!.overdueOrders) > 0) {
+    <div class="alert-banner">
+      <span class="alert-banner-icon">🔔</span>
+      <div>
+        <strong>Action Required:</strong>
+        @if (kpi()!.lowStockItems > 0) { {{ kpi()!.lowStockItems }} items are below reorder point. }
+        @if (kpi()!.overdueOrders > 0) { {{ kpi()!.overdueOrders }} purchase orders are overdue. }
+      </div>
+      <a routerLink="/alerts" class="btn btn-sm btn-outline">View Alerts</a>
+    </div>
+  }
+
+  <!-- Quick Actions -->
+  <div class="section-title">Quick Actions</div>
+  <div class="quick-actions">
+    <a routerLink="/products/new"        class="quick-card">📦<span>Add Product</span></a>
+    <a routerLink="/stock/transfer"      class="quick-card">🔄<span>Transfer Stock</span></a>
+    <a routerLink="/purchase-orders/new" class="quick-card">🛒<span>Create PO</span></a>
+    <a routerLink="/stock/adjust"        class="quick-card">✏️<span>Adjust Stock</span></a>
+    <a routerLink="/reports/export"      class="quick-card">📄<span>Export Report</span></a>
+    <a routerLink="/alerts"             class="quick-card">🔔<span>Alert Center</span></a>
+  </div>
+
+  <!-- Metrics Row -->
+  <div class="metrics-row">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Inventory Health</span>
+      </div>
+      <div class="health-list">
+        <div class="health-item">
+          <span class="health-label">🟢 Healthy Stock</span>
+          <span class="health-value success">{{ kpi()!.totalProducts - kpi()!.lowStockItems - kpi()!.deadStockItems - kpi()!.overstockItems }}</span>
+        </div>
+        <div class="health-item">
+          <span class="health-label">🟡 Low Stock</span>
+          <span class="health-value warning">{{ kpi()!.lowStockItems }}</span>
+        </div>
+        <div class="health-item">
+          <span class="health-label">🔴 Dead Stock</span>
+          <span class="health-value danger">{{ kpi()!.deadStockItems }}</span>
+        </div>
+        <div class="health-item">
+          <span class="health-label">🔵 Overstock</span>
+          <span class="health-value info">{{ kpi()!.overstockItems }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Purchase Orders Status</span>
+        <a routerLink="/purchase-orders" class="card-link">View all</a>
+      </div>
+      <div class="health-list">
+        <div class="health-item">
+          <span class="health-label">⏳ Pending Approval</span>
+          <span class="health-value warning">{{ kpi()!.pendingApprovalOrders }}</span>
+        </div>
+        <div class="health-item">
+          <span class="health-label">✅ Open Orders</span>
+          <span class="health-value success">{{ kpi()!.openPurchaseOrders }}</span>
+        </div>
+        <div class="health-item">
+          <span class="health-label">⚠️ Overdue</span>
+          <span class="health-value danger">{{ kpi()!.overdueOrders }}</span>
+        </div>
+        <div class="health-item">
+          <span class="health-label">📊 Avg Turnover Rate</span>
+          <span class="health-value info">{{ kpi()!.turnoverRateAvg | number:'1.2-2' }}x</span>
+        </div>
+      </div>
+    </div>
+  </div>
+}

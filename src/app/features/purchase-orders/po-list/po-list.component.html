@@ -1,0 +1,32 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Purchase Orders</h1>
+    <p class="page-subtitle">Manage procurement requests and approvals</p>
+  </div>
+  <a routerLink="/purchase-orders/new" class="btn btn-primary">+ Create PO</a>
+</div>
+
+<div class="card toolbar-card">
+  <div class="d-flex gap-3 align-center flex-wrap">
+    <div class="status-tabs">
+      <button class="status-tab" [class.active]="!statusFilter()" (click)="onStatusChange('')">All</button>
+      @for (s of statuses; track s) {
+        <button class="status-tab" [class.active]="statusFilter() === s" (click)="onStatusChange(s)">
+          {{ s.replace('_', ' ') }}
+        </button>
+      }
+    </div>
+    <span class="text-sm text-muted">{{ totalElements() }} orders</span>
+  </div>
+</div>
+
+<app-data-table
+  [columns]="columns"
+  [data]="orders()"
+  [loading]="loading()"
+  [totalElements]="totalElements()"
+  [page]="page()"
+  [size]="20"
+  (pageChange)="onPageChange($event)"
+  (rowClick)="onRowClick($event)">
+</app-data-table>

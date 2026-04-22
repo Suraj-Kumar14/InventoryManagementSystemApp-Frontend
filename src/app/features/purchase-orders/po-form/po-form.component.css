@@ -1,0 +1,13 @@
+.form-section-title { font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:1rem; }
+.form-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:0 1.25rem; }
+.item-row { display:flex;gap:1rem;align-items:flex-end;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border-color); }
+.item-row .form-group { margin-bottom:0; }
+.flex-2 { flex:2; }
+.flex-1 { flex:1; }
+.item-total { flex-shrink:0;width:120px; }
+.subtotal-display { padding:.5rem .75rem;background:var(--gray-50);border-radius:var(--radius-md);font-weight:700;font-size:.9375rem;color:var(--color-primary);height:40px;display:flex;align-items:center; }
+.remove-btn { flex-shrink:0;color:var(--color-danger); }
+.total-row { display:flex;justify-content:flex-end;align-items:center;gap:1rem;padding-top:.75rem;margin-top:.25rem; }
+.total-label { font-size:1rem;font-weight:600;color:var(--text-secondary); }
+.total-value { font-size:1.375rem;font-weight:800;color:var(--color-primary); }
+.form-actions-card { display:flex;justify-content:flex-end;gap:.75rem;padding:.875rem 1.25rem; }

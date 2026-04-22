@@ -1,0 +1,71 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Transfer Stock</h1>
+    <p class="page-subtitle">Move inventory between warehouses</p>
+  </div>
+</div>
+
+<div class="card" style="max-width:640px">
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+
+    <div class="form-group">
+      <label class="form-label">Product *</label>
+      <select class="form-control" formControlName="productId"
+              [class.is-invalid]="form.get('productId')!.invalid && form.get('productId')!.touched">
+        <option [value]="null">Select a product</option>
+        @for (p of products(); track p.id) {
+          <option [value]="p.id">{{ p.name }} ({{ p.sku }})</option>
+        }
+      </select>
+      @if (form.get('productId')!.invalid && form.get('productId')!.touched) {
+        <div class="form-error">Product is required</div>
+      }
+    </div>
+
+    <div class="transfer-route">
+      <div class="form-group flex-1">
+        <label class="form-label">From Warehouse *</label>
+        <select class="form-control" formControlName="fromWarehouseId"
+                [class.is-invalid]="form.get('fromWarehouseId')!.invalid && form.get('fromWarehouseId')!.touched">
+          <option [value]="null">Select source</option>
+          @for (w of warehouses(); track w.id) {
+            <option [value]="w.id">{{ w.name }}</option>
+          }
+        </select>
+      </div>
+      <div class="transfer-arrow">→</div>
+      <div class="form-group flex-1">
+        <label class="form-label">To Warehouse *</label>
+        <select class="form-control" formControlName="toWarehouseId"
+                [class.is-invalid]="form.get('toWarehouseId')!.invalid && form.get('toWarehouseId')!.touched">
+          <option [value]="null">Select destination</option>
+          @for (w of warehouses(); track w.id) {
+            <option [value]="w.id">{{ w.name }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Quantity *</label>
+      <input type="number" class="form-control" formControlName="quantity" min="1"
+             [class.is-invalid]="form.get('quantity')!.invalid && form.get('quantity')!.touched" />
+      @if (form.get('quantity')!.invalid && form.get('quantity')!.touched) {
+        <div class="form-error">Quantity must be at least 1</div>
+      }
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Reason / Notes</label>
+      <textarea class="form-control" formControlName="reason" rows="2" placeholder="Optional transfer reason"></textarea>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-secondary" routerLink="/stock">Cancel</button>
+      <button type="submit" class="btn btn-primary" [disabled]="saving()">
+        @if (saving()) { <span class="spinner"></span> Transferring... }
+        @else { 🔄 Transfer Stock }
+      </button>
+    </div>
+  </form>
+</div>

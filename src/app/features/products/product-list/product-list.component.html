@@ -1,0 +1,50 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Products</h1>
+    <p class="page-subtitle">Manage your product catalog</p>
+  </div>
+  <a routerLink="/products/new" class="btn btn-primary">+ Add Product</a>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar card" style="padding:1rem 1.25rem;margin-bottom:1.25rem">
+  <div class="d-flex gap-3 align-center flex-wrap">
+    <div class="search-box">
+      <span class="search-prefix">🔍</span>
+      <input type="text" class="form-control" placeholder="Search by name or SKU..."
+             [value]="search()"
+             (input)="onSearch($any($event.target).value)" />
+    </div>
+    <select class="form-control" style="width:180px" (change)="onSearch(search())">
+      <option value="">All Categories</option>
+      <option value="Electronics">Electronics</option>
+      <option value="Food">Food & Beverages</option>
+      <option value="Furniture">Furniture</option>
+      <option value="Clothing">Clothing</option>
+      <option value="Tools">Tools</option>
+    </select>
+    <div class="d-flex align-center gap-2 text-sm text-muted">
+      <span>{{ totalElements() }} products</span>
+    </div>
+  </div>
+</div>
+
+<app-data-table
+  [columns]="columns"
+  [data]="products()"
+  [loading]="loading()"
+  [totalElements]="totalElements()"
+  [page]="page()"
+  [size]="20"
+  (pageChange)="onPageChange($event)">
+</app-data-table>
+
+<app-confirm-dialog
+  [open]="!!deleteTarget()"
+  title="Delete Product"
+  [message]="'Are you sure you want to delete ' + deleteTarget()?.name + '? This cannot be undone.'"
+  confirmLabel="Delete"
+  [loading]="deleting()"
+  (confirm)="doDelete()"
+  (cancel)="deleteTarget.set(null)">
+</app-confirm-dialog>

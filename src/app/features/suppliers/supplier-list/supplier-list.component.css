@@ -1,0 +1,4 @@
+.toolbar-card { padding: 1rem 1.25rem; margin-bottom: 1.25rem; }
+.search-box { position: relative; max-width: 380px; }
+.search-prefix { position: absolute; left: .75rem; top: 50%; transform: translateY(-50%); }
+.search-box .form-control { padding-left: 2.125rem; }

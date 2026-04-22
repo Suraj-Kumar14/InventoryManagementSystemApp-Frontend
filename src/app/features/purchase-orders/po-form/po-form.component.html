@@ -1,0 +1,94 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">{{ isEdit ? 'Edit Purchase Order' : 'Create Purchase Order' }}</h1>
+    <p class="page-subtitle">{{ isEdit ? 'Modify draft PO details' : 'Request goods from a supplier' }}</p>
+  </div>
+</div>
+
+<form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <!-- Header info -->
+  <div class="card" style="margin-bottom:1.25rem">
+    <div class="form-section-title">Order Details</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label">Supplier *</label>
+        <select class="form-control" formControlName="supplierId"
+                [class.is-invalid]="form.get('supplierId')!.invalid && form.get('supplierId')!.touched">
+          <option [value]="null">Select supplier</option>
+          @for (s of suppliers(); track s.id) { <option [value]="s.id">{{ s.name }}</option> }
+        </select>
+        @if (form.get('supplierId')!.invalid && form.get('supplierId')!.touched) { <div class="form-error">Required</div> }
+      </div>
+      <div class="form-group">
+        <label class="form-label">Warehouse *</label>
+        <select class="form-control" formControlName="warehouseId"
+                [class.is-invalid]="form.get('warehouseId')!.invalid && form.get('warehouseId')!.touched">
+          <option [value]="null">Select warehouse</option>
+          @for (w of warehouses(); track w.id) { <option [value]="w.id">{{ w.name }}</option> }
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Expected Delivery Date</label>
+        <input type="date" class="form-control" formControlName="expectedDeliveryDate" />
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">Notes / Instructions</label>
+        <textarea class="form-control" formControlName="notes" rows="2" placeholder="Optional notes for the supplier"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Line items -->
+  <div class="card" style="margin-bottom:1.25rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <div class="form-section-title" style="margin:0">Order Items</div>
+      <button type="button" class="btn btn-outline btn-sm" (click)="addItem()">+ Add Item</button>
+    </div>
+
+    @for (item of items.controls; track item; let i = $index) {
+      <div [formGroupName]="i" class="item-row" [formGroup]="$any(item)">
+        <div class="form-group flex-2">
+          <label class="form-label" [class.first]="i === 0">Product *</label>
+          <select class="form-control" formControlName="productId"
+                  (change)="onProductChange(i, $any($event.target).value)"
+                  [class.is-invalid]="item.get('productId')!.invalid && item.get('productId')!.touched">
+            <option [value]="null">Select product</option>
+            @for (p of products(); track p.id) { <option [value]="p.id">{{ p.name }} ({{ p.sku }})</option> }
+          </select>
+        </div>
+        <div class="form-group flex-1">
+          <label class="form-label" [class.first]="i === 0">Qty *</label>
+          <input type="number" class="form-control" formControlName="orderedQuantity" min="1"
+                 [class.is-invalid]="item.get('orderedQuantity')!.invalid && item.get('orderedQuantity')!.touched" />
+        </div>
+        <div class="form-group flex-1">
+          <label class="form-label" [class.first]="i === 0">Unit Price (₹) *</label>
+          <input type="number" class="form-control" formControlName="unitPrice" min="0" step="0.01"
+                 [class.is-invalid]="item.get('unitPrice')!.invalid && item.get('unitPrice')!.touched" />
+        </div>
+        <div class="form-group item-total">
+          @if (i === 0) { <label class="form-label">Subtotal</label> }
+          <div class="subtotal-display">
+            ₹{{ ((item.get('orderedQuantity')?.value ?? 0) * (item.get('unitPrice')?.value ?? 0)) | number:'1.0-2' }}
+          </div>
+        </div>
+        @if (items.length > 1) {
+          <button type="button" class="btn btn-ghost btn-icon remove-btn" (click)="removeItem(i)" [style.marginTop]="i === 0 ? '1.625rem' : '0'">✕</button>
+        }
+      </div>
+    }
+
+    <div class="total-row">
+      <span class="total-label">Total Amount:</span>
+      <span class="total-value">₹{{ totalAmount | number:'1.0-2' }}</span>
+    </div>
+  </div>
+
+  <div class="form-actions-card card">
+    <button type="button" class="btn btn-secondary" (click)="cancel()">Cancel</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      @if (saving()) { <span class="spinner"></span> Saving... }
+      @else { {{ isEdit ? 'Update PO' : 'Create PO' }} }
+    </button>
+  </div>
+</form>

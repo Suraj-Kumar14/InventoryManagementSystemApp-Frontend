@@ -1,0 +1,69 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Receive Goods</h1>
+    <p class="page-subtitle">{{ po()?.poNumber }} — Update received quantities to update stock</p>
+  </div>
+</div>
+
+@if (loading()) {
+  <div class="card" style="height:200px;display:flex;align-items:center;justify-content:center">
+    <div class="spinner spinner-dark" style="width:36px;height:36px;border-width:3px"></div>
+  </div>
+} @else if (po()) {
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="card" style="margin-bottom:1.25rem">
+      <div class="po-info-strip">
+        <div class="info-chip"><span>🏭</span>{{ po()!.warehouseName }}</div>
+        <div class="info-chip"><span>🤝</span>{{ po()!.supplierName }}</div>
+        <div class="info-chip"><span>📦</span>{{ po()!.items.length }} items</div>
+        <div class="info-chip"><span>💰</span>₹{{ po()!.totalAmount | number }}</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Product</th><th width="80">SKU</th>
+            <th width="120">Ordered Qty</th>
+            <th width="150">Received Qty *</th>
+            <th width="100">Status</th>
+          </tr>
+        </thead>
+        <tbody [formArrayName]="'receipts'">
+          @for (ctrl of receipts.controls; track ctrl; let i = $index) {
+            <tr [formGroupName]="i">
+              <td>{{ ctrl.get('productName')?.value }}</td>
+              <td class="text-muted text-sm">—</td>
+              <td class="font-semibold">{{ ctrl.get('orderedQuantity')?.value }}</td>
+              <td>
+                <input type="number" class="form-control form-control-sm" formControlName="receivedQuantity"
+                       min="0" [max]="ctrl.get('orderedQuantity')?.value"
+                       [class.is-invalid]="ctrl.get('receivedQuantity')!.invalid && ctrl.get('receivedQuantity')!.touched" />
+              </td>
+              <td>
+                @if ((ctrl.get('receivedQuantity')?.value ?? 0) === 0) {
+                  <span class="badge badge-gray">Not received</span>
+                } @else if ((ctrl.get('receivedQuantity')?.value ?? 0) < ctrl.get('orderedQuantity')?.value) {
+                  <span class="badge badge-warning">Partial</span>
+                } @else {
+                  <span class="badge badge-success">Full</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card" style="margin-top:1.25rem;display:flex;justify-content:space-between;align-items:center;padding:.875rem 1.25rem">
+      <p class="text-sm text-muted">Stock levels will be updated immediately upon confirmation.</p>
+      <div class="d-flex gap-2">
+        <a [href]="'/purchase-orders/' + po()!.id" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary" [disabled]="saving()">
+          @if (saving()) { <span class="spinner"></span> Processing... } @else { 📦 Confirm Receipt }
+        </button>
+      </div>
+    </div>
+  </form>
+}

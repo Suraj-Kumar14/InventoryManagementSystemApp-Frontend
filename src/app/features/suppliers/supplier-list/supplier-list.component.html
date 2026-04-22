@@ -1,0 +1,36 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Suppliers</h1>
+    <p class="page-subtitle">Manage your vendor and supplier network</p>
+  </div>
+  <a routerLink="/suppliers/new" class="btn btn-primary">+ Add Supplier</a>
+</div>
+
+<div class="card toolbar-card">
+  <div class="search-box">
+    <span class="search-prefix">🔍</span>
+    <input type="text" class="form-control" placeholder="Search suppliers..."
+           [value]="search"
+           (input)="onSearch($any($event.target).value)" />
+  </div>
+</div>
+
+<app-data-table
+  [columns]="columns"
+  [data]="suppliers()"
+  [loading]="loading()"
+  [totalElements]="totalElements()"
+  [page]="page()"
+  [size]="20"
+  (pageChange)="onPageChange($event)">
+</app-data-table>
+
+<app-confirm-dialog
+  [open]="!!deleteTarget()"
+  title="Remove Supplier"
+  [message]="'Remove ' + deleteTarget()?.name + '?'"
+  confirmLabel="Remove"
+  [loading]="deleting()"
+  (confirm)="doDelete()"
+  (cancel)="deleteTarget.set(null)">
+</app-confirm-dialog>
