@@ -1,2 +1,24 @@
 .toolbar-card { padding: 1rem 1.25rem; margin-bottom: 1.25rem; }
+.toolbar-row {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.toolbar-filter {
+  min-width: 220px;
+}
+
+.filter-label {
+  display: block;
+  margin-bottom: .375rem;
+  font-size: .75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
 .legend-row { display: flex; gap: .5rem; align-items: center; }

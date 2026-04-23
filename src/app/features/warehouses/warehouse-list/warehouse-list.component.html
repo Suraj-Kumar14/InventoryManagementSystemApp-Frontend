@@ -1,23 +1,27 @@
 <div class="page-header">
   <div>
     <h1 class="page-title">Warehouses</h1>
-    <p class="page-subtitle">Manage your storage locations and capacity</p>
+    <p class="page-subtitle">Manage warehouse registry, storage capacity, and operational status.</p>
   </div>
   <a routerLink="/warehouses/new" class="btn btn-primary">+ Add Warehouse</a>
 </div>
 
 @if (loading()) {
   <div class="wh-grid">
-    @for (i of [1,2,3,4,5,6]; track i) {
+    @for (i of [1, 2, 3, 4, 5, 6]; track i) {
       <div class="card skeleton-card">
-        <div class="skeleton" style="height:1.25rem;width:60%;margin-bottom:.75rem"></div>
-        <div class="skeleton skeleton-text" style="width:40%;margin-bottom:.5rem"></div>
-        <div class="skeleton" style="height:.5rem;border-radius:99px;margin-top:1rem"></div>
+        <div class="skeleton" style="height: 1.25rem; width: 60%; margin-bottom: 0.75rem"></div>
+        <div class="skeleton skeleton-text" style="width: 40%; margin-bottom: 0.5rem"></div>
+        <div class="skeleton" style="height: 0.5rem; border-radius: 99px; margin-top: 1rem"></div>
       </div>
     }
   </div>
 } @else if (warehouses().length === 0) {
-  <app-empty-state icon="🏭" title="No warehouses yet" description="Add your first warehouse to start tracking inventory locations.">
+  <app-empty-state
+    icon="WH"
+    title="No warehouses yet"
+    description="Add your first warehouse to start tracking inventory locations."
+  >
     <a routerLink="/warehouses/new" class="btn btn-primary">Add Warehouse</a>
   </app-empty-state>
 } @else {
@@ -25,23 +29,37 @@
     @for (wh of warehouses(); track wh.id) {
       <div class="wh-card card">
         <div class="wh-header">
-          <div class="wh-icon">🏭</div>
+          <div class="wh-icon">WH</div>
           <div class="wh-meta">
             <div class="wh-name">{{ wh.name }}</div>
-            <div class="wh-code text-xs text-muted">{{ wh.code }}</div>
+            <div class="wh-code text-xs text-muted">{{ wh.location }}</div>
           </div>
-          <span class="badge" [class]="wh.active ? 'badge-success' : 'badge-gray'">
-            {{ wh.active ? 'Active' : 'Inactive' }}
+          <span class="badge" [class]="wh.isActive ? 'badge-success' : 'badge-gray'">
+            {{ wh.isActive ? 'Active' : 'Inactive' }}
           </span>
         </div>
 
-        <div class="wh-location">
-          <span>📍</span> {{ wh.city }}, {{ wh.country }}
+        <div class="wh-detail-row">
+          <span class="wh-label">Location</span>
+          <span>{{ wh.location }}</span>
         </div>
 
-        @if (wh.managerName) {
-          <div class="wh-manager">
-            <span>👤</span> {{ wh.managerName }}
+        <div class="wh-detail-row">
+          <span class="wh-label">Address</span>
+          <span>{{ wh.address }}</span>
+        </div>
+
+        @if (wh.managerId) {
+          <div class="wh-detail-row">
+            <span class="wh-label">Manager</span>
+            <span>ID {{ wh.managerId }}</span>
+          </div>
+        }
+
+        @if (wh.phone) {
+          <div class="wh-detail-row">
+            <span class="wh-label">Phone</span>
+            <span>{{ wh.phone }}</span>
           </div>
         }
 
@@ -53,20 +71,24 @@
             </span>
           </div>
           <div class="util-bar">
-            <div class="util-fill"
-                 [style.width.%]="wh.utilizationPercent"
-                 [class]="'fill-' + getUtilizationColor(wh.utilizationPercent)">
-            </div>
+            <div
+              class="util-fill"
+              [style.width.%]="wh.utilizationPercent"
+              [class]="'fill-' + getUtilizationColor(wh.utilizationPercent)"
+            ></div>
           </div>
           <div class="util-detail text-xs text-muted">
-            {{ wh.currentUtilization | number }} / {{ wh.capacity | number }} units
+            {{ wh.usedCapacity | number }} / {{ wh.capacity | number }} units used
           </div>
         </div>
 
         <div class="wh-actions">
-          <a [routerLink]="['/warehouses', wh.id]" class="btn btn-ghost btn-sm">View</a>
           <a [routerLink]="['/warehouses', wh.id, 'edit']" class="btn btn-secondary btn-sm">Edit</a>
-          <button class="btn btn-danger btn-sm" (click)="confirmDelete(wh)">Delete</button>
+          @if (wh.isActive) {
+            <button class="btn btn-danger btn-sm" (click)="confirmDeactivate(wh)">Deactivate</button>
+          } @else {
+            <span class="text-xs text-muted">Warehouse is inactive</span>
+          }
         </div>
       </div>
     }
@@ -74,11 +96,11 @@
 }
 
 <app-confirm-dialog
-  [open]="!!deleteTarget()"
-  title="Delete Warehouse"
-  [message]="'Delete ' + deleteTarget()?.name + '? All associated stock data may be affected.'"
-  confirmLabel="Delete"
-  [loading]="deleting()"
-  (confirm)="doDelete()"
-  (cancel)="deleteTarget.set(null)">
-</app-confirm-dialog>
+  [open]="!!deactivateTarget()"
+  title="Deactivate Warehouse"
+  [message]="'Deactivate ' + deactivateTarget()?.name + '? The warehouse will remain in history but should no longer be used for active operations.'"
+  confirmLabel="Deactivate"
+  [loading]="deactivating()"
+  (confirm)="doDeactivate()"
+  (cancel)="deactivateTarget.set(null)"
+></app-confirm-dialog>

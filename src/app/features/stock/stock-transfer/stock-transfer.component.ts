@@ -1,58 +1,108 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
-import { StockService } from '../../../core/services/stock.service';
-import { WarehouseService } from '../../../core/services/warehouse.service';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import {
+  AbstractControl,
+  FormBuilder,
+  ReactiveFormsModule,
+  ValidationErrors,
+  ValidatorFn,
+  Validators
+} from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
+import { Product, Warehouse } from '../../../core/models';
 import { ProductService } from '../../../core/services/product.service';
-import { Warehouse, Product } from '../../../core/models';
+import { StockService } from '../../../core/services/stock.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { WarehouseService } from '../../../core/services/warehouse.service';
 
 @Component({
   selector: 'app-stock-transfer',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './stock-transfer.component.html',
   styleUrls: ['./stock-transfer.component.css']
 })
 export class StockTransferComponent implements OnInit {
-  fb         = inject(FormBuilder);
-  stockSvc   = inject(StockService);
-  whSvc      = inject(WarehouseService);
-  productSvc = inject(ProductService);
-  router     = inject(Router);
-  toast      = inject(ToastService);
+  private readonly fb = inject(FormBuilder);
+  private readonly stockService = inject(StockService);
+  private readonly warehouseService = inject(WarehouseService);
+  private readonly productService = inject(ProductService);
+  private readonly router = inject(Router);
+  private readonly toast = inject(ToastService);
 
-  warehouses = signal<Warehouse[]>([]);
-  products   = signal<Product[]>([]);
-  saving     = signal(false);
+  readonly warehouses = signal<Warehouse[]>([]);
+  readonly products = signal<Product[]>([]);
+  readonly saving = signal(false);
 
-  form = this.fb.group({
-    productId:       [null as number | null, Validators.required],
-    fromWarehouseId: [null as number | null, Validators.required],
-    toWarehouseId:   [null as number | null, Validators.required],
-    quantity:        [1, [Validators.required, Validators.min(1)]],
-    reason:          ['']
-  });
+  readonly form = this.fb.group(
+    {
+      productId: [null as number | null, Validators.required],
+      sourceWarehouseId: [null as number | null, Validators.required],
+      destinationWarehouseId: [null as number | null, Validators.required],
+      quantity: [1, [Validators.required, Validators.min(1)]],
+      referenceId: [''],
+      notes: ['']
+    },
+    { validators: this.differentWarehousesValidator() }
+  );
 
   ngOnInit(): void {
-    this.whSvc.getActive().subscribe({ next: w => this.warehouses.set(w), error: () => {} });
-    this.productSvc.getAll(0, 200).subscribe({ next: r => this.products.set(r.content), error: () => {} });
+    this.warehouseService.getActive().subscribe({
+      next: (warehouses) => this.warehouses.set(warehouses),
+      error: () => undefined
+    });
+
+    this.productService.getAllProducts().subscribe({
+      next: (products) => this.products.set(products),
+      error: () => undefined
+    });
   }
 
   submit(): void {
-    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+
+    const value = this.form.getRawValue();
+    const selectedProduct = this.products().find((product) => product.id === value.productId);
+
     this.saving.set(true);
-    const v = this.form.getRawValue();
-    this.stockSvc.transfer({
-      productId:       v.productId!,
-      fromWarehouseId: v.fromWarehouseId!,
-      toWarehouseId:   v.toWarehouseId!,
-      quantity:        v.quantity!,
-      reason:          v.reason ?? ''
+    this.stockService.transfer({
+      productId: value.productId!,
+      sourceWarehouseId: value.sourceWarehouseId!,
+      destinationWarehouseId: value.destinationWarehouseId!,
+      quantity: Number(value.quantity ?? 0),
+      referenceId: value.referenceId?.trim() || null,
+      referenceType: 'TRANSFER',
+      unitCost: selectedProduct?.costPrice ?? null,
+      notes: value.notes?.trim() || null
     }).subscribe({
-      next: () => { this.toast.success('Stock transferred successfully!'); this.router.navigate(['/stock']); },
-      error: err => { this.saving.set(false); this.toast.error('Transfer failed', err.error?.message); }
+      next: () => {
+        this.toast.success('Stock transferred');
+        this.router.navigate(['/stock']);
+      },
+      error: (error) => {
+        this.saving.set(false);
+        this.toast.error('Transfer failed', error.error?.message ?? error.message);
+      }
     });
+  }
+
+  private differentWarehousesValidator(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const sourceWarehouseId = control.get('sourceWarehouseId')?.value;
+      const destinationWarehouseId = control.get('destinationWarehouseId')?.value;
+
+      if (
+        sourceWarehouseId != null &&
+        destinationWarehouseId != null &&
+        sourceWarehouseId === destinationWarehouseId
+      ) {
+        return { sameWarehouse: true };
+      }
+
+      return null;
+    };
   }
 }

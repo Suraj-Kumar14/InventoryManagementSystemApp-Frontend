@@ -23,14 +23,14 @@ export class WarehouseListComponent implements OnInit {
   totalElements = signal(0);
   page          = signal(0);
   loading       = signal(true);
-  deleteTarget  = signal<Warehouse | null>(null);
-  deleting      = signal(false);
+  deactivateTarget = signal<Warehouse | null>(null);
+  deactivating     = signal(false);
 
   ngOnInit(): void { this.load(); }
 
   load(): void {
     this.loading.set(true);
-    this.whSvc.getAll(this.page(), 12).subscribe({
+    this.whSvc.getAll(this.page(), 12, 'name', 'asc').subscribe({
       next: (res: PagedResponse<Warehouse>) => {
         this.warehouses.set(res.content);
         this.totalElements.set(res.totalElements);
@@ -46,15 +46,26 @@ export class WarehouseListComponent implements OnInit {
     return 'success';
   }
 
-  confirmDelete(w: Warehouse): void { this.deleteTarget.set(w); }
+  confirmDeactivate(warehouse: Warehouse): void {
+    this.deactivateTarget.set(warehouse);
+  }
 
-  doDelete(): void {
-    const w = this.deleteTarget();
-    if (!w) return;
-    this.deleting.set(true);
-    this.whSvc.delete(w.id).subscribe({
-      next: () => { this.toast.success('Warehouse deleted'); this.deleteTarget.set(null); this.deleting.set(false); this.load(); },
-      error: () => { this.toast.error('Delete failed'); this.deleting.set(false); }
+  doDeactivate(): void {
+    const warehouse = this.deactivateTarget();
+    if (!warehouse) return;
+
+    this.deactivating.set(true);
+    this.whSvc.deactivate(warehouse.id).subscribe({
+      next: () => {
+        this.toast.success('Warehouse deactivated');
+        this.deactivateTarget.set(null);
+        this.deactivating.set(false);
+        this.load();
+      },
+      error: (error) => {
+        this.toast.error('Deactivate failed', error.error?.message);
+        this.deactivating.set(false);
+      }
     });
   }
 }

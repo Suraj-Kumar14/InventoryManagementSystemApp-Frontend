@@ -76,44 +76,91 @@ export * from './low-stock-product.model';
 // ── Warehouses ────────────────────────────────────────────────────────────────
 
 export interface Warehouse {
+  warehouseId: number;
   id: number;
   name: string;
-  code: string;
+  location: string;
   address: string;
-  city: string;
-  country: string;
-  managerId?: number;
-  managerName?: string;
+  managerId?: number | null;
   capacity: number;
+  usedCapacity: number;
   currentUtilization: number;
   utilizationPercent: number;
+  isActive: boolean;
   active: boolean;
-  createdAt: string;
+  phone?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+
+  // Compatibility fields used by older templates.
+  code: string;
+  managerName?: string;
+  city?: string;
+  country?: string;
+}
+
+export interface CreateWarehouseRequest {
+  name: string;
+  location: string;
+  address: string;
+  managerId?: number | null;
+  capacity: number;
+  phone?: string | null;
+}
+
+export interface UpdateWarehouseRequest extends CreateWarehouseRequest {
+  isActive?: boolean;
+}
+
+export interface WarehouseSummaryResponse {
+  warehouseId: number;
+  id: number;
+  name: string;
+  location: string;
+  isActive: boolean;
+  active: boolean;
+}
+
+export interface WarehouseUtilizationResponse {
+  warehouseId: number;
+  capacity: number;
+  usedCapacity: number;
+  utilizationPercentage: number;
 }
 
 // ── Stock ─────────────────────────────────────────────────────────────────────
 
 export interface StockLevel {
+  stockId: number;
   id: number;
-  productId: number;
-  productName: string;
-  sku: string;
   warehouseId: number;
-  warehouseName: string;
+  productId: number;
   quantity: number;
   reservedQuantity: number;
   availableQuantity: number;
-  reorderPoint: number;
-  stockValue: number;
+  location?: string | null;
   lastUpdated: string;
+  createdAt?: string;
+  updatedAt?: string;
+
+  // Optional client-side enrichment fields.
+  productName?: string;
+  sku?: string;
+  warehouseName?: string;
+  reorderLevel?: number;
+  reorderPoint?: number;
+  stockValue?: number;
 }
 
 export interface StockTransferRequest {
+  sourceWarehouseId: number;
+  destinationWarehouseId: number;
   productId: number;
-  fromWarehouseId: number;
-  toWarehouseId: number;
   quantity: number;
-  reason?: string;
+  referenceId?: string | null;
+  referenceType?: string | null;
+  unitCost?: number | null;
+  notes?: string | null;
 }
 
 export interface StockAdjustRequest {
@@ -122,6 +169,62 @@ export interface StockAdjustRequest {
   newQuantity: number;
   reason: string;
   adjustmentType: 'INCREASE' | 'DECREASE' | 'SET';
+  referenceId?: string | null;
+  unitCost?: number | null;
+}
+
+export interface UpdateStockRequest {
+  warehouseId: number;
+  productId: number;
+  quantity: number;
+  unitCost?: number | null;
+  referenceId?: string | null;
+  referenceType?: string | null;
+  notes?: string | null;
+}
+
+export interface ReserveStockRequest {
+  warehouseId: number;
+  productId: number;
+  quantity: number;
+  referenceId?: string | null;
+  referenceType?: string | null;
+  notes?: string | null;
+}
+
+export interface ReleaseReservationRequest {
+  warehouseId: number;
+  productId: number;
+  quantity: number;
+  referenceId?: string | null;
+  referenceType?: string | null;
+  notes?: string | null;
+}
+
+export interface TransferStockResponse {
+  productId: number;
+  sourceWarehouseId: number;
+  destinationWarehouseId: number;
+  transferredQuantity: number;
+  sourceBalance: number;
+  destinationBalance: number;
+  message: string;
+}
+
+export interface LowStockItem {
+  warehouseId: number;
+  productId: number;
+  quantity: number;
+  reservedQuantity: number;
+  availableQuantity: number;
+  location?: string | null;
+
+  // Optional client-side enrichment fields.
+  productName?: string;
+  sku?: string;
+  warehouseName?: string;
+  reorderLevel?: number;
+  reorderPoint?: number;
 }
 
 // ── Movements ─────────────────────────────────────────────────────────────────

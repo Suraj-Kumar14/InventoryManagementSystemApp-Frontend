@@ -1,70 +1,109 @@
 <div class="page-header">
   <div>
     <h1 class="page-title">Transfer Stock</h1>
-    <p class="page-subtitle">Move inventory between warehouses</p>
+    <p class="page-subtitle">Move on-hand quantity between active warehouses in one controlled transfer.</p>
   </div>
 </div>
 
-<div class="card" style="max-width:640px">
+<div class="card" style="max-width: 680px">
   <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-
     <div class="form-group">
       <label class="form-label">Product *</label>
-      <select class="form-control" formControlName="productId"
-              [class.is-invalid]="form.get('productId')!.invalid && form.get('productId')!.touched">
-        <option [value]="null">Select a product</option>
-        @for (p of products(); track p.id) {
-          <option [value]="p.id">{{ p.name }} ({{ p.sku }})</option>
+      <select
+        class="form-control"
+        formControlName="productId"
+        [class.is-invalid]="form.get('productId')?.invalid && form.get('productId')?.touched"
+      >
+        <option [ngValue]="null">Select a product</option>
+        @for (product of products(); track product.id) {
+          <option [ngValue]="product.id">{{ product.name }} ({{ product.sku }})</option>
         }
       </select>
-      @if (form.get('productId')!.invalid && form.get('productId')!.touched) {
-        <div class="form-error">Product is required</div>
+      @if (form.get('productId')?.invalid && form.get('productId')?.touched) {
+        <div class="form-error">Product is required.</div>
       }
     </div>
 
     <div class="transfer-route">
       <div class="form-group flex-1">
-        <label class="form-label">From Warehouse *</label>
-        <select class="form-control" formControlName="fromWarehouseId"
-                [class.is-invalid]="form.get('fromWarehouseId')!.invalid && form.get('fromWarehouseId')!.touched">
-          <option [value]="null">Select source</option>
-          @for (w of warehouses(); track w.id) {
-            <option [value]="w.id">{{ w.name }}</option>
+        <label class="form-label">Source Warehouse *</label>
+        <select
+          class="form-control"
+          formControlName="sourceWarehouseId"
+          [class.is-invalid]="form.get('sourceWarehouseId')?.invalid && form.get('sourceWarehouseId')?.touched"
+        >
+          <option [ngValue]="null">Select source</option>
+          @for (warehouse of warehouses(); track warehouse.id) {
+            <option [ngValue]="warehouse.id">{{ warehouse.name }}</option>
           }
         </select>
       </div>
-      <div class="transfer-arrow">→</div>
+
+      <div class="transfer-arrow">TO</div>
+
       <div class="form-group flex-1">
-        <label class="form-label">To Warehouse *</label>
-        <select class="form-control" formControlName="toWarehouseId"
-                [class.is-invalid]="form.get('toWarehouseId')!.invalid && form.get('toWarehouseId')!.touched">
-          <option [value]="null">Select destination</option>
-          @for (w of warehouses(); track w.id) {
-            <option [value]="w.id">{{ w.name }}</option>
+        <label class="form-label">Destination Warehouse *</label>
+        <select
+          class="form-control"
+          formControlName="destinationWarehouseId"
+          [class.is-invalid]="form.get('destinationWarehouseId')?.invalid && form.get('destinationWarehouseId')?.touched"
+        >
+          <option [ngValue]="null">Select destination</option>
+          @for (warehouse of warehouses(); track warehouse.id) {
+            <option [ngValue]="warehouse.id">{{ warehouse.name }}</option>
           }
         </select>
       </div>
     </div>
 
+    @if (form.errors?.['sameWarehouse']) {
+      <div class="form-error" style="margin-top: -0.25rem; margin-bottom: 1rem;">
+        Source and destination warehouses must be different.
+      </div>
+    }
+
     <div class="form-group">
       <label class="form-label">Quantity *</label>
-      <input type="number" class="form-control" formControlName="quantity" min="1"
-             [class.is-invalid]="form.get('quantity')!.invalid && form.get('quantity')!.touched" />
-      @if (form.get('quantity')!.invalid && form.get('quantity')!.touched) {
-        <div class="form-error">Quantity must be at least 1</div>
+      <input
+        type="number"
+        class="form-control"
+        formControlName="quantity"
+        min="1"
+        [class.is-invalid]="form.get('quantity')?.invalid && form.get('quantity')?.touched"
+      />
+      @if (form.get('quantity')?.invalid && form.get('quantity')?.touched) {
+        <div class="form-error">Quantity must be greater than zero.</div>
       }
     </div>
 
     <div class="form-group">
-      <label class="form-label">Reason / Notes</label>
-      <textarea class="form-control" formControlName="reason" rows="2" placeholder="Optional transfer reason"></textarea>
+      <label class="form-label">Reference ID</label>
+      <input
+        type="text"
+        class="form-control"
+        formControlName="referenceId"
+        placeholder="Optional transfer reference"
+      />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <textarea
+        class="form-control"
+        formControlName="notes"
+        rows="3"
+        placeholder="Optional transfer notes for audit context"
+      ></textarea>
     </div>
 
     <div class="form-actions">
       <button type="button" class="btn btn-secondary" routerLink="/stock">Cancel</button>
       <button type="submit" class="btn btn-primary" [disabled]="saving()">
-        @if (saving()) { <span class="spinner"></span> Transferring... }
-        @else { 🔄 Transfer Stock }
+        @if (saving()) {
+          <span class="spinner"></span> Transferring...
+        } @else {
+          Transfer Stock
+        }
       </button>
     </div>
   </form>
