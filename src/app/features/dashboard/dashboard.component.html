@@ -117,14 +117,14 @@
           <span>Low Stock</span>
         </a>
 
-        <a routerLink="/products/scan" class="quick-card">
+        <a routerLink="/products/barcode-lookup" class="quick-card">
           <span class="quick-icon">SC</span>
           <span>Scan Barcode</span>
         </a>
 
         <a
           *ngIf="canManageProducts()"
-          routerLink="/products/new"
+          routerLink="/products/create"
           class="quick-card"
         >
           <span class="quick-icon">NP</span>

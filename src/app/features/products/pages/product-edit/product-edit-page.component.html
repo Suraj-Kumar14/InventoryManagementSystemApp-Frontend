@@ -1,0 +1,41 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <p class="page-breadcrumb">Catalog / Products / Edit</p>
+      <h1 class="page-title">Edit Product</h1>
+      <p class="page-subtitle">
+        Update the catalogue record while keeping the product status visible to operations teams.
+      </p>
+    </div>
+
+    <div class="page-actions">
+      @if (product()) {
+        <a [routerLink]="['/products', product()!.productId]" class="btn btn-secondary">Back to Details</a>
+      } @else {
+        <a routerLink="/products" class="btn btn-secondary">Back to Products</a>
+      }
+    </div>
+  </div>
+
+  @if (loading()) {
+    <section class="card state-card">
+      <div class="spinner spinner-dark" style="width: 28px; height: 28px; border-width: 3px;"></div>
+      <span>Loading product details...</span>
+    </section>
+  } @else if (errorMessage()) {
+    <app-empty-state
+      title="Product unavailable"
+      [description]="errorMessage()"
+    >
+      <button type="button" class="btn btn-primary" (click)="retry()">Retry</button>
+    </app-empty-state>
+  } @else if (product()) {
+    <app-product-form
+      mode="edit"
+      [product]="product()"
+      [saving]="saving()"
+      (formSubmit)="updateProduct($event)"
+      (cancel)="cancel()"
+    />
+  }
+</div>

@@ -1,0 +1,155 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <p class="page-breadcrumb">Catalog / Products / Details</p>
+      <h1 class="page-title">Product Detail</h1>
+      <p class="page-subtitle">
+        Review pricing, catalogue metadata, barcode information, and replenishment settings in one place.
+      </p>
+    </div>
+
+    <div class="page-actions">
+      <button type="button" class="btn btn-secondary" (click)="goBack()">Back</button>
+      @if (product() && canManageProducts()) {
+        <a [routerLink]="['/products', product()!.productId, 'edit']" class="btn btn-primary">Edit Product</a>
+      }
+    </div>
+  </div>
+
+  @if (loading()) {
+    <section class="card state-card">
+      <div class="spinner spinner-dark" style="width: 28px; height: 28px; border-width: 3px;"></div>
+      <span>Loading product details...</span>
+    </section>
+  } @else if (errorMessage() || !product()) {
+    <app-empty-state
+      title="Product not available"
+      [description]="errorMessage() || 'This product could not be loaded.'"
+    >
+      <button type="button" class="btn btn-primary" (click)="retry()">Retry</button>
+    </app-empty-state>
+  } @else {
+    <div class="detail-layout">
+      <app-product-summary-card class="summary-panel" [product]="summary()!" />
+
+      <section class="card detail-card">
+        <div class="card-header">
+          <h2 class="card-title">Description</h2>
+          <span class="badge" [class]="product()!.isActive ? 'badge-success' : 'badge-gray'">
+            {{ product()!.isActive ? 'Active' : 'Inactive' }}
+          </span>
+        </div>
+        <p>{{ product()!.description || 'No description has been provided for this product yet.' }}</p>
+      </section>
+
+      <section class="card detail-card">
+        <div class="card-header">
+          <h2 class="card-title">Pricing</h2>
+        </div>
+        <div class="detail-grid">
+          <div>
+            <span>Cost Price</span>
+            <strong>{{ product()!.costPrice | currency: 'INR':'symbol':'1.2-2' }}</strong>
+          </div>
+          <div>
+            <span>Selling Price</span>
+            <strong>{{ product()!.sellingPrice | currency: 'INR':'symbol':'1.2-2' }}</strong>
+          </div>
+          <div>
+            <span>Unit of Measure</span>
+            <strong>{{ product()!.unitOfMeasure }}</strong>
+          </div>
+          <div>
+            <span>Gross Margin</span>
+            <strong>
+              {{ (product()!.sellingPrice - product()!.costPrice) | currency: 'INR':'symbol':'1.2-2' }}
+            </strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="card detail-card">
+        <div class="card-header">
+          <h2 class="card-title">Reorder Settings</h2>
+        </div>
+        <div class="detail-grid">
+          <div>
+            <span>Reorder Level</span>
+            <strong>{{ product()!.reorderLevel }}</strong>
+          </div>
+          <div>
+            <span>Max Stock Level</span>
+            <strong>{{ product()!.maxStockLevel ?? '--' }}</strong>
+          </div>
+          <div>
+            <span>Lead Time (Days)</span>
+            <strong>{{ product()!.leadTimeDays ?? '--' }}</strong>
+          </div>
+          <div>
+            <span>Barcode</span>
+            <strong>{{ product()!.barcode || '--' }}</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="card detail-card">
+        <div class="card-header">
+          <h2 class="card-title">Metadata</h2>
+        </div>
+        <div class="detail-grid">
+          <div>
+            <span>Product ID</span>
+            <strong>{{ product()!.productId }}</strong>
+          </div>
+          <div>
+            <span>SKU</span>
+            <strong>{{ product()!.sku }}</strong>
+          </div>
+          <div>
+            <span>Created At</span>
+            <strong>{{ product()!.createdAt ? (product()!.createdAt | date: 'medium') : '--' }}</strong>
+          </div>
+          <div>
+            <span>Updated At</span>
+            <strong>{{ product()!.updatedAt ? (product()!.updatedAt | date: 'medium') : '--' }}</strong>
+          </div>
+        </div>
+      </section>
+
+      @if (product()!.imageUrl) {
+        <section class="card detail-card image-card">
+          <div class="card-header">
+            <h2 class="card-title">Image Preview</h2>
+          </div>
+          <img [src]="product()!.imageUrl!" [alt]="product()!.name" />
+        </section>
+      }
+
+      @if (canManageProducts() && product()!.isActive) {
+        <section class="card detail-card action-card">
+          <div class="card-header">
+            <h2 class="card-title">Actions</h2>
+          </div>
+          <p>Use the controlled deactivate action when the product should stay in history but stop being active.</p>
+          <div class="action-row">
+            <a [routerLink]="['/products', product()!.productId, 'edit']" class="btn btn-secondary">Edit Product</a>
+            <button type="button" class="btn btn-primary" (click)="openDeactivateDialog()">
+              Deactivate Product
+            </button>
+          </div>
+        </section>
+      }
+    </div>
+  }
+</div>
+
+<app-confirm-dialog
+  [open]="showDeactivateDialog()"
+  title="Deactivate Product"
+  [message]="'Deactivate ' + product()?.name + '? It will remain in the catalogue as inactive.'"
+  confirmLabel="Deactivate"
+  confirmClass="btn-primary"
+  [loading]="submittingAction()"
+  (confirm)="deactivateProduct()"
+  (cancel)="closeDeactivateDialog()"
+/>

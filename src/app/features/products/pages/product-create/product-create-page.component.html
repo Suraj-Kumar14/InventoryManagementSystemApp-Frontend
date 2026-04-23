@@ -1,0 +1,22 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <p class="page-breadcrumb">Catalog / Products / Create</p>
+      <h1 class="page-title">Create Product</h1>
+      <p class="page-subtitle">
+        Add a new catalogue item with pricing, replenishment thresholds, and barcode readiness.
+      </p>
+    </div>
+
+    <div class="page-actions">
+      <a routerLink="/products" class="btn btn-secondary">Back to Products</a>
+    </div>
+  </div>
+
+  <app-product-form
+    mode="create"
+    [saving]="saving()"
+    (formSubmit)="createProduct($event)"
+    (cancel)="cancel()"
+  />
+</div>

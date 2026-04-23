@@ -1,0 +1,60 @@
+<form class="filter-form" [formGroup]="form" (ngSubmit)="apply()">
+  <div class="filter-intro">
+    <div>
+      <h3>Filter Catalogue</h3>
+      <p>Search by product name, SKU, or barcode, then narrow by category, brand, and status.</p>
+    </div>
+  </div>
+
+  <div class="filter-grid">
+    <div class="form-group filter-search">
+      <label class="form-label" for="productSearch">Search</label>
+      <input
+        id="productSearch"
+        type="text"
+        class="form-control"
+        formControlName="searchText"
+        placeholder="Name, SKU, or barcode"
+        [disabled]="disabled"
+      />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="productCategory">Category</label>
+      <select id="productCategory" class="form-control" formControlName="category" [disabled]="disabled">
+        <option value="">All Categories</option>
+        @for (category of categories; track category) {
+          <option [value]="category">{{ category }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="productBrand">Brand</label>
+      <select id="productBrand" class="form-control" formControlName="brand" [disabled]="disabled">
+        <option value="">All Brands</option>
+        @for (brand of brands; track brand) {
+          <option [value]="brand">{{ brand }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="productStatus">Status</label>
+      <select id="productStatus" class="form-control" formControlName="status" [disabled]="disabled">
+        <option value="ALL">All Statuses</option>
+        <option value="ACTIVE">Active</option>
+        <option value="INACTIVE">Inactive</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="filter-actions">
+    <button type="button" class="btn btn-secondary" (click)="reset()" [disabled]="disabled">
+      Reset
+    </button>
+    <button type="submit" class="btn btn-primary" [disabled]="disabled">
+      Apply Filters
+    </button>
+  </div>
+</form>

@@ -111,54 +111,10 @@ export const routes: Routes = [
             "PURCHASE_OFFICER",
           ],
         },
-        children: [
-          {
-            path: "",
-            loadComponent: () =>
-              import("./features/products/product-list/product-list.component").then(
-                (m) => m.ProductListComponent,
-              ),
-          },
-          {
-            path: "low-stock",
-            loadComponent: () =>
-              import("./features/products/product-low-stock/product-low-stock.component").then(
-                (m) => m.ProductLowStockComponent,
-              ),
-          },
-          {
-            path: "scan",
-            loadComponent: () =>
-              import("./features/products/product-scan/product-scan.component").then(
-                (m) => m.ProductScanComponent,
-              ),
-          },
-          {
-            path: "new",
-            canActivate: [roleGuard],
-            data: { roles: ["MANAGER", "INVENTORY_MANAGER"] },
-            loadComponent: () =>
-              import("./features/products/product-form/product-form.component").then(
-                (m) => m.ProductFormComponent,
-              ),
-          },
-          {
-            path: ":id/edit",
-            canActivate: [roleGuard],
-            data: { roles: ["MANAGER", "INVENTORY_MANAGER"] },
-            loadComponent: () =>
-              import("./features/products/product-form/product-form.component").then(
-                (m) => m.ProductFormComponent,
-              ),
-          },
-          {
-            path: ":id",
-            loadComponent: () =>
-              import("./features/products/product-detail/product-detail.component").then(
-                (m) => m.ProductDetailComponent,
-              ),
-          },
-        ],
+        loadChildren: () =>
+          import("./features/products/routes/product.routes").then(
+            (m) => m.PRODUCT_ROUTES,
+          ),
       },
 
       // Warehouses
@@ -220,9 +176,14 @@ export const routes: Routes = [
           },
           {
             path: "barcode",
+            data: {
+              sectionLabel: "Stock",
+              backRoute: "/stock",
+              backLabel: "Back to Stock",
+            },
             loadComponent: () =>
-              import("./features/stock/barcode-lookup/barcode-lookup.component").then(
-                (m) => m.BarcodeLookupComponent,
+              import("./features/products/pages/barcode-lookup/barcode-lookup-page.component").then(
+                (m) => m.BarcodeLookupPageComponent,
               ),
           },
         ],
