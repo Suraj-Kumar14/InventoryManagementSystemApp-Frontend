@@ -1,0 +1,11 @@
+.page-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.state-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}

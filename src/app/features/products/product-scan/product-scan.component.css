@@ -1,0 +1,73 @@
+.scan-card {
+  max-width: 720px;
+}
+
+.scan-form {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+
+.scan-input {
+  flex: 1;
+}
+
+.result-card {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: var(--gray-50);
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.result-name {
+  margin-bottom: 0.25rem;
+}
+
+.result-meta {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.result-item {
+  background: #fff;
+  border-radius: var(--radius-md);
+  padding: 0.875rem;
+}
+
+.result-label {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.result-actions {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .scan-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

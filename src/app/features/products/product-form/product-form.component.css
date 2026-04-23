@@ -1,7 +1,46 @@
-.form-card { max-width: 900px; }
-.form-section-title {
-  font-size: .75rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .06em; color: var(--text-muted); margin-bottom: 1rem;
+.form-card {
+  max-width: 960px;
 }
-.form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 0 1.25rem; }
-.form-actions { display: flex; justify-content: flex-end; gap: .75rem; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-color); }
+
+.loading-state {
+  text-align: center;
+  padding: 3rem;
+}
+
+.form-section-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0 1.25rem;
+}
+
+.form-checkbox {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.checkbox-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 42px;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border-color);
+}

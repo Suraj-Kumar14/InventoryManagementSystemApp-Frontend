@@ -69,38 +69,9 @@ export interface RegisterRequest {
 
 // ── Products ──────────────────────────────────────────────────────────────────
 
-export interface Product {
-  id: number;
-  name: string;
-  description?: string;
-  sku: string;
-  barcode?: string;
-  category: string;
-  brand?: string;
-  unitOfMeasure: string;
-  costPrice: number;
-  sellingPrice: number;
-  reorderPoint: number;
-  maxStockLevel?: number;
-  imageUrl?: string;
-  active: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface ProductRequest {
-  name: string;
-  description?: string;
-  sku: string;
-  barcode?: string;
-  category: string;
-  brand?: string;
-  unitOfMeasure: string;
-  costPrice: number;
-  sellingPrice: number;
-  reorderPoint: number;
-  maxStockLevel?: number;
-}
+export * from './product.model';
+export * from './product-request.model';
+export * from './low-stock-product.model';
 
 // ── Warehouses ────────────────────────────────────────────────────────────────
 

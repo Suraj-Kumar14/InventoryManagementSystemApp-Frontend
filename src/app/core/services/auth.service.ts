@@ -16,6 +16,7 @@ export class AuthService {
     this.normalizeUser(this.tokenSvc.getUser<User>()) ??
       this.buildUserFromToken(),
   );
+
   readonly user = this._user.asReadonly();
 
   constructor(
@@ -35,20 +36,12 @@ export class AuthService {
       .pipe(tap((res) => this.applySession(res)));
   }
 
-  /**
-   * Step 1: Send OTP for registration
-   * Backend returns plain text
-   */
   registerRequest(req: RegisterRequest): Observable<string> {
     return this.http.post(`${this.base}/register-request`, req, {
       responseType: "text",
     });
   }
 
-  /**
-   * Step 2: Verify registration OTP and create account
-   * Backend returns AuthResponse JSON
-   */
   registerUser(email: string, otp: string): Observable<AuthResponse> {
     return this.http
       .post<AuthResponse>(
@@ -58,32 +51,6 @@ export class AuthService {
       .pipe(tap((res) => this.applySession(res)));
   }
 
-  logout(): void {
-    this.clearSession();
-    this.router.navigate(["/auth/login"]);
-  }
-
-  isLoggedIn(): boolean {
-    return this.tokenSvc.isTokenValid();
-  }
-
-  currentUser(): User | null {
-    return this._user();
-  }
-
-  hasRole(role: string): boolean {
-    return this._user()?.role === role;
-  }
-
-  hasAnyRole(...roles: string[]): boolean {
-    const userRole = this._user()?.role;
-    return userRole ? roles.includes(userRole) : false;
-  }
-
-  /**
-   * Forgot password step 1
-   * Backend returns plain text
-   */
   forgotPasswordRequest(email: string): Observable<string> {
     return this.http.post(
       `${this.base}/forgot-password/request?email=${encodeURIComponent(email)}`,
@@ -92,10 +59,6 @@ export class AuthService {
     );
   }
 
-  /**
-   * Forgot password step 2
-   * Backend returns plain text
-   */
   forgotPasswordVerify(email: string, otp: string): Observable<string> {
     return this.http.post(
       `${this.base}/forgot-password/verify?email=${encodeURIComponent(email)}&otp=${encodeURIComponent(otp)}`,
@@ -104,10 +67,6 @@ export class AuthService {
     );
   }
 
-  /**
-   * Forgot password step 3
-   * Backend returns plain text
-   */
   resetPassword(email: string, password: string): Observable<string> {
     return this.http.post(
       `${this.base}/forgot-password/reset?email=${encodeURIComponent(email)}&newPassword=${encodeURIComponent(password)}`,
@@ -116,9 +75,6 @@ export class AuthService {
     );
   }
 
-  /**
-   * Optional aliases for old component names if some files still use them
-   */
   register(req: RegisterRequest): Observable<string> {
     return this.registerRequest(req);
   }
@@ -158,16 +114,9 @@ export class AuthService {
     );
   }
 
-  ensureCurrentUserLoaded(): Observable<User | null> {
-    const user = this._user();
-    if (user) return of(user);
-    if (!this.isLoggedIn()) return of(null);
-
-    const tokenUser = this.buildUserFromToken();
-    if (!tokenUser) return of(null);
-
-    this.persistUser(tokenUser);
-    return of(tokenUser);
+  logout(): void {
+    this.clearSession();
+    this.router.navigate(["/auth/login"], { replaceUrl: true });
   }
 
   clearSession(): void {
@@ -175,28 +124,77 @@ export class AuthService {
     this._user.set(null);
   }
 
+  isLoggedIn(): boolean {
+    return this.tokenSvc.isTokenValid() || !!this._user();
+  }
+
+  currentUser(): User | null {
+    return this._user();
+  }
+
+  hasRole(role: string): boolean {
+    return this._user()?.role === role;
+  }
+
+  hasAnyRole(...roles: string[]): boolean {
+    const userRole = this._user()?.role;
+    return !!userRole && roles.includes(userRole);
+  }
+
+  ensureCurrentUserLoaded(): Observable<User | null> {
+    const current = this._user();
+    if (current) {
+      return of(current);
+    }
+
+    if (!this.tokenSvc.getToken()) {
+      return of(null);
+    }
+
+    const tokenUser = this.buildUserFromToken();
+    if (!tokenUser) {
+      return of(null);
+    }
+
+    this.persistUser(tokenUser);
+    return of(tokenUser);
+  }
+
   applySession(res: unknown): void {
     const session = this.extractSession(res);
     if (!session) return;
 
-    if (session.accessToken) {
-      this.tokenSvc.setToken(session.accessToken);
+    const accessToken = session.accessToken ?? session.token;
+
+    if (accessToken) {
+      this.tokenSvc.setToken(accessToken);
     }
+
     if (session.refreshToken) {
       this.tokenSvc.setRefreshToken(session.refreshToken);
     }
-    if (session.accessToken && !session.user) {
-      this.tokenSvc.clearUser();
-      this._user.set(null);
-    }
+
     if (session.user) {
       this.persistUser(this.normalizeUser(session.user) ?? session.user);
+      return;
+    }
+
+    if (accessToken) {
+      const tokenUser = this.buildUserFromToken();
+      if (tokenUser) {
+        this.persistUser(tokenUser);
+      } else {
+        this.tokenSvc.clearUser();
+        this._user.set(null);
+      }
     }
   }
 
   redirectAfterLogin(replaceUrl = false): void {
-    if (this.isLoggedIn() || this._user()) {
+    if (this.isLoggedIn()) {
       this.router.navigate(["/dashboard"], { replaceUrl });
+    } else {
+      this.router.navigate(["/auth/login"], { replaceUrl });
     }
   }
 
@@ -204,13 +202,16 @@ export class AuthService {
     return `${environment.apiUrl}/oauth2/authorization/google`;
   }
 
-  private extractSession(res: unknown): Partial<AuthResponse> | null {
+  private extractSession(
+    res: unknown,
+  ): Partial<AuthResponse & { token?: string }> | null {
     const record = this.extractSessionRecord(res);
     if (!record) return null;
 
     const accessToken =
       this.readString(record, "accessToken") ??
       this.readString(record, "token");
+
     const refreshToken = this.readString(record, "refreshToken");
     const tokenType = this.readString(record, "tokenType");
     const expiresIn =
@@ -221,13 +222,21 @@ export class AuthService {
       return null;
     }
 
-    return { accessToken, refreshToken, tokenType, expiresIn, user };
+    return {
+      accessToken,
+      token: accessToken,
+      refreshToken,
+      tokenType,
+      expiresIn,
+      user,
+    };
   }
 
   private extractSessionRecord(res: unknown): Record<string, unknown> | null {
     if (!res || typeof res !== "object") return null;
 
     const root = res as Record<string, unknown>;
+
     if (this.looksLikeSession(root)) {
       return root;
     }
@@ -259,6 +268,7 @@ export class AuthService {
     if (!user) return null;
 
     const normalized = { ...user };
+
     const fullName =
       normalized.fullName?.trim() ||
       `${normalized.firstName ?? ""} ${normalized.lastName ?? ""}`.trim();
@@ -283,6 +293,7 @@ export class AuthService {
 
     const email =
       this.readString(payload, "email") ?? this.readString(payload, "sub");
+
     if (!email) return null;
 
     return this.normalizeUser({
@@ -291,10 +302,12 @@ export class AuthService {
       lastName: "",
       fullName:
         this.readString(payload, "fullName") ??
-        this.readString(payload, "name"),
+        this.readString(payload, "name") ??
+        "",
       role:
         this.readString(payload, "role") ??
-        this.readAuthority(payload["authorities"]),
+        this.readAuthority(payload["authorities"]) ??
+        "",
       active: true,
     } as User);
   }
@@ -314,12 +327,14 @@ export class AuthService {
     if (typeof value === "string" && value.trim()) {
       return value;
     }
+
     if (Array.isArray(value)) {
       const first = value.find(
         (item) => typeof item === "string" && item.trim(),
       );
       return typeof first === "string" ? first : undefined;
     }
+
     return undefined;
   }
 

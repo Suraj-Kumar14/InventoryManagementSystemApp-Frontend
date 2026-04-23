@@ -1,0 +1,61 @@
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Low Stock Products</h1>
+    <p class="page-subtitle">Products returned by Product-Service low-stock endpoint.</p>
+  </div>
+  <div class="page-actions">
+    <a routerLink="/products" class="btn btn-secondary">Back to Products</a>
+    <a routerLink="/products/scan" class="btn btn-secondary">Barcode Lookup</a>
+  </div>
+</div>
+
+@if (loading()) {
+  <div class="card state-card">
+    <div class="spinner spinner-dark" style="width:32px;height:32px;border-width:3px"></div>
+    <span>Loading low-stock products...</span>
+  </div>
+} @else if (products().length === 0) {
+  <app-empty-state
+    title="No low-stock products"
+    description="Product-Service did not return any low-stock products."
+  />
+} @else {
+  <div class="table-container">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>SKU</th>
+          <th>Name</th>
+          <th>Category</th>
+          <th>Brand</th>
+          <th>Reorder Level</th>
+          <th>Current Quantity</th>
+          <th>Barcode</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (product of products(); track product.productId) {
+          <tr>
+            <td>{{ product.sku }}</td>
+            <td>{{ product.name }}</td>
+            <td>{{ product.category }}</td>
+            <td>{{ product.brand || '-' }}</td>
+            <td>{{ product.reorderLevel }}</td>
+            <td>{{ product.currentQuantity }}</td>
+            <td>{{ product.barcode || '-' }}</td>
+            <td>
+              <span class="badge" [class]="product.isActive ? 'badge-success' : 'badge-gray'">
+                {{ product.isActive ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+            <td>
+              <a class="btn btn-secondary btn-sm" [routerLink]="['/products', product.productId]">View</a>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

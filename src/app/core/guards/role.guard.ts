@@ -1,5 +1,6 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, ActivatedRouteSnapshot, Router } from '@angular/router';
+import { roleMatches } from '../constants/roles';
 import { AuthService } from '../services/auth.service';
 
 export const roleGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
@@ -12,7 +13,7 @@ export const roleGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
   const user = auth.currentUser();
   if (!user) return router.createUrlTree(['/auth/login']);
 
-  if (user.role && allowed.includes(user.role)) return true;
+  if (allowed.some(role => roleMatches(user.role, role))) return true;
 
   // Redirect to dashboard with an access-denied state
   return router.createUrlTree(['/dashboard']);
