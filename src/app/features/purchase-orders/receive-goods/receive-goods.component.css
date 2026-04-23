@@ -1,3 +1,47 @@
-.po-info-strip { display:flex;gap:1rem;flex-wrap:wrap; }
-.info-chip { display:flex;align-items:center;gap:.375rem;background:var(--gray-100);border-radius:var(--radius-md);padding:.375rem .75rem;font-size:.875rem;font-weight:500; }
-.form-control-sm { padding:.25rem .5rem;height:36px;font-size:.875rem; }
+.loading-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  min-height: 220px;
+}
+
+.po-info-strip {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.info-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
+  background: var(--gray-100);
+  font-size: 0.875rem;
+}
+
+.info-chip span {
+  color: var(--text-muted);
+}
+
+.receipt-cell {
+  min-width: 180px;
+}
+
+.footer-card {
+  margin-top: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 900px) {
+  .footer-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

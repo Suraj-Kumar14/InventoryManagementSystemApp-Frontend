@@ -1,67 +1,94 @@
 <div class="page-header">
   <div>
     <h1 class="page-title">Receive Goods</h1>
-    <p class="page-subtitle">{{ po()?.poNumber }} — Update received quantities to update stock</p>
+    <p class="page-subtitle">{{ po()?.poNumber || 'Purchase Order' }} — record the quantities received in this delivery.</p>
   </div>
 </div>
 
 @if (loading()) {
-  <div class="card" style="height:200px;display:flex;align-items:center;justify-content:center">
-    <div class="spinner spinner-dark" style="width:36px;height:36px;border-width:3px"></div>
+  <div class="card loading-card">
+    <div class="spinner spinner-dark" style="width: 34px; height: 34px; border-width: 3px"></div>
+    <span>Loading receipt form...</span>
   </div>
 } @else if (po()) {
   <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-    <div class="card" style="margin-bottom:1.25rem">
+    <div class="card" style="margin-bottom: 1.25rem">
       <div class="po-info-strip">
-        <div class="info-chip"><span>🏭</span>{{ po()!.warehouseName }}</div>
-        <div class="info-chip"><span>🤝</span>{{ po()!.supplierName }}</div>
-        <div class="info-chip"><span>📦</span>{{ po()!.items.length }} items</div>
-        <div class="info-chip"><span>💰</span>₹{{ po()!.totalAmount | number }}</div>
+        <div class="info-chip"><span>Supplier</span><strong>{{ po()!.supplierName }}</strong></div>
+        <div class="info-chip"><span>Warehouse</span><strong>{{ po()!.warehouseName }}</strong></div>
+        <div class="info-chip"><span>Status</span><strong>{{ po()!.status.replace('_', ' ') }}</strong></div>
+        <div class="info-chip"><span>Total</span><strong>₹{{ po()!.totalAmount | number:'1.0-2' }}</strong></div>
       </div>
     </div>
 
     <div class="card">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Product</th><th width="80">SKU</th>
-            <th width="120">Ordered Qty</th>
-            <th width="150">Received Qty *</th>
-            <th width="100">Status</th>
-          </tr>
-        </thead>
-        <tbody [formArrayName]="'receipts'">
-          @for (ctrl of receipts.controls; track ctrl; let i = $index) {
-            <tr [formGroupName]="i">
-              <td>{{ ctrl.get('productName')?.value }}</td>
-              <td class="text-muted text-sm">—</td>
-              <td class="font-semibold">{{ ctrl.get('orderedQuantity')?.value }}</td>
-              <td>
-                <input type="number" class="form-control form-control-sm" formControlName="receivedQuantity"
-                       min="0" [max]="ctrl.get('orderedQuantity')?.value"
-                       [class.is-invalid]="ctrl.get('receivedQuantity')!.invalid && ctrl.get('receivedQuantity')!.touched" />
-              </td>
-              <td>
-                @if ((ctrl.get('receivedQuantity')?.value ?? 0) === 0) {
-                  <span class="badge badge-gray">Not received</span>
-                } @else if ((ctrl.get('receivedQuantity')?.value ?? 0) < ctrl.get('orderedQuantity')?.value) {
-                  <span class="badge badge-warning">Partial</span>
-                } @else {
-                  <span class="badge badge-success">Full</span>
-                }
-              </td>
+      <div style="overflow-x: auto">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>SKU</th>
+              <th>Ordered</th>
+              <th>Already Received</th>
+              <th>Remaining</th>
+              <th>Receive Now</th>
+              <th>Status</th>
             </tr>
-          }
-        </tbody>
-      </table>
+          </thead>
+          <tbody formArrayName="receipts">
+            @for (control of receipts.controls; track control; let i = $index) {
+              <tr [formGroupName]="i">
+                <td>{{ control.get('productName')?.value }}</td>
+                <td>{{ control.get('sku')?.value }}</td>
+                <td class="font-semibold">{{ control.get('orderedQty')?.value }}</td>
+                <td>{{ control.get('alreadyReceivedQty')?.value }}</td>
+                <td>
+                  <span class="badge" [class]="control.get('remainingQty')?.value === 0 ? 'badge-success' : 'badge-warning'">
+                    {{ control.get('remainingQty')?.value }}
+                  </span>
+                </td>
+                <td class="receipt-cell">
+                  <input
+                    type="number"
+                    class="form-control form-control-sm"
+                    formControlName="receiveNowQty"
+                    min="0"
+                    [max]="control.get('remainingQty')?.value"
+                    [class.is-invalid]="control.get('receiveNowQty')?.invalid && control.get('receiveNowQty')?.touched"
+                    [disabled]="control.get('remainingQty')?.value === 0"
+                  />
+                  @if (control.get('receiveNowQty')?.invalid && control.get('receiveNowQty')?.touched) {
+                    <div class="form-error">Must be between 0 and remaining quantity.</div>
+                  }
+                </td>
+                <td>
+                  @if (getRowStatus(control) === 'Complete') {
+                    <span class="badge badge-success">Complete</span>
+                  } @else if (getRowStatus(control) === 'Partial') {
+                    <span class="badge badge-warning">Partial</span>
+                  } @else {
+                    <span class="badge badge-gray">Not Received</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
     </div>
 
-    <div class="card" style="margin-top:1.25rem;display:flex;justify-content:space-between;align-items:center;padding:.875rem 1.25rem">
-      <p class="text-sm text-muted">Stock levels will be updated immediately upon confirmation.</p>
+    <div class="card footer-card">
+      <p class="text-sm text-muted">
+        Submit only the quantity received in this delivery. The purchase order stays open until all remaining quantities reach zero.
+      </p>
       <div class="d-flex gap-2">
-        <a [href]="'/purchase-orders/' + po()!.id" class="btn btn-secondary">Cancel</a>
+        <a [routerLink]="['/purchase-orders', po()!.id]" class="btn btn-secondary">Back</a>
         <button type="submit" class="btn btn-primary" [disabled]="saving()">
-          @if (saving()) { <span class="spinner"></span> Processing... } @else { 📦 Confirm Receipt }
+          @if (saving()) {
+            <span class="spinner"></span> Processing...
+          } @else {
+            Confirm Receipt
+          }
         </button>
       </div>
     </div>

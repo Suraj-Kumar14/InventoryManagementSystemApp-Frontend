@@ -1,80 +1,169 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { catchError, forkJoin, of } from 'rxjs';
+import { Roles, normalizeRole } from '../../../core/constants/roles';
+import { Product, PurchaseOrder, Supplier, Warehouse } from '../../../core/models';
+import { AuthService } from '../../../core/services/auth.service';
+import { ProductService } from '../../../core/services/product.service';
 import { PurchaseOrderService } from '../../../core/services/purchase-order.service';
-import { PurchaseOrder, PoStatus } from '../../../core/models';
+import { SupplierService } from '../../../core/services/supplier.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { WarehouseService } from '../../../core/services/warehouse.service';
 import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
-import { ModalComponent } from '../../../shared/components/modal/modal.component';
-import { FormsModule } from '@angular/forms';
+import {
+  canApprovePurchaseOrder,
+  canCancelPurchaseOrder,
+  canReceivePurchaseOrder,
+  enrichPurchaseOrder,
+  getPurchaseStatusBadgeClass,
+  getPurchaseStatusLabel
+} from '../purchase-order.utils';
+
+type ActionType = 'approve' | 'cancel';
 
 @Component({
   selector: 'app-po-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, ConfirmDialogComponent, ModalComponent],
+  imports: [CommonModule, RouterLink, ConfirmDialogComponent],
   templateUrl: './po-detail.component.html',
   styleUrls: ['./po-detail.component.css']
 })
 export class PoDetailComponent implements OnInit {
-  poSvc   = inject(PurchaseOrderService);
-  route   = inject(ActivatedRoute);
-  router  = inject(Router);
-  toast   = inject(ToastService);
+  private readonly purchaseOrderService = inject(PurchaseOrderService);
+  private readonly supplierService = inject(SupplierService);
+  private readonly warehouseService = inject(WarehouseService);
+  private readonly productService = inject(ProductService);
+  private readonly authService = inject(AuthService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly toast = inject(ToastService);
 
-  po          = signal<PurchaseOrder | null>(null);
-  loading     = signal(true);
-  actionModal = signal<'approve' | 'reject' | 'cancel' | null>(null);
-  actionNote  = '';
-  actioning   = signal(false);
-
-  readonly timeline: { status: PoStatus; label: string; icon: string }[] = [
-    { status: 'DRAFT',            label: 'Draft',            icon: '📝' },
-    { status: 'PENDING_APPROVAL', label: 'Pending Approval', icon: '⏳' },
-    { status: 'APPROVED',         label: 'Approved',         icon: '✅' },
-    { status: 'RECEIVED',         label: 'Received',         icon: '📦' },
-  ];
+  readonly po = signal<PurchaseOrder | null>(null);
+  readonly loading = signal(true);
+  readonly actionTarget = signal<PurchaseOrder | null>(null);
+  readonly actionType = signal<ActionType | null>(null);
+  readonly actionLoading = signal(false);
 
   ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id')!;
-    this.poSvc.getById(+id).subscribe({
-      next: po => { this.po.set(po); this.loading.set(false); },
-      error: () => { this.toast.error('PO not found'); this.router.navigate(['/purchase-orders']); }
-    });
+    this.loadOrder();
   }
 
-  statusIndex(status: PoStatus): number {
-    const order: PoStatus[] = ['DRAFT','PENDING_APPROVAL','APPROVED','RECEIVED'];
-    return order.indexOf(status);
-  }
+  private loadOrder(): void {
+    this.loading.set(true);
+    const id = Number(this.route.snapshot.paramMap.get('id'));
 
-  openAction(type: 'approve' | 'reject' | 'cancel'): void { this.actionNote = ''; this.actionModal.set(type); }
+    if (!id) {
+      this.toast.error('Purchase order not found');
+      this.router.navigate(['/purchase-orders']);
+      return;
+    }
 
-  executeAction(): void {
-    const po   = this.po();
-    const type = this.actionModal();
-    if (!po || !type) return;
-    this.actioning.set(true);
-    let op$;
-    if (type === 'approve') op$ = this.poSvc.approve(po.id, this.actionNote);
-    else if (type === 'reject') op$ = this.poSvc.reject(po.id, this.actionNote);
-    else op$ = this.poSvc.cancel(po.id, this.actionNote);
-
-    op$.subscribe({
-      next: updated => {
-        this.po.set(updated);
-        this.toast.success(`PO ${type}d successfully`);
-        this.actionModal.set(null);
-        this.actioning.set(false);
+    forkJoin({
+      order: this.purchaseOrderService.getPOById(id),
+      suppliers: this.supplierService.getActive().pipe(catchError(() => of([] as Supplier[]))),
+      warehouses: this.warehouseService.getActive().pipe(catchError(() => of([] as Warehouse[]))),
+      products: this.productService.getAllProducts().pipe(catchError(() => of([] as Product[])))
+    }).subscribe({
+      next: ({ order, suppliers, warehouses, products }) => {
+        this.po.set(
+          enrichPurchaseOrder(order, {
+            suppliers,
+            warehouses,
+            products
+          })
+        );
+        this.loading.set(false);
       },
-      error: err => { this.toast.error('Action failed', err.error?.message); this.actioning.set(false); }
+      error: (error) => {
+        this.toast.error('Unable to load purchase order', error.error?.message ?? error.message);
+        this.router.navigate(['/purchase-orders']);
+      }
     });
   }
 
-  getBadgeClass(status: PoStatus): string {
-    const map: Record<PoStatus, string> = {
-      DRAFT: 'badge-gray', PENDING_APPROVAL: 'badge-warning', APPROVED: 'badge-primary',
-      RECEIVED: 'badge-success', CANCELLED: 'badge-danger', REJECTED: 'badge-danger'
-    };
-    return map[status] ?? 'badge-gray';
+  get currentRole(): string {
+    return normalizeRole(this.authService.currentUser()?.role);
+  }
+
+  canApprove(order: PurchaseOrder): boolean {
+    const role = this.currentRole;
+    return (
+      canApprovePurchaseOrder(order) &&
+      (role === Roles.ADMIN || role === Roles.INVENTORY_MANAGER || role === Roles.MANAGER)
+    );
+  }
+
+  canCancel(order: PurchaseOrder): boolean {
+    const role = this.currentRole;
+    return canCancelPurchaseOrder(order) && (role === Roles.ADMIN || role === Roles.PURCHASE_OFFICER);
+  }
+
+  canReceive(order: PurchaseOrder): boolean {
+    const role = this.currentRole;
+    return (
+      canReceivePurchaseOrder(order) &&
+      (role === Roles.ADMIN || role === Roles.PURCHASE_OFFICER || role === Roles.WAREHOUSE_STAFF)
+    );
+  }
+
+  openAction(type: ActionType): void {
+    const order = this.po();
+    if (!order) {
+      return;
+    }
+
+    this.actionType.set(type);
+    this.actionTarget.set(order);
+  }
+
+  confirmAction(): void {
+    const order = this.actionTarget();
+    const type = this.actionType();
+
+    if (!order || !type) {
+      return;
+    }
+
+    this.actionLoading.set(true);
+    const request =
+      type === 'approve'
+        ? this.purchaseOrderService.approvePO(order.id)
+        : this.purchaseOrderService.cancelPO(order.id);
+
+    request.subscribe({
+      next: (updatedOrder) => {
+        this.po.set({
+          ...order,
+          ...updatedOrder
+        });
+        this.actionLoading.set(false);
+        this.actionTarget.set(null);
+        this.actionType.set(null);
+        this.toast.success(type === 'approve' ? 'Purchase order approved' : 'Purchase order cancelled');
+        this.loadOrder();
+      },
+      error: (error) => {
+        this.actionLoading.set(false);
+        this.toast.error('Action failed', error.error?.message ?? error.message);
+      }
+    });
+  }
+
+  getStatusLabel(status: PurchaseOrder['status']): string {
+    return getPurchaseStatusLabel(status);
+  }
+
+  getStatusBadgeClass(status: PurchaseOrder['status']): string {
+    return getPurchaseStatusBadgeClass(status);
+  }
+
+  formatDate(value?: string | null): string {
+    if (!value) {
+      return '-';
+    }
+
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleDateString();
   }
 }

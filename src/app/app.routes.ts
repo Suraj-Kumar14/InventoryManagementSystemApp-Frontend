@@ -193,7 +193,7 @@ export const routes: Routes = [
       {
         path: "purchase-orders",
         canActivate: [roleGuard],
-        data: { roles: ["ADMIN", "PURCHASE_OFFICER", "INVENTORY_MANAGER"] },
+        data: { roles: ["ADMIN", "PURCHASE_OFFICER", "INVENTORY_MANAGER", "WAREHOUSE_STAFF"] },
         children: [
           {
             path: "",

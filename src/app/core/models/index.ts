@@ -249,45 +249,103 @@ export interface StockMovement {
 
 // ── Purchase Orders ───────────────────────────────────────────────────────────
 
-export type PoStatus = 'DRAFT' | 'PENDING_APPROVAL' | 'APPROVED' | 'RECEIVED' | 'CANCELLED' | 'REJECTED';
+export type PoStatus =
+  | 'DRAFT'
+  | 'PENDING_APPROVAL'
+  | 'APPROVED'
+  | 'PARTIALLY_RECEIVED'
+  | 'FULLY_RECEIVED'
+  | 'CANCELLED';
 
-export interface PurchaseOrder {
-  id: number;
-  poNumber: string;
-  supplierId: number;
-  supplierName: string;
-  warehouseId: number;
-  warehouseName: string;
-  status: PoStatus;
-  totalAmount: number;
-  items: PurchaseOrderItem[];
-  expectedDeliveryDate?: string;
-  notes?: string;
-  approvedBy?: string;
-  approvedAt?: string;
-  createdBy: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface PurchaseOrderItem {
+export interface POLineItem {
+  lineItemId?: number;
   id?: number;
+  poId?: number;
   productId: number;
   productName?: string;
   sku?: string;
+  quantity: number;
   orderedQuantity: number;
-  receivedQuantity?: number;
+  unitCost: number;
   unitPrice: number;
-  totalPrice?: number;
+  totalCost: number;
+  totalPrice: number;
+  receivedQty: number;
+  receivedQuantity: number;
+  remainingQty: number;
 }
 
-export interface CreatePoRequest {
+export interface PurchaseOrder {
+  poId: number;
+  id: number;
+  supplierId: number;
+  supplierName?: string;
+  warehouseId: number;
+  warehouseName?: string;
+  createdById: number;
+  createdBy?: string;
+  status: PoStatus;
+  totalAmount: number;
+  orderDate: string;
+  expectedDate?: string | null;
+  expectedDeliveryDate?: string | null;
+  receivedDate?: string | null;
+  notes?: string | null;
+  referenceNumber?: string | null;
+  poNumber: string;
+  lineItems: POLineItem[];
+  items: POLineItem[];
+  approvedBy?: string;
+  approvedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  receivedPercent: number;
+}
+
+export interface CreatePurchaseOrderRequest {
   supplierId: number;
   warehouseId: number;
-  expectedDeliveryDate?: string;
-  notes?: string;
-  items: { productId: number; orderedQuantity: number; unitPrice: number }[];
+  createdById?: number | null;
+  status?: 'DRAFT' | 'PENDING_APPROVAL';
+  orderDate?: string | null;
+  expectedDate?: string | null;
+  notes?: string | null;
+  referenceNumber?: string | null;
+  lineItems: Array<{
+    productId: number;
+    quantity: number;
+    unitCost: number;
+    totalCost?: number;
+    receivedQty?: number;
+  }>;
 }
+
+export interface UpdatePurchaseOrderRequest extends CreatePurchaseOrderRequest {}
+
+export interface ReceiveGoodsRequest {
+  items: Array<{
+    lineItemId?: number;
+    productId?: number;
+    receivedQty: number;
+  }>;
+}
+
+export interface PurchaseOrderFilter {
+  page?: number;
+  size?: number;
+  status?: PoStatus | 'ALL' | '';
+  supplierId?: number | null;
+  warehouseId?: number | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  referenceNumber?: string;
+  search?: string;
+  sortBy?: string;
+  sortDir?: 'asc' | 'desc';
+}
+
+export type PurchaseOrderItem = POLineItem;
+export type CreatePoRequest = CreatePurchaseOrderRequest;
 
 // ── Suppliers ─────────────────────────────────────────────────────────────────
 

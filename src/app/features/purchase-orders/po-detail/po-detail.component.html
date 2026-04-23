@@ -1,6 +1,6 @@
 @if (loading()) {
-  <div style="display:flex;align-items:center;justify-content:center;height:300px">
-    <div class="spinner spinner-dark" style="width:40px;height:40px;border-width:4px"></div>
+  <div class="detail-loading">
+    <div class="spinner spinner-dark" style="width: 38px; height: 38px; border-width: 3px"></div>
   </div>
 } @else if (po()) {
   <div class="page-header">
@@ -8,98 +8,131 @@
       <h1 class="page-title">{{ po()!.poNumber }}</h1>
       <p class="page-subtitle">{{ po()!.supplierName }} · {{ po()!.warehouseName }}</p>
     </div>
-    <div class="d-flex gap-2">
-      @if (po()!.status === 'DRAFT') {
-        <a [routerLink]="['/purchase-orders', po()!.id, 'edit']" class="btn btn-secondary">✏️ Edit</a>
-        <button class="btn btn-primary" (click)="openAction('approve')">✅ Approve</button>
+    <div class="header-actions">
+      @if (canApprove(po()!)) {
+        <button type="button" class="btn btn-primary" (click)="openAction('approve')">Approve</button>
       }
-      @if (po()!.status === 'PENDING_APPROVAL') {
-        <button class="btn btn-success" (click)="openAction('approve')">✅ Approve</button>
-        <button class="btn btn-danger" (click)="openAction('reject')">❌ Reject</button>
+      @if (canReceive(po()!)) {
+        <a [routerLink]="['/purchase-orders', po()!.id, 'receive']" class="btn btn-secondary">Receive Goods</a>
       }
-      @if (po()!.status === 'APPROVED') {
-        <a [routerLink]="['/purchase-orders', po()!.id, 'receive']" class="btn btn-primary">📦 Receive Goods</a>
-        <button class="btn btn-danger" (click)="openAction('cancel')">🚫 Cancel</button>
+      @if (canCancel(po()!)) {
+        <button type="button" class="btn btn-danger" (click)="openAction('cancel')">Cancel</button>
       }
-      <span class="badge {{ getBadgeClass(po()!.status) }}" style="font-size:.875rem;padding:.375rem .875rem">
-        {{ po()!.status.replace('_', ' ') }}
+      <span class="badge" [class]="getStatusBadgeClass(po()!.status)">
+        {{ getStatusLabel(po()!.status) }}
       </span>
     </div>
   </div>
 
-  <!-- Status Timeline -->
-  @if (!['CANCELLED','REJECTED'].includes(po()!.status)) {
-    <div class="card timeline-card">
-      <div class="timeline">
-        @for (step of timeline; track step.status; let i = $index) {
-          <div class="timeline-step" [class.completed]="statusIndex(po()!.status) >= i" [class.current]="statusIndex(po()!.status) === i">
-            <div class="step-dot">{{ step.icon }}</div>
-            <div class="step-label">{{ step.label }}</div>
-            @if (i < timeline.length - 1) { <div class="step-line"></div> }
-          </div>
-        }
+  <div class="card summary-card">
+    <div class="summary-grid">
+      <div>
+        <div class="summary-label">Order Date</div>
+        <div class="summary-value">{{ formatDate(po()!.orderDate) }}</div>
+      </div>
+      <div>
+        <div class="summary-label">Expected Date</div>
+        <div class="summary-value">{{ formatDate(po()!.expectedDate) }}</div>
+      </div>
+      <div>
+        <div class="summary-label">Received Date</div>
+        <div class="summary-value">{{ formatDate(po()!.receivedDate) }}</div>
+      </div>
+      <div>
+        <div class="summary-label">Reference</div>
+        <div class="summary-value">{{ po()!.referenceNumber || '-' }}</div>
+      </div>
+      <div>
+        <div class="summary-label">Total Amount</div>
+        <div class="summary-value text-primary-color">₹{{ po()!.totalAmount | number:'1.0-2' }}</div>
+      </div>
+      <div>
+        <div class="summary-label">Receipt Progress</div>
+        <div class="summary-value">{{ po()!.receivedPercent | number:'1.0-0' }}%</div>
       </div>
     </div>
-  }
 
-  <!-- PO Info -->
+    <div class="progress-block">
+      <div class="progress-bar">
+        <div class="progress-fill" [style.width.%]="po()!.receivedPercent"></div>
+      </div>
+      <div class="text-xs text-muted">
+        {{ po()!.lineItems.length }} lines · Progress updates automatically as goods are received.
+      </div>
+    </div>
+  </div>
+
   <div class="detail-grid">
     <div class="card">
-      <div class="card-header"><span class="card-title">Order Details</span></div>
+      <div class="card-header"><span class="card-title">Order Information</span></div>
       <div class="info-list">
         <div class="info-row"><span>PO Number</span><span class="font-semibold">{{ po()!.poNumber }}</span></div>
         <div class="info-row"><span>Supplier</span><span>{{ po()!.supplierName }}</span></div>
         <div class="info-row"><span>Warehouse</span><span>{{ po()!.warehouseName }}</span></div>
-        <div class="info-row"><span>Total Amount</span><span class="font-semibold text-primary-color">₹{{ po()!.totalAmount | number }}</span></div>
-        <div class="info-row"><span>Expected Delivery</span><span>{{ po()!.expectedDeliveryDate ?? '—' }}</span></div>
-        <div class="info-row"><span>Created By</span><span>{{ po()!.createdBy }}</span></div>
-        @if (po()!.approvedBy) {
-          <div class="info-row"><span>Approved By</span><span>{{ po()!.approvedBy }}</span></div>
-        }
-        @if (po()!.notes) {
-          <div class="info-row"><span>Notes</span><span>{{ po()!.notes }}</span></div>
-        }
+        <div class="info-row"><span>Status</span><span>{{ getStatusLabel(po()!.status) }}</span></div>
+        <div class="info-row"><span>Created By ID</span><span>{{ po()!.createdById || '-' }}</span></div>
+        <div class="info-row"><span>Order Date</span><span>{{ formatDate(po()!.orderDate) }}</span></div>
+        <div class="info-row"><span>Expected Date</span><span>{{ formatDate(po()!.expectedDate) }}</span></div>
+        <div class="info-row"><span>Received Date</span><span>{{ formatDate(po()!.receivedDate) }}</span></div>
+        <div class="info-row"><span>Reference Number</span><span>{{ po()!.referenceNumber || '-' }}</span></div>
       </div>
+      @if (po()!.notes) {
+        <div class="notes-block">
+          <div class="summary-label">Notes</div>
+          <p>{{ po()!.notes }}</p>
+        </div>
+      }
     </div>
 
-    <!-- Items -->
     <div class="card">
-      <div class="card-header"><span class="card-title">Order Items ({{ po()!.items.length }})</span></div>
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Product</th><th>SKU</th><th>Ordered</th><th>Received</th><th>Unit Price</th><th>Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (item of po()!.items; track item.id) {
+      <div class="card-header">
+        <span class="card-title">Line Items ({{ po()!.lineItems.length }})</span>
+      </div>
+      <div style="overflow-x: auto">
+        <table class="table">
+          <thead>
             <tr>
-              <td>{{ item.productName }}</td>
-              <td>{{ item.sku }}</td>
-              <td>{{ item.orderedQuantity }}</td>
-              <td>{{ item.receivedQuantity ?? 0 }}</td>
-              <td>₹{{ item.unitPrice | number }}</td>
-              <td class="font-semibold">₹{{ (item.orderedQuantity * item.unitPrice) | number }}</td>
+              <th>Product</th>
+              <th>SKU</th>
+              <th>Ordered</th>
+              <th>Received</th>
+              <th>Remaining</th>
+              <th>Unit Cost</th>
+              <th>Total</th>
             </tr>
-          }
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            @for (item of po()!.lineItems; track item.lineItemId ?? item.productId) {
+              <tr>
+                <td>{{ item.productName }}</td>
+                <td>{{ item.sku }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item.receivedQty }}</td>
+                <td>
+                  <span class="badge" [class]="item.remainingQty === 0 ? 'badge-success' : item.receivedQty > 0 ? 'badge-warning' : 'badge-gray'">
+                    {{ item.remainingQty }}
+                  </span>
+                </td>
+                <td>₹{{ item.unitCost | number:'1.0-2' }}</td>
+                <td class="font-semibold">₹{{ item.totalCost | number:'1.0-2' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 }
 
-<!-- Action Modal -->
-<app-modal [open]="!!actionModal()" [title]="actionModal() === 'approve' ? 'Approve PO' : actionModal() === 'reject' ? 'Reject PO' : 'Cancel PO'" (close)="actionModal.set(null)">
-  <p class="text-muted" style="margin-bottom:1rem">
-    @if (actionModal() === 'approve') { Add optional approval notes: }
-    @else { Please provide a reason: }
-  </p>
-  <textarea class="form-control" rows="3" [(ngModel)]="actionNote"
-            [placeholder]="actionModal() === 'approve' ? 'Optional notes...' : 'Required reason...'"></textarea>
-  <div slot="footer">
-    <button class="btn btn-secondary" (click)="actionModal.set(null)">Cancel</button>
-    <button class="btn" [class]="actionModal() === 'approve' ? 'btn-success' : 'btn-danger'" [disabled]="actioning()" (click)="executeAction()">
-      @if (actioning()) { <span class="spinner"></span> } @else { Confirm }
-    </button>
-  </div>
-</app-modal>
+<app-confirm-dialog
+  [open]="!!actionTarget()"
+  [title]="actionType() === 'approve' ? 'Approve Purchase Order' : 'Cancel Purchase Order'"
+  [message]="actionType() === 'approve'
+    ? 'Approve ' + actionTarget()?.poNumber + '? This will allow goods receipt against this order.'
+    : 'Cancel ' + actionTarget()?.poNumber + '? Orders with received stock cannot be cancelled.'"
+  [confirmLabel]="actionType() === 'approve' ? 'Approve' : 'Cancel PO'"
+  [confirmClass]="actionType() === 'approve' ? 'btn-primary' : 'btn-danger'"
+  [loading]="actionLoading()"
+  (confirm)="confirmAction()"
+  (cancel)="actionTarget.set(null); actionType.set(null)"
+></app-confirm-dialog>
