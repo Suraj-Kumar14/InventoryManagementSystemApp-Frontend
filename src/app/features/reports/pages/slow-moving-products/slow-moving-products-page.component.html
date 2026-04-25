@@ -1,0 +1,58 @@
+<div class="reports-page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Slow Moving Products</h1>
+      <p class="page-subtitle">
+        Review products with low recent activity before they turn into dead stock.
+      </p>
+    </div>
+
+    <app-report-export-actions
+      [canExport]="canExport()"
+      [busy]="exportBusy()"
+      (exportRequested)="onExport($event)"
+    />
+  </div>
+
+  <app-report-filter
+    [filters]="filters()"
+    [showDateRange]="true"
+    submitLabel="Load Slow Movers"
+    (filtersChange)="onFiltersChange($event)"
+  />
+
+  <div class="summary-grid">
+    <app-report-kpi-card
+      title="Slowest Product"
+      [value]="slowestProduct() ? slowestProduct().productName : 'None'"
+      [subtitle]="slowestProduct() ? formatNumber(slowestProduct().totalMovementQuantity) + ' total movements' : 'No slow moving products returned'"
+      icon="SLW"
+      tone="warning"
+    />
+
+    <app-report-kpi-card
+      title="Products Reviewed"
+      [value]="loading() ? 'Loading...' : formatNumber(response().totalElements)"
+      subtitle="Rows returned for the current slow-mover filter"
+      icon="CNT"
+      tone="info"
+    />
+  </div>
+
+  <app-report-table
+    title="Slow Movement Table"
+    subtitle="Products sorted by the lowest recent movement activity."
+    [columns]="columns"
+    [data]="response().content"
+    [loading]="loading()"
+    [totalElements]="response().totalElements"
+    [page]="response().page"
+    [size]="response().size"
+    [errorMessage]="errorMessage()"
+    emptyTitle="No slow moving products"
+    emptyDescription="Try broadening the date range if the current filters are too narrow."
+    (pageChange)="onPageChange($event)"
+    (sortChange)="onSortChange($event)"
+    (retry)="loadReport()"
+  />
+</div>

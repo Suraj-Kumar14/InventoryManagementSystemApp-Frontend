@@ -1,0 +1,5 @@
+@import '../../reports.shared.css';
+
+.date-input {
+  min-width: 180px;
+}

@@ -1,0 +1,9 @@
+@import '../../reports.shared.css';
+
+.threshold-input {
+  width: 110px;
+}
+
+.threshold-label {
+  margin-bottom: 0;
+}

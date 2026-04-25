@@ -1,0 +1,113 @@
+<div class="reports-page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Total Stock Value</h1>
+      <p class="page-subtitle">
+        View the overall inventory valuation for a selected snapshot date.
+      </p>
+    </div>
+
+    <div class="inline-actions">
+      <label class="inline-filter">
+        <span class="text-sm text-muted">Snapshot Date</span>
+        <input
+          class="form-control date-input"
+          type="date"
+          [value]="snapshotDate()"
+          (change)="onDateChange($any($event.target).value)"
+        />
+      </label>
+      <button class="btn btn-secondary" type="button" (click)="loadReport()" [disabled]="loading()">
+        Apply
+      </button>
+      @if (canTakeSnapshot()) {
+        <button class="btn btn-outline" type="button" (click)="takeSnapshot()">
+          Take Snapshot
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="state-box error">
+      <div>
+        <strong>Unable to load the valuation.</strong>
+        <p>{{ errorMessage() }}</p>
+      </div>
+      <button class="btn btn-secondary btn-sm" type="button" (click)="loadReport()">
+        Retry
+      </button>
+    </div>
+  }
+
+  <div class="summary-grid">
+    <app-report-kpi-card
+      title="Inventory Value"
+      [value]="loading() ? 'Loading...' : formatCurrency(report()?.totalStockValue)"
+      [subtitle]="report()?.snapshotDate ? 'Snapshot ' + formatDate(report()?.snapshotDate) : 'Latest available valuation'"
+      icon="VAL"
+      tone="primary"
+    />
+
+    <app-report-kpi-card
+      title="Products Count"
+      [value]="loading() ? 'Loading...' : formatNumber(report()?.totalProducts)"
+      subtitle="Products included in the valuation"
+      icon="PRD"
+      tone="info"
+    />
+
+    <app-report-kpi-card
+      title="Units Count"
+      [value]="loading() ? 'Loading...' : formatNumber(report()?.totalQuantity)"
+      subtitle="Total units represented by the snapshot"
+      icon="QTY"
+      tone="success"
+    />
+  </div>
+
+  <div class="page-panel">
+    <div class="panel-header">
+      <div>
+        <div class="panel-title">Valuation Details</div>
+        <div class="panel-subtitle">
+          Summary details returned from the report-service for the selected date.
+        </div>
+      </div>
+
+      <app-report-export-actions
+        [canExport]="canExport()"
+        [busy]="exportBusy()"
+        (exportRequested)="onExport($event)"
+      />
+    </div>
+
+    @if (!report() && !loading()) {
+      <div class="state-box info">
+        <div>
+          <strong>No valuation returned</strong>
+          <p>Try a different snapshot date or refresh the latest inventory snapshot.</p>
+        </div>
+      </div>
+    } @else {
+      <div class="metrics-list">
+        <div class="metrics-row">
+          <span class="metrics-label">Snapshot date</span>
+          <span class="metrics-value">{{ formatDate(report()?.snapshotDate) }}</span>
+        </div>
+        <div class="metrics-row">
+          <span class="metrics-label">Total stock value</span>
+          <span class="metrics-value">{{ formatCurrency(report()?.totalStockValue) }}</span>
+        </div>
+        <div class="metrics-row">
+          <span class="metrics-label">Products covered</span>
+          <span class="metrics-value">{{ formatNumber(report()?.totalProducts) }}</span>
+        </div>
+        <div class="metrics-row">
+          <span class="metrics-label">Units covered</span>
+          <span class="metrics-value">{{ formatNumber(report()?.totalQuantity) }}</span>
+        </div>
+      </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,58 @@
+<div class="reports-page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Top Moving Products</h1>
+      <p class="page-subtitle">
+        Rank the products with the highest stock movement in the selected period.
+      </p>
+    </div>
+
+    <app-report-export-actions
+      [canExport]="canExport()"
+      [busy]="exportBusy()"
+      (exportRequested)="onExport($event)"
+    />
+  </div>
+
+  <app-report-filter
+    [filters]="filters()"
+    [showDateRange]="true"
+    submitLabel="Load Top Movers"
+    (filtersChange)="onFiltersChange($event)"
+  />
+
+  <div class="summary-grid">
+    <app-report-kpi-card
+      title="Leader"
+      [value]="leader() ? leader().productName : 'None'"
+      [subtitle]="leader() ? formatNumber(leader().totalMovementQuantity) + ' total movement units' : 'No ranked products returned'"
+      icon="TOP"
+      tone="success"
+    />
+
+    <app-report-kpi-card
+      title="Ranked Products"
+      [value]="loading() ? 'Loading...' : formatNumber(response().totalElements)"
+      subtitle="Products returned for the current ranking set"
+      icon="RNK"
+      tone="info"
+    />
+  </div>
+
+  <app-report-table
+    title="Ranking Table"
+    subtitle="Highest movement quantity products for the selected period."
+    [columns]="columns"
+    [data]="response().content"
+    [loading]="loading()"
+    [totalElements]="response().totalElements"
+    [page]="response().page"
+    [size]="response().size"
+    [errorMessage]="errorMessage()"
+    emptyTitle="No top movers"
+    emptyDescription="Try expanding the date range to include more stock movement."
+    (pageChange)="onPageChange($event)"
+    (sortChange)="onSortChange($event)"
+    (retry)="loadReport()"
+  />
+</div>

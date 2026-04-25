@@ -1,0 +1,60 @@
+<div class="reports-page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Inventory Turnover</h1>
+      <p class="page-subtitle">
+        Measure how efficiently products move through stock over a reporting period.
+      </p>
+    </div>
+
+    <app-report-export-actions
+      [canExport]="canExport()"
+      [busy]="exportBusy()"
+      (exportRequested)="onExport($event)"
+    />
+  </div>
+
+  <app-report-filter
+    [filters]="filters()"
+    [showWarehouse]="true"
+    [showProduct]="true"
+    [showDateRange]="true"
+    submitLabel="Load Turnover"
+    (filtersChange)="onFiltersChange($event)"
+  />
+
+  <div class="summary-grid">
+    <app-report-kpi-card
+      title="Average Turnover"
+      [value]="loading() ? 'Loading...' : formatPercent(averageTurnover())"
+      subtitle="Average turnover rate across the current page"
+      icon="AVG"
+      tone="info"
+    />
+
+    <app-report-kpi-card
+      title="Best Performing Product"
+      [value]="bestProduct() ? bestProduct().productName : 'None'"
+      [subtitle]="bestProduct() ? formatPercent(bestProduct().turnoverRate) : 'No turnover rows returned'"
+      icon="TOP"
+      tone="success"
+    />
+  </div>
+
+  <app-report-table
+    title="Turnover Results"
+    subtitle="Current product turnover rate by selected warehouse and period."
+    [columns]="columns"
+    [data]="response().content"
+    [loading]="loading()"
+    [totalElements]="response().totalElements"
+    [page]="response().page"
+    [size]="response().size"
+    [errorMessage]="errorMessage()"
+    emptyTitle="No turnover data"
+    emptyDescription="Try widening the date range or removing specific product filters."
+    (pageChange)="onPageChange($event)"
+    (sortChange)="onSortChange($event)"
+    (retry)="loadReport()"
+  />
+</div>

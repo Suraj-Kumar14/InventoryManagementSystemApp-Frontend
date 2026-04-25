@@ -1,0 +1,154 @@
+<div class="reports-page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Reports Dashboard</h1>
+      <p class="page-subtitle">
+        Inventory valuation, stock health, and purchasing insight in one place.
+      </p>
+    </div>
+
+    <div class="inline-actions">
+      <button class="btn btn-secondary" type="button" (click)="loadDashboard()" [disabled]="loading()">
+        Refresh
+      </button>
+      @if (canTakeSnapshot()) {
+        <button class="btn btn-outline" type="button" (click)="takeSnapshot()">
+          Take Snapshot
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="state-box error">
+      <div>
+        <strong>Dashboard data is unavailable.</strong>
+        <p>{{ errorMessage() }}</p>
+      </div>
+      <button class="btn btn-secondary btn-sm" type="button" (click)="loadDashboard()">
+        Retry
+      </button>
+    </div>
+  }
+
+  <div class="summary-grid">
+    <app-report-kpi-card
+      title="Total Stock Value"
+      [value]="loading() ? 'Loading...' : formatCurrency(summary()?.totalStockValue)"
+      [subtitle]="summary()?.snapshotDate ? 'Snapshot ' + formatDate(summary()?.snapshotDate) : 'Latest valuation'"
+      icon="TSV"
+      tone="primary"
+    />
+
+    <app-report-kpi-card
+      title="Low Stock Items"
+      [value]="loading() ? 'Loading...' : formatNumber(summary()?.lowStockCount)"
+      subtitle="Products currently below reorder threshold"
+      icon="LOW"
+      tone="warning"
+    />
+
+    <app-report-kpi-card
+      title="Dead Stock Items"
+      [value]="loading() ? 'Loading...' : formatNumber(summary()?.deadStockCount)"
+      subtitle="Inventory inactive beyond the tracked threshold"
+      icon="DED"
+      tone="danger"
+    />
+
+    <app-report-kpi-card
+      title="PO Spend"
+      [value]="loading() ? 'Loading...' : formatCurrency(summary()?.totalPurchaseSpend)"
+      [subtitle]="formatNumber(summary()?.totalPurchaseOrders) + ' purchase orders in summary'"
+      icon="POS"
+      tone="info"
+    />
+  </div>
+
+  <div class="summary-highlight">
+    <div class="highlight-card">
+      <div class="highlight-label">Top Warehouse</div>
+      <div class="highlight-value">{{ topWarehouseLabel() }}</div>
+      <div class="highlight-subtitle">Highest stock value across all warehouses.</div>
+    </div>
+
+    <div class="highlight-card">
+      <div class="highlight-label">Warehouse Coverage</div>
+      <div class="highlight-value">{{ formatNumber(summary()?.warehouseCount) }}</div>
+      <div class="highlight-subtitle">Warehouses contributing to the current valuation snapshot.</div>
+    </div>
+
+    <div class="highlight-card">
+      <div class="highlight-label">Snapshot Freshness</div>
+      <div class="highlight-value">{{ formatDate(summary()?.snapshotDate) }}</div>
+      <div class="highlight-subtitle">Latest date available from the report-service snapshot feed.</div>
+    </div>
+  </div>
+
+  <div class="dashboard-grid">
+    <app-report-chart-card
+      title="Warehouse Value Mix"
+      subtitle="Relative contribution of the top warehouses to current stock valuation."
+      [items]="warehouseChartItems()"
+      format="currency"
+    />
+
+    <div class="page-panel">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Low Stock Watchlist</div>
+          <div class="panel-subtitle">
+            Quick preview of the items closest to stock-out.
+          </div>
+        </div>
+      </div>
+
+      @if (!lowStockPreview().length) {
+        <div class="state-box info">
+          <div>
+            <strong>No urgent low-stock items</strong>
+            <p>The low-stock preview is empty for the current report snapshot.</p>
+          </div>
+        </div>
+      } @else {
+        <div class="watchlist">
+          @for (item of lowStockPreview(); track item.productId + '-' + item.warehouseId) {
+            <div class="watchlist-item">
+              <div>
+                <div class="watchlist-title">{{ item.productName }}</div>
+                <div class="watchlist-meta">
+                  {{ item.warehouseName || ('Warehouse #' + item.warehouseId) }}
+                </div>
+              </div>
+              <div class="watchlist-stats">
+                <span class="table-value--danger">{{ formatNumber(item.availableQuantity) }}</span>
+                <span class="text-xs text-muted">Reorder {{ formatNumber(item.reorderLevel) }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="page-panel">
+    <div class="panel-header">
+      <div>
+        <div class="panel-title">Detailed Reports</div>
+        <div class="panel-subtitle">
+          Open the report pages available for your current role.
+        </div>
+      </div>
+    </div>
+
+    <div class="report-links-grid">
+      @for (item of navigationItems(); track item.route) {
+        <a class="report-link-card" [routerLink]="item.route">
+          <div class="report-link-eyebrow">Analytics</div>
+          <div class="report-link-title">{{ item.title }}</div>
+          <div class="report-link-desc">{{ item.description }}</div>
+        </a>
+      }
+    </div>
+  </div>
+</div>
