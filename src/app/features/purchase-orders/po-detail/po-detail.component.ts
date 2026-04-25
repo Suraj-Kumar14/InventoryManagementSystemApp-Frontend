@@ -61,7 +61,7 @@ export class PoDetailComponent implements OnInit {
 
     forkJoin({
       order: this.purchaseOrderService.getPOById(id),
-      suppliers: this.supplierService.getActive().pipe(catchError(() => of([] as Supplier[]))),
+      suppliers: this.supplierService.getAllList().pipe(catchError(() => of([] as Supplier[]))),
       warehouses: this.warehouseService.getActive().pipe(catchError(() => of([] as Warehouse[]))),
       products: this.productService.getAllProducts().pipe(catchError(() => of([] as Product[])))
     }).subscribe({

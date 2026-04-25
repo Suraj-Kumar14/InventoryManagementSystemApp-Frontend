@@ -192,7 +192,7 @@ export class PoListComponent implements OnInit {
     this.loading.set(true);
 
     forkJoin({
-      suppliers: this.supplierService.getActive().pipe(catchError(() => of([] as Supplier[]))),
+      suppliers: this.supplierService.getAllList().pipe(catchError(() => of([] as Supplier[]))),
       warehouses: this.warehouseService.getActive().pipe(catchError(() => of([] as Warehouse[])))
     }).subscribe({
       next: ({ suppliers, warehouses }) => {

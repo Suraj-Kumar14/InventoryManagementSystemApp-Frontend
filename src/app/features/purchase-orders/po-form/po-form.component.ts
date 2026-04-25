@@ -65,7 +65,7 @@ export class PoFormComponent implements OnInit {
 
   ngOnInit(): void {
     forkJoin({
-      suppliers: this.supplierService.getActive().pipe(catchError(() => of([] as Supplier[]))),
+      suppliers: this.supplierService.getSelectableForPurchaseOrders().pipe(catchError(() => of([] as Supplier[]))),
       warehouses: this.warehouseService.getActive().pipe(catchError(() => of([] as Warehouse[]))),
       products: this.productService.getAllProducts().pipe(catchError(() => of([] as Product[])))
     }).subscribe({
