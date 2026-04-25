@@ -1,36 +1,218 @@
 <div class="page-header">
   <div>
     <h1 class="page-title">Suppliers</h1>
-    <p class="page-subtitle">Manage your vendor and supplier network</p>
+    <p class="page-subtitle">Maintain the supplier registry used by purchasing while preserving inactive vendors in historical records.</p>
   </div>
-  <a routerLink="/suppliers/new" class="btn btn-primary">+ Add Supplier</a>
+  @if (canManage()) {
+    <a routerLink="/suppliers/new" class="btn btn-primary">+ Add Supplier</a>
+  }
 </div>
 
 <div class="card toolbar-card">
-  <div class="search-box">
-    <span class="search-prefix">🔍</span>
-    <input type="text" class="form-control" placeholder="Search suppliers..."
-           [value]="search"
-           (input)="onSearch($any($event.target).value)" />
+  <div class="filters-grid">
+    <div class="form-group search-group">
+      <label class="form-label">Search</label>
+      <input
+        type="text"
+        class="form-control"
+        [(ngModel)]="search"
+        (ngModelChange)="onFiltersChange()"
+        placeholder="Name, contact, email, tax id"
+      />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">City</label>
+      <select class="form-control" [(ngModel)]="city" (ngModelChange)="onFiltersChange()">
+        <option value="">All cities</option>
+        @for (option of cityOptions(); track option) {
+          <option [value]="option">{{ option }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Country</label>
+      <select class="form-control" [(ngModel)]="country" (ngModelChange)="onFiltersChange()">
+        <option value="">All countries</option>
+        @for (option of countryOptions(); track option) {
+          <option [value]="option">{{ option }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Status</label>
+      <select class="form-control" [(ngModel)]="status" (ngModelChange)="onFiltersChange()">
+        <option value="">All suppliers</option>
+        <option value="active">Active only</option>
+        <option value="inactive">Inactive only</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="toolbar-footer">
+    <div class="toolbar-note">Inactive suppliers stay visible for purchase history, but should not be used for new POs.</div>
+    <button type="button" class="btn btn-ghost btn-sm" (click)="clearFilters()">Clear Filters</button>
   </div>
 </div>
 
-<app-data-table
-  [columns]="columns"
-  [data]="suppliers()"
-  [loading]="loading()"
-  [totalElements]="totalElements()"
-  [page]="page()"
-  [size]="20"
-  (pageChange)="onPageChange($event)">
-</app-data-table>
+@if (errorMessage()) {
+  <div class="card error-card">
+    <div>
+      <div class="error-title">Could not load suppliers</div>
+      <div class="error-message">{{ errorMessage() }}</div>
+    </div>
+    <button type="button" class="btn btn-secondary btn-sm" (click)="load()">Retry</button>
+  </div>
+} @else if (!loading() && suppliers().length === 0) {
+  <app-empty-state
+    icon="SU"
+    title="No suppliers found"
+    description="Try a different search or add a supplier to start using the supplier master register."
+  >
+    @if (canManage()) {
+      <a routerLink="/suppliers/new" class="btn btn-primary">Add Supplier</a>
+    }
+  </app-empty-state>
+} @else {
+  <div class="card table-card">
+    <div class="table-toolbar">
+      <div class="table-summary">
+        Showing {{ rangeStart }}-{{ rangeEnd }} of {{ totalElements() }} suppliers
+      </div>
+      <div class="table-summary text-muted">Sorted by {{ sortBy }} {{ sortDir }}</div>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="supplier-table">
+        <thead>
+          <tr>
+            <th>
+              <button type="button" class="sort-button" (click)="toggleSort('name')">
+                Supplier {{ getSortIndicator('name') }}
+              </button>
+            </th>
+            <th>Contact</th>
+            <th>
+              <button type="button" class="sort-button" (click)="toggleSort('city')">
+                City {{ getSortIndicator('city') }}
+              </button>
+            </th>
+            <th>
+              <button type="button" class="sort-button" (click)="toggleSort('country')">
+                Country {{ getSortIndicator('country') }}
+              </button>
+            </th>
+            <th>Payment Terms</th>
+            <th>
+              <button type="button" class="sort-button" (click)="toggleSort('leadTimeDays')">
+                Lead Time {{ getSortIndicator('leadTimeDays') }}
+              </button>
+            </th>
+            <th>
+              <button type="button" class="sort-button" (click)="toggleSort('rating')">
+                Rating {{ getSortIndicator('rating') }}
+              </button>
+            </th>
+            <th>Status</th>
+            <th class="actions-cell">Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          @if (loading()) {
+            @for (row of [1, 2, 3, 4, 5]; track row) {
+              <tr>
+                <td colspan="9">
+                  <div class="loading-row"></div>
+                </td>
+              </tr>
+            }
+          } @else {
+            @for (supplier of suppliers(); track supplier.id) {
+              <tr [class.inactive-row]="!supplier.isActive">
+                <td>
+                  <div class="primary-cell">
+                    <a class="supplier-link" [routerLink]="['/suppliers', supplier.id]">{{ supplier.name }}</a>
+                    <div class="supplier-meta">{{ supplier.taxId }}</div>
+                  </div>
+                </td>
+                <td>
+                  <div class="contact-block">
+                    <div>{{ supplier.contactPerson }}</div>
+                    <div class="supplier-meta">{{ supplier.email }}</div>
+                    <div class="supplier-meta">{{ supplier.phone || 'No phone provided' }}</div>
+                  </div>
+                </td>
+                <td>{{ supplier.city }}</td>
+                <td>{{ supplier.country }}</td>
+                <td>{{ supplier.paymentTerms }}</td>
+                <td>{{ supplier.leadTimeDays }} days</td>
+                <td>
+                  <span class="rating-pill">{{ formatRating(supplier.rating) }}</span>
+                </td>
+                <td>
+                  <span class="badge" [class]="supplier.isActive ? 'badge-success' : 'badge-gray'">
+                    {{ supplier.isActive ? 'Active' : 'Inactive' }}
+                  </span>
+                </td>
+                <td class="actions-cell">
+                  <div class="row-actions">
+                    <a class="btn btn-secondary btn-sm" [routerLink]="['/suppliers', supplier.id]">View</a>
+                    @if (canManage()) {
+                      <a class="btn btn-secondary btn-sm" [routerLink]="['/suppliers', supplier.id, 'edit']">Edit</a>
+                      @if (supplier.isActive) {
+                        <button type="button" class="btn btn-danger btn-sm" (click)="confirmDeactivate(supplier)">Deactivate</button>
+                      }
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (!loading() && totalElements() > size()) {
+      <div class="pagination-bar">
+        <button type="button" class="btn btn-secondary btn-sm" [disabled]="page() === 0" (click)="onPageChange(page() - 1)">
+          Previous
+        </button>
+
+        <div class="page-numbers">
+          @for (pageNumber of pageNumbers; track pageNumber) {
+            <button
+              type="button"
+              class="page-number"
+              [class.active]="pageNumber === page()"
+              (click)="onPageChange(pageNumber)"
+            >
+              {{ pageNumber + 1 }}
+            </button>
+          }
+        </div>
+
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm"
+          [disabled]="page() >= totalPages - 1"
+          (click)="onPageChange(page() + 1)"
+        >
+          Next
+        </button>
+      </div>
+    }
+  </div>
+}
 
 <app-confirm-dialog
-  [open]="!!deleteTarget()"
-  title="Remove Supplier"
-  [message]="'Remove ' + deleteTarget()?.name + '?'"
-  confirmLabel="Remove"
-  [loading]="deleting()"
-  (confirm)="doDelete()"
-  (cancel)="deleteTarget.set(null)">
-</app-confirm-dialog>
+  [open]="!!deactivateTarget()"
+  title="Deactivate Supplier"
+  [message]="'Deactivate ' + deactivateTarget()?.name + '? The supplier will stay visible in purchase history but should no longer be used for new purchase orders.'"
+  confirmLabel="Deactivate"
+  [loading]="deactivating()"
+  (confirm)="doDeactivate()"
+  (cancel)="deactivateTarget.set(null)"
+></app-confirm-dialog>

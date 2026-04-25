@@ -1,7 +1,12 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import {
+  CreateSupplierRequest,
+  Supplier,
+  UpdateSupplierRequest
+} from '../../../core/models';
 import { SupplierService } from '../../../core/services/supplier.service';
 import { ToastService } from '../../../core/services/toast.service';
 
@@ -9,112 +14,166 @@ import { ToastService } from '../../../core/services/toast.service';
   selector: 'app-supplier-form',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
-  template: `
-    <div class="page-header">
-      <div><h1 class="page-title">{{ isEdit ? 'Edit Supplier' : 'Add Supplier' }}</h1></div>
-    </div>
-    <div class="card" style="max-width:780px">
-      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-        <div class="form-grid">
-          <div class="form-group">
-            <label class="form-label">Supplier Name *</label>
-            <input type="text" class="form-control" formControlName="name"
-                   [class.is-invalid]="f['name'].invalid && f['name'].touched" placeholder="Company name" />
-            @if (f['name'].invalid && f['name'].touched) { <div class="form-error">Name is required</div> }
-          </div>
-          <div class="form-group">
-            <label class="form-label">Contact Person</label>
-            <input type="text" class="form-control" formControlName="contactPerson" placeholder="Full name" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Email *</label>
-            <input type="email" class="form-control" formControlName="email"
-                   [class.is-invalid]="f['email'].invalid && f['email'].touched" placeholder="supplier@example.com" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Phone</label>
-            <input type="tel" class="form-control" formControlName="phone" placeholder="+91 9876543210" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">City</label>
-            <input type="text" class="form-control" formControlName="city" placeholder="Mumbai" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Country</label>
-            <input type="text" class="form-control" formControlName="country" placeholder="India" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Payment Terms</label>
-            <select class="form-control" formControlName="paymentTerms">
-              <option value="NET30">NET 30</option><option value="NET60">NET 60</option>
-              <option value="NET90">NET 90</option><option value="IMMEDIATE">Immediate</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Lead Time (days)</label>
-            <input type="number" class="form-control" formControlName="leadTimeDays" min="0" />
-          </div>
-          <div class="form-group" style="grid-column:1/-1">
-            <label class="form-label">Address</label>
-            <textarea class="form-control" formControlName="address" rows="2" placeholder="Full address"></textarea>
-          </div>
-          <div class="form-group" style="grid-column:1/-1">
-            <label class="form-label">Notes</label>
-            <textarea class="form-control" formControlName="notes" rows="2" placeholder="Any special terms or notes"></textarea>
-          </div>
-        </div>
-        <div class="form-actions">
-          <button type="button" class="btn btn-secondary" routerLink="/suppliers">Cancel</button>
-          <button type="submit" class="btn btn-primary" [disabled]="saving()">
-            @if (saving()) { <span class="spinner"></span> Saving... } @else { {{ isEdit ? 'Update' : 'Add Supplier' }} }
-          </button>
-        </div>
-      </form>
-    </div>
-  `,
-  styles: [`.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:0 1.25rem}.form-actions{display:flex;justify-content:flex-end;gap:.75rem;margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--border-color)}`]
+  templateUrl: './supplier-form.component.html',
+  styleUrls: ['./supplier-form.component.css']
 })
 export class SupplierFormComponent implements OnInit {
-  fb       = inject(FormBuilder);
-  suppSvc  = inject(SupplierService);
-  router   = inject(Router);
-  route    = inject(ActivatedRoute);
-  toast    = inject(ToastService);
-  suppId   = signal<number | null>(null);
-  saving   = signal(false);
+  private readonly fb = inject(FormBuilder);
+  private readonly supplierService = inject(SupplierService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly toast = inject(ToastService);
 
-  form = this.fb.group({
-    name:          ['', Validators.required],
-    contactPerson: [''],
-    email:         ['', [Validators.required, Validators.email]],
-    phone:         [''],
-    city:          [''],
-    country:       ['India'],
-    address:       [''],
-    paymentTerms:  ['NET30'],
-    leadTimeDays:  [7],
-    notes:         ['']
+  readonly supplierId = signal<number | null>(null);
+  readonly supplierMeta = signal<Supplier | null>(null);
+  readonly loading = signal(false);
+  readonly saving = signal(false);
+
+  readonly paymentTermsOptions = ['IMMEDIATE', 'NET15', 'NET30', 'NET45', 'NET60', 'NET90'];
+
+  readonly form = this.fb.group({
+    name: ['', [Validators.required, Validators.maxLength(150)]],
+    contactPerson: ['', [Validators.required, Validators.maxLength(120)]],
+    email: ['', [Validators.required, Validators.email, Validators.maxLength(150)]],
+    phone: ['', [Validators.maxLength(30), Validators.pattern(/^[0-9+\-()\s]{7,30}$/)]],
+    address: ['', [Validators.required, Validators.maxLength(255)]],
+    city: ['', [Validators.required, Validators.maxLength(100)]],
+    country: ['India', [Validators.required, Validators.maxLength(100)]],
+    taxId: ['', [Validators.required, Validators.maxLength(80)]],
+    paymentTerms: ['NET30', Validators.required],
+    leadTimeDays: [7, [Validators.required, Validators.min(0)]]
   });
 
-  get f() { return this.form.controls; }
-  get isEdit() { return this.suppId() != null; }
+  readonly isEdit = computed(() => this.supplierId() != null);
+
+  get controls() {
+    return this.form.controls;
+  }
 
   ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id) {
-      this.suppId.set(+id);
-      this.suppSvc.getById(+id).subscribe({ next: s => this.form.patchValue(s as never) });
+    const id = Number(this.route.snapshot.paramMap.get('id'));
+    if (!id) {
+      return;
     }
+
+    this.supplierId.set(id);
+    this.loading.set(true);
+    this.supplierService.getSupplierById(id).subscribe({
+      next: (supplier) => {
+        this.supplierMeta.set(supplier);
+        this.form.patchValue({
+          name: supplier.name,
+          contactPerson: supplier.contactPerson,
+          email: supplier.email,
+          phone: supplier.phone ?? '',
+          address: supplier.address ?? '',
+          city: supplier.city,
+          country: supplier.country,
+          taxId: supplier.taxId,
+          paymentTerms: supplier.paymentTerms,
+          leadTimeDays: supplier.leadTimeDays
+        });
+        this.loading.set(false);
+      },
+      error: (error) => {
+        this.toast.error('Unable to load supplier', error.error?.message ?? error.message);
+        this.router.navigate(['/suppliers']);
+      }
+    });
   }
 
   submit(): void {
-    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+
     this.saving.set(true);
-    const val = this.form.getRawValue() as never;
-    const op = this.isEdit ? this.suppSvc.update(this.suppId()!, val) : this.suppSvc.create(val);
-    op.subscribe({
-      next: () => { this.toast.success(this.isEdit ? 'Supplier updated!' : 'Supplier added!'); this.router.navigate(['/suppliers']); },
-      error: err => { this.saving.set(false); this.toast.error('Save failed', err.error?.message); }
+    const rawValue = this.form.getRawValue();
+    const basePayload: CreateSupplierRequest = {
+      name: rawValue.name?.trim() ?? '',
+      contactPerson: rawValue.contactPerson?.trim() ?? '',
+      email: rawValue.email?.trim() ?? '',
+      phone: rawValue.phone?.trim() || null,
+      address: rawValue.address?.trim() ?? '',
+      city: rawValue.city?.trim() ?? '',
+      country: rawValue.country?.trim() ?? '',
+      taxId: rawValue.taxId?.trim() ?? '',
+      paymentTerms: rawValue.paymentTerms?.trim() ?? '',
+      leadTimeDays: Number(rawValue.leadTimeDays ?? 0)
+    };
+
+    const updatePayload: UpdateSupplierRequest = {
+      ...basePayload,
+      isActive: this.supplierMeta()?.isActive ?? true,
+      rating: this.supplierMeta()?.rating ?? 0
+    };
+
+    const request$ = this.isEdit()
+      ? this.supplierService.updateSupplier(this.supplierId()!, updatePayload)
+      : this.supplierService.createSupplier(basePayload);
+
+    request$.subscribe({
+      next: (supplier) => {
+        this.toast.success(this.isEdit() ? 'Supplier updated' : 'Supplier created');
+        this.router.navigate(['/suppliers', supplier.id]);
+      },
+      error: (error) => {
+        this.saving.set(false);
+        this.toast.error('Save failed', error.error?.message ?? error.message);
+      }
     });
+  }
+
+  cancel(): void {
+    const supplierId = this.supplierId();
+    this.router.navigate(supplierId ? ['/suppliers', supplierId] : ['/suppliers']);
+  }
+
+  getErrorMessage(controlName: keyof typeof this.controls): string {
+    const control = this.controls[controlName];
+
+    if (!control.touched || !control.errors) {
+      return '';
+    }
+
+    if (control.errors['required']) {
+      switch (controlName) {
+        case 'contactPerson':
+          return 'Contact person is required.';
+        case 'leadTimeDays':
+          return 'Lead time is required.';
+        case 'paymentTerms':
+          return 'Payment terms are required.';
+        case 'taxId':
+          return 'Tax id is required.';
+        default:
+          return `${this.toLabel(controlName)} is required.`;
+      }
+    }
+
+    if (control.errors['email']) {
+      return 'Enter a valid email address.';
+    }
+
+    if (control.errors['min']) {
+      return 'Value cannot be negative.';
+    }
+
+    if (control.errors['pattern']) {
+      return 'Enter a valid phone number.';
+    }
+
+    if (control.errors['maxlength']) {
+      return `${this.toLabel(controlName)} is too long.`;
+    }
+
+    return 'Please review this field.';
+  }
+
+  private toLabel(controlName: string): string {
+    return controlName
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/^./, (value) => value.toUpperCase());
   }
 }
