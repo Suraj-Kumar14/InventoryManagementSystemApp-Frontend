@@ -295,10 +295,10 @@ export const routes: Routes = [
       {
         path: "reports",
         canActivate: [roleGuard],
-        data: { roles: ["ADMIN", "INVENTORY_MANAGER", "PURCHASE_OFFICER"] },
-        loadComponent: () =>
-          import("./features/reports/reports/reports.component").then(
-            (m) => m.ReportsComponent,
+        data: { roles: ["ADMIN", "INVENTORY_MANAGER", "PURCHASE_OFFICER", "WAREHOUSE_STAFF"] },
+        loadChildren: () =>
+          import("./features/reports/routes/report.routes").then(
+            (m) => m.REPORT_ROUTES,
           ),
       },
 

@@ -54,7 +54,12 @@ export class SidebarComponent {
         roles: ['ROLE_ADMIN', 'ROLE_INVENTORY_MANAGER', 'ROLE_WAREHOUSE_STAFF', 'ROLE_PURCHASE_OFFICER']
       },
       { label: 'Alerts', icon: 'AL', route: '/alerts' },
-      { label: 'Reports', icon: 'RP', route: '/reports', roles: ['ROLE_ADMIN', 'ROLE_INVENTORY_MANAGER', 'ROLE_PURCHASE_OFFICER'] },
+      {
+        label: 'Reports',
+        icon: 'RP',
+        route: '/reports',
+        roles: ['ROLE_ADMIN', 'ROLE_INVENTORY_MANAGER', 'ROLE_PURCHASE_OFFICER', 'ROLE_WAREHOUSE_STAFF']
+      },
       { label: 'Admin', icon: 'AD', route: '/admin', roles: ['ROLE_ADMIN'] }
     ];
 
