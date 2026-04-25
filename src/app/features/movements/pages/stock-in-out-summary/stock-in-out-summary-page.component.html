@@ -1,0 +1,124 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <p class="page-breadcrumb">Audit / Movements / Summary</p>
+      <h1 class="page-title">Stock In / Stock Out Summary</h1>
+      <p class="page-subtitle">
+        Calculate total stock in and stock out volume for a single product using movement history.
+      </p>
+    </div>
+
+    <div class="page-actions">
+      <a routerLink="/movements" class="btn btn-secondary">Back to Movement List</a>
+      <a routerLink="/movements/search" class="btn btn-secondary">Advanced Search</a>
+    </div>
+  </div>
+
+  <section class="card filter-card">
+    <div class="card-header">
+      <div>
+        <h2 class="card-title">Product Summary Lookup</h2>
+        <p class="filter-subtitle">Enter a product ID to calculate stock-in and stock-out totals.</p>
+      </div>
+    </div>
+
+    <form class="summary-form" [formGroup]="form" (ngSubmit)="submit()">
+      <div class="summary-form-row">
+        <div class="form-group">
+          <label class="form-label" for="summary-product-id">Product ID</label>
+          <input
+            id="summary-product-id"
+            type="number"
+            class="form-control"
+            formControlName="productId"
+            placeholder="Example: 101"
+          />
+          @if (form.controls.productId.invalid && form.controls.productId.touched) {
+            <p class="form-error">A product ID is required.</p>
+          }
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Load Summary</button>
+        <button type="button" class="btn btn-secondary" (click)="reset()">Reset</button>
+      </div>
+    </form>
+  </section>
+
+  @if (!hasLoaded() && !loading()) {
+    <app-empty-state
+      title="Load a product summary"
+      description="Enter a product ID above to calculate stock-in and stock-out totals."
+      icon="SM"
+    ></app-empty-state>
+  } @else if (errorMessage() && !loading()) {
+    <app-empty-state
+      title="Summary unavailable"
+      [description]="errorMessage()"
+      icon="ER"
+    >
+      <button type="button" class="btn btn-primary" (click)="retry()">Retry</button>
+    </app-empty-state>
+  } @else if (loading()) {
+    <section class="card state-card">
+      <div class="spinner spinner-dark" style="width: 28px; height: 28px; border-width: 3px;"></div>
+      <span>Loading stock movement totals...</span>
+    </section>
+  } @else if (summary()) {
+    <div class="summary-grid">
+      <app-movement-summary-card
+        title="Product ID"
+        [value]="summary()!.productId"
+        subtitle="Summary target"
+        caption="Requested product identifier"
+        icon="PD"
+        tone="neutral"
+      />
+      <app-movement-summary-card
+        title="Total Stock In"
+        [value]="summary()!.totalStockIn"
+        subtitle="Inbound quantity"
+        caption="STOCK IN movement total"
+        icon="IN"
+        tone="success"
+      />
+      <app-movement-summary-card
+        title="Total Stock Out"
+        [value]="summary()!.totalStockOut"
+        subtitle="Outbound quantity"
+        caption="STOCK OUT movement total"
+        icon="OU"
+        tone="danger"
+      />
+      <app-movement-summary-card
+        title="Net Movement"
+        [value]="summary()!.netMovement"
+        subtitle="Inbound minus outbound"
+        caption="Movement balance delta"
+        icon="NT"
+        tone="info"
+      />
+    </div>
+
+    <section class="card detail-card">
+      <div class="card-header">
+        <h2 class="card-title">Summary Notes</h2>
+      </div>
+      <div class="detail-grid">
+        <div>
+          <span>Movement Entries</span>
+          <strong>{{ summary()!.movementCount }}</strong>
+        </div>
+        <div>
+          <span>Last Movement Date</span>
+          <strong>{{ summary()!.lastMovementDate ? (summary()!.lastMovementDate | date: 'medium') : '--' }}</strong>
+        </div>
+      </div>
+      <p class="detail-note">
+        This summary reflects the movement history available from the movement service and is intended for
+        audit visibility, not direct stock mutation.
+      </p>
+    </section>
+  }
+</div>

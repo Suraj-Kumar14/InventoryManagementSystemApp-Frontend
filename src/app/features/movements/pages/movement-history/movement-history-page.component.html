@@ -1,0 +1,123 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <p class="page-breadcrumb">Audit / Movements / History</p>
+      <h1 class="page-title">Movement History</h1>
+      <p class="page-subtitle">
+        Trace how stock changed over time for a specific product, warehouse, or both.
+      </p>
+    </div>
+
+    <div class="page-actions">
+      <a routerLink="/movements" class="btn btn-secondary">Back to Movement List</a>
+      <a routerLink="/movements/search" class="btn btn-secondary">Advanced Search</a>
+    </div>
+  </div>
+
+  <section class="card filter-card">
+    <div class="card-header">
+      <div>
+        <h2 class="card-title">History Scope</h2>
+        <p class="filter-subtitle">Enter a product ID, warehouse ID, or both to load a chronological audit timeline.</p>
+      </div>
+    </div>
+
+    <form class="history-form" [formGroup]="form" (ngSubmit)="submit()">
+      <div class="history-form-grid">
+        <div class="form-group">
+          <label class="form-label" for="history-product-id">Product ID</label>
+          <input
+            id="history-product-id"
+            type="number"
+            class="form-control"
+            formControlName="productId"
+            placeholder="Example: 101"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="history-warehouse-id">Warehouse ID</label>
+          <input
+            id="history-warehouse-id"
+            type="number"
+            class="form-control"
+            formControlName="warehouseId"
+            placeholder="Example: 5"
+          />
+        </div>
+      </div>
+
+      @if (form.errors?.['missingCriteria'] && (form.touched || form.dirty)) {
+        <p class="form-error">Enter at least one identifier to load movement history.</p>
+      }
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Load History</button>
+        <button type="button" class="btn btn-secondary" (click)="reset()">Reset</button>
+        @if (hasLoaded() && !loading()) {
+          <button type="button" class="btn btn-outline" (click)="viewAllMovements()">
+            Open In Search
+          </button>
+        }
+      </div>
+    </form>
+  </section>
+
+  @if (!hasLoaded() && !loading()) {
+    <app-empty-state
+      title="Choose a history scope"
+      description="Load a product, warehouse, or combined history to review stock balance progression."
+      icon="HS"
+    ></app-empty-state>
+  } @else if (errorMessage() && !loading()) {
+    <app-empty-state
+      title="History unavailable"
+      [description]="errorMessage()"
+      icon="ER"
+    >
+      <button type="button" class="btn btn-primary" (click)="retry()">Retry</button>
+    </app-empty-state>
+  } @else {
+    <div class="summary-grid">
+      <app-movement-summary-card
+        title="History Scope"
+        [value]="scopeLabel()"
+        subtitle="Current filter context"
+        caption="Product and warehouse identifiers"
+        icon="SC"
+        tone="neutral"
+      />
+      <app-movement-summary-card
+        title="History Events"
+        [value]="summary().totalMovements"
+        subtitle="Chronological movement records"
+        caption="Immutable audit entries"
+        icon="EV"
+        tone="info"
+      />
+      <app-movement-summary-card
+        title="Net Stock In"
+        [value]="summary().stockInTotal - summary().stockOutTotal"
+        subtitle="STOCK IN minus STOCK OUT"
+        caption="Visible history difference"
+        icon="NT"
+        tone="success"
+      />
+      <app-movement-summary-card
+        title="Latest Balance"
+        [value]="latestBalance()"
+        subtitle="Balance after the latest history entry"
+        caption="Chronological ending point"
+        icon="BL"
+        tone="warning"
+      />
+    </div>
+
+    <app-movement-timeline
+      [movements]="movements()"
+      [loading]="loading()"
+      emptyTitle="No history entries found"
+      emptyDescription="Try a different product or warehouse identifier."
+    />
+  }
+</div>

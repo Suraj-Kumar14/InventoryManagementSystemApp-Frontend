@@ -1,0 +1,146 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <p class="page-breadcrumb">Audit / Movements / Detail</p>
+      <h1 class="page-title">Movement Detail</h1>
+      <p class="page-subtitle">
+        Review an immutable stock movement record with its reference context, notes, and resulting balance.
+      </p>
+    </div>
+
+    <div class="page-actions">
+      <button type="button" class="btn btn-secondary" (click)="goBack()">Back</button>
+      @if (movement()) {
+        <a
+          class="btn btn-primary"
+          [routerLink]="['/movements/history']"
+          [queryParams]="{ productId: movement()!.productId, warehouseId: movement()!.warehouseId }"
+        >
+          View Related History
+        </a>
+      }
+    </div>
+  </div>
+
+  @if (loading() && !movement()) {
+    <section class="card state-card">
+      <div class="spinner spinner-dark" style="width: 28px; height: 28px; border-width: 3px;"></div>
+      <span>Loading movement details...</span>
+    </section>
+  } @else if (errorMessage() && !movement()) {
+    <app-empty-state
+      title="Movement detail unavailable"
+      [description]="errorMessage()"
+      icon="ER"
+    >
+      <button type="button" class="btn btn-primary" (click)="retry()">Retry</button>
+    </app-empty-state>
+  } @else if (movement()) {
+    <section class="card audit-banner">
+      <div>
+        <h2>Immutable Record</h2>
+        <p>
+          This movement is part of the stock audit trail. Historical entries remain read-only; any correction
+          must be captured by creating a new compensating movement.
+        </p>
+      </div>
+      <span class="badge" [class]="getMovementBadgeClass(movement()!.movementType)">
+        {{ movementTypeLabel() }}
+      </span>
+    </section>
+
+    <div class="summary-grid">
+      <app-movement-summary-card
+        title="Movement ID"
+        [value]="movement()!.movementId"
+        subtitle="Permanent audit identifier"
+        caption="Read-only record key"
+        icon="ID"
+        tone="neutral"
+      />
+      <app-movement-summary-card
+        title="Quantity Delta"
+        [value]="quantityLabel()"
+        subtitle="Signed movement quantity"
+        caption="Based on movement type"
+        icon="QT"
+        tone="info"
+      />
+      <app-movement-summary-card
+        title="Balance After"
+        [value]="movement()!.balanceAfter"
+        subtitle="Stock position after this movement"
+        caption="Warehouse balance checkpoint"
+        icon="BL"
+        tone="warning"
+      />
+      <app-movement-summary-card
+        title="Performed By"
+        [value]="movement()!.performedBy"
+        subtitle="Recorded operator or system actor"
+        caption="Audit accountability"
+        icon="US"
+        tone="success"
+      />
+    </div>
+
+    <div class="detail-grid">
+      <section class="card detail-card">
+        <div class="card-header">
+          <h2 class="card-title">Stock Context</h2>
+        </div>
+        <div class="field-grid">
+          <div>
+            <span>Product</span>
+            <strong>{{ movement()!.productName || 'Product #' + movement()!.productId }}</strong>
+          </div>
+          <div>
+            <span>Warehouse</span>
+            <strong>{{ movement()!.warehouseName || 'Warehouse #' + movement()!.warehouseId }}</strong>
+          </div>
+          <div>
+            <span>Product ID</span>
+            <strong>{{ movement()!.productId }}</strong>
+          </div>
+          <div>
+            <span>Warehouse ID</span>
+            <strong>{{ movement()!.warehouseId }}</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="card detail-card">
+        <div class="card-header">
+          <h2 class="card-title">Reference & Timing</h2>
+        </div>
+        <div class="field-grid">
+          <div>
+            <span>Reference Type</span>
+            <strong>{{ movement()!.referenceType || '--' }}</strong>
+          </div>
+          <div>
+            <span>Reference ID</span>
+            <strong>{{ movement()!.referenceId || '--' }}</strong>
+          </div>
+          <div>
+            <span>Movement Date</span>
+            <strong>{{ movement()!.movementDate ? (movement()!.movementDate | date: 'medium') : '--' }}</strong>
+          </div>
+          <div>
+            <span>Unit Cost</span>
+            <strong>
+              {{ movement()!.unitCost != null ? (movement()!.unitCost | currency: 'INR':'symbol':'1.2-2') : '--' }}
+            </strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="card detail-card notes-card">
+        <div class="card-header">
+          <h2 class="card-title">Notes</h2>
+        </div>
+        <p>{{ movement()!.notes || 'No notes were recorded for this movement.' }}</p>
+      </section>
+    </div>
+  }
+</div>

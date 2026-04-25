@@ -1,0 +1,100 @@
+<div class="page-shell">
+  <div class="page-header">
+    <div>
+      <p class="page-breadcrumb">Audit / Movements / Search</p>
+      <h1 class="page-title">Advanced Movement Search</h1>
+      <p class="page-subtitle">
+        Submit detailed audit queries across product, warehouse, type, reference, and date range.
+      </p>
+    </div>
+
+    <div class="page-actions">
+      <a routerLink="/movements" class="btn btn-secondary">Back to Movement List</a>
+      <a routerLink="/movements/history" class="btn btn-secondary">History View</a>
+    </div>
+  </div>
+
+  <section class="card filter-card">
+    <div class="card-header">
+      <div>
+        <h2 class="card-title">Search Criteria</h2>
+        <p class="filter-subtitle">Use the same audit filters as the list page, then submit to search.</p>
+      </div>
+    </div>
+
+    <app-movement-filter
+      [filters]="filters()"
+      submitLabel="Search Movements"
+      resetLabel="Reset Search"
+      (filtersChange)="applyFilters($event)"
+    />
+  </section>
+
+  @if (!hasSearched() && !loading()) {
+    <app-empty-state
+      title="Ready for an advanced search"
+      description="Submit filters above to search the movement audit trail."
+      icon="SR"
+    ></app-empty-state>
+  } @else if (errorMessage() && !loading()) {
+    <app-empty-state
+      title="Search unavailable"
+      [description]="errorMessage()"
+      icon="ER"
+    >
+      <button type="button" class="btn btn-primary" (click)="retry()">Retry Search</button>
+    </app-empty-state>
+  } @else {
+    <div class="summary-grid">
+      <app-movement-summary-card
+        title="Search Results"
+        [value]="totalElements()"
+        subtitle="Matching audit entries"
+        caption="Across current search criteria"
+        icon="RS"
+        tone="neutral"
+      />
+      <app-movement-summary-card
+        title="Stock In"
+        [value]="summary().stockInTotal"
+        subtitle="Inbound quantity in results"
+        caption="STOCK IN rows"
+        icon="IN"
+        tone="success"
+      />
+      <app-movement-summary-card
+        title="Stock Out"
+        [value]="summary().stockOutTotal"
+        subtitle="Outbound quantity in results"
+        caption="STOCK OUT rows"
+        icon="OU"
+        tone="danger"
+      />
+      <app-movement-summary-card
+        title="Reference Matches"
+        [value]="filters().referenceId || '--'"
+        subtitle="Current reference query"
+        caption="Blank means all references"
+        icon="RF"
+        tone="info"
+      />
+    </div>
+
+    <app-movement-table
+      [movements]="results()"
+      [loading]="loading()"
+      [page]="page()"
+      [pageSize]="pageSize"
+      [totalElements]="totalElements()"
+      [sortBy]="sortBy()"
+      [sortDirection]="sortDirection()"
+      title="Search Results"
+      subtitle="Advanced movement query results in an export-friendly audit table."
+      emptyTitle="No movement matches found"
+      emptyDescription="Change one or more search criteria and try again."
+      (pageChange)="changePage($event)"
+      (sortChange)="changeSort($event)"
+      (view)="viewMovement($event)"
+    />
+  }
+</div>
