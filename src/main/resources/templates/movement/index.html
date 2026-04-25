@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/base :: appLayout(~{::title}, ~{::pageContent}, ~{::pageScripts})}">
+<head>
+    <title>Movements | StockPro</title>
+</head>
+<body>
+<th:block th:fragment="movementHeaderActions"></th:block>
+
+<th:block th:fragment="movementFilters">
+    <form th:action="@{/movements}" method="get" class="filters-grid" data-auto-submit>
+        <div class="field-group">
+            <label class="field-label" for="movement-product">Product</label>
+            <select id="movement-product" class="field-control" name="productId">
+                <option value="">All products</option>
+                <option th:each="productOption : ${products}"
+                        th:value="${productOption.id}"
+                        th:text="${productOption.name}"
+                        th:selected="${movementFilter != null and movementFilter.productId == productOption.id}">Product</option>
+            </select>
+        </div>
+
+        <div class="field-group">
+            <label class="field-label" for="movement-warehouse">Warehouse</label>
+            <select id="movement-warehouse" class="field-control" name="warehouseId">
+                <option value="">All warehouses</option>
+                <option th:each="warehouse : ${warehouses}"
+                        th:value="${warehouse.id}"
+                        th:text="${warehouse.name}"
+                        th:selected="${movementFilter != null and movementFilter.warehouseId == warehouse.id}">Warehouse</option>
+            </select>
+        </div>
+
+        <div class="field-group">
+            <label class="field-label" for="movement-type">Type</label>
+            <select id="movement-type" class="field-control" name="type">
+                <option value="">All movement types</option>
+                <option th:each="type : ${movementTypes}"
+                        th:value="${type}"
+                        th:text="${type}"
+                        th:selected="${movementFilter != null and movementFilter.type == type}">Type</option>
+            </select>
+        </div>
+
+        <div class="field-group">
+            <label class="field-label" for="movement-start">Start Date</label>
+            <input id="movement-start"
+                   class="field-control"
+                   type="date"
+                   name="startDate"
+                   th:value="${movementFilter != null ? movementFilter.startDate : param.startDate}">
+        </div>
+
+        <div class="field-group">
+            <label class="field-label" for="movement-end">End Date</label>
+            <input id="movement-end"
+                   class="field-control"
+                   type="date"
+                   name="endDate"
+                   th:value="${movementFilter != null ? movementFilter.endDate : param.endDate}">
+        </div>
+
+        <div class="field-group field-group--full">
+            <label class="field-label" for="movement-reference">Reference</label>
+            <input id="movement-reference"
+                   class="field-control"
+                   type="search"
+                   name="reference"
+                   th:value="${movementFilter != null and movementFilter.reference != null ? movementFilter.reference : param.reference}"
+                   placeholder="Filter by reference number, transfer id, or receipt reference">
+        </div>
+    </form>
+</th:block>
+
+<th:block th:fragment="movementTableActions">
+    <div class="toolbar__actions">
+        <span class="toolbar__meta"
+              th:text="${movementPage != null ? movementPage.totalElements + ' movement records' : '0 movement records'}">0 movement records</span>
+        <a class="btn btn--secondary btn--small" th:href="@{/inventory/stock/transfer}" sec:authorize="hasAnyRole('ADMIN','INVENTORY_MANAGER','WAREHOUSE_STAFF')">New transfer</a>
+    </div>
+</th:block>
+
+<th:block th:fragment="movementTable">
+    <div th:if="${movementPage != null and movementPage.content != null and !#lists.isEmpty(movementPage.content)}">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Product</th>
+                    <th>Warehouse</th>
+                    <th>Quantity</th>
+                    <th>Date</th>
+                    <th>Reference</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="movement : ${movementPage.content}">
+                    <td>
+                        <span th:replace="~{components/badge :: pill(${movement.type}, ${movement.type == 'STOCK_OUT' ? 'warning' : (movement.type == 'ADJUSTMENT' ? 'critical' : 'info')})}"></span>
+                    </td>
+                    <td>
+                        <strong th:text="${movement.productName}">Product</strong>
+                        <p class="secondary-text" th:text="${movement.sku != null ? movement.sku : 'No SKU'}">No SKU</p>
+                    </td>
+                    <td th:text="${movement.warehouseName}">Warehouse</td>
+                    <td th:text="${movement.quantity}">0</td>
+                    <td th:text="${movement.movementDate != null ? #temporals.format(movement.movementDate, 'dd MMM yyyy, HH:mm') : 'Not available'}">Date</td>
+                    <td th:text="${movement.reference != null ? movement.reference : 'No reference'}">Reference</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div th:replace="~{components/pagination :: pager(${movementPager})}"></div>
+    </div>
+
+    <div th:if="${movementPage == null or movementPage.content == null or #lists.isEmpty(movementPage.content)}"
+         th:replace="~{components/common :: emptyState('No movement records found', 'Adjust the active filters to broaden the audit view or wait for the next movement transaction.')}"></div>
+</th:block>
+
+<th:block th:fragment="pageContent">
+    <section th:replace="~{components/common :: pageHeader('Audit Trail', 'Movements', 'Track inbound, outbound, transfer, and adjustment entries for inventory control and audit review.', ~{::movementHeaderActions})}"></section>
+
+    <section class="panel">
+        <div class="message-banner message-banner--info">
+            <div>
+                <strong>Immutable audit history</strong>
+                <p>Movement records should stay read-only. Corrections are captured through new transactions rather than edits to existing entries.</p>
+            </div>
+        </div>
+    </section>
+
+    <section th:replace="~{components/filters :: panel('Movement Filters', 'Filter by product, warehouse, movement type, date range, and reference.', ~{::movementFilters})}"></section>
+    <section th:replace="~{components/table :: shell('Movement History', 'Warehouse movement records for stock traceability.', ~{::movementTableActions}, ~{::movementTable})}"></section>
+</th:block>
+
+<th:block th:fragment="pageScripts"></th:block>
+</body>
+</html>

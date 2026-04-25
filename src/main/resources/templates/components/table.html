@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<section th:fragment="shell(title, subtitle, actions, content)" class="panel">
+    <div class="panel__header">
+        <div>
+            <h2 class="panel__title" th:text="${title}">Table Title</h2>
+            <p class="panel__subtitle" th:text="${subtitle}">Table subtitle</p>
+        </div>
+        <div class="panel__actions" th:replace="${actions}">
+            <span></span>
+        </div>
+    </div>
+    <div class="table-shell" th:replace="${content}">
+        <div th:replace="~{components/common :: emptyState('Table unavailable', 'The table fragment could not be loaded.')}"></div>
+    </div>
+</section>
+</body>
+</html>

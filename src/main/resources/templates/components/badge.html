@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<span th:fragment="pill(label, tone)"
+      class="status-badge"
+      th:classappend="${tone != null ? ' status-badge--' + tone : ''}"
+      th:text="${label}">Label</span>
+</body>
+</html>

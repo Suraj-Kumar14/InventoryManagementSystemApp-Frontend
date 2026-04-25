@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<section th:fragment="pageHeader(eyebrow, title, subtitle, actions)" class="page-header">
+    <div>
+        <p class="page-header__eyebrow" th:text="${eyebrow}">Section</p>
+        <h1 class="page-header__title" th:text="${title}">Page Title</h1>
+        <p class="page-header__subtitle" th:text="${subtitle}">Page subtitle</p>
+    </div>
+    <div class="page-header__actions">
+        <th:block th:replace="${actions}"></th:block>
+    </div>
+</section>
+
+<div th:fragment="emptyState(title, text)" class="empty-state">
+    <h3 class="empty-state__title" th:text="${title}">Nothing to display</h3>
+    <p class="empty-state__text" th:text="${text}">No records are available right now.</p>
+</div>
+
+<div th:fragment="loadingState(message)" class="loading-state">
+    <span class="loading-spinner"></span>
+    <span th:text="${message}">Loading data...</span>
+</div>
+</body>
+</html>

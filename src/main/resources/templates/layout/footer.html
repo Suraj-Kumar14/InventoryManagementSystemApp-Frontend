@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<footer th:fragment="footer" class="footer">
+    <div class="footer__content">
+        <p>&copy; <span th:text="${#dates.format(#dates.createNow(), 'yyyy')}">2026</span> StockPro. Enterprise inventory workspace.</p>
+        <p>Warehouse operations, procurement controls, and reporting in one internal dashboard.</p>
+    </div>
+</footer>
+</body>
+</html>

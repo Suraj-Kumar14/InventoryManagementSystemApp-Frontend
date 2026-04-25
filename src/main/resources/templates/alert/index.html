@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/base :: appLayout(~{::title}, ~{::pageContent}, ~{::pageScripts})}">
+<head>
+    <title>Alert Center | StockPro</title>
+</head>
+<body>
+<th:block th:fragment="alertHeaderActions">
+    <form th:action="@{/alerts}" method="get">
+        <input type="hidden" name="unreadOnly" th:value="${alertFilter != null and alertFilter.unreadOnly ? 'false' : 'true'}">
+        <button type="submit" class="btn btn--secondary"
+                th:text="${alertFilter != null and alertFilter.unreadOnly ? 'Show all alerts' : 'Unread only'}">Unread only</button>
+    </form>
+    <form th:action="@{/alerts/mark-all-read}" method="post" data-confirm="Mark all alerts as read?">
+        <button type="submit" class="btn btn--primary" data-loading-text="Updating alerts...">Mark all read</button>
+    </form>
+</th:block>
+
+<th:block th:fragment="pageContent">
+    <section th:replace="~{components/common :: pageHeader('Notifications', 'Alert Center', 'Review system notifications, inventory alerts, and required acknowledgements.', ~{::alertHeaderActions})}"></section>
+
+    <section class="alert-list" th:if="${alertsPage != null and alertsPage.content != null and !#lists.isEmpty(alertsPage.content)}">
+        <article class="alert-card" th:each="alertItem : ${alertsPage.content}" th:classappend="${!alertItem.read} ? ' is-unread' : ''">
+            <div class="alert-card__top">
+                <div>
+                    <h2 class="alert-card__title" th:text="${alertItem.title}">Alert title</h2>
+                    <p class="alert-card__text" th:text="${alertItem.message}">Alert message</p>
+                </div>
+                <div class="action-group">
+                    <span th:replace="~{components/badge :: pill(${alertItem.severity}, ${alertItem.severity == 'CRITICAL' ? 'critical' : alertItem.severity == 'WARNING' ? 'warning' : 'success'})}"></span>
+                    <span class="secondary-text"
+                          th:text="${alertItem.createdAt != null ? #temporals.format(alertItem.createdAt, 'dd MMM yyyy, HH:mm') : 'Recent'}">Recent</span>
+                </div>
+            </div>
+
+            <div class="key-value-list">
+                <div class="key-value">
+                    <span class="secondary-text">Source</span>
+                    <strong th:text="${alertItem.source != null ? alertItem.source : 'System'}">System</strong>
+                </div>
+                <div class="key-value">
+                    <span class="secondary-text">Status</span>
+                    <strong th:text="${alertItem.read ? 'Read' : 'Unread'}">Unread</strong>
+                </div>
+            </div>
+
+            <div class="alert-card__actions">
+                <form th:if="${!alertItem.read}" th:action="@{/alerts/{id}/read(id=${alertItem.id})}" method="post">
+                    <button type="submit" class="btn btn--secondary btn--small" data-loading-text="Saving...">Mark read</button>
+                </form>
+                <form th:if="${!alertItem.acknowledged}" th:action="@{/alerts/{id}/acknowledge(id=${alertItem.id})}" method="post">
+                    <button type="submit" class="btn btn--primary btn--small" data-loading-text="Saving...">Acknowledge</button>
+                </form>
+                <span class="secondary-text" th:if="${alertItem.acknowledged}">Acknowledged</span>
+                <a class="btn btn--ghost btn--small" th:if="${alertItem.linkUrl != null}" th:href="${alertItem.linkUrl}">Open reference</a>
+            </div>
+        </article>
+    </section>
+
+    <section th:if="${alertsPage == null or alertsPage.content == null or #lists.isEmpty(alertsPage.content)}" class="panel">
+        <div th:replace="~{components/common :: emptyState('No alerts to show', 'This view will populate when inventory or system events require attention.')}"></div>
+    </section>
+
+    <section th:if="${alertsPage != null and alertsPage.content != null and !#lists.isEmpty(alertsPage.content)}" class="panel">
+        <div th:replace="~{components/pagination :: pager(${alertsPager})}"></div>
+    </section>
+</th:block>
+
+<th:block th:fragment="pageScripts"></th:block>
+</body>
+</html>

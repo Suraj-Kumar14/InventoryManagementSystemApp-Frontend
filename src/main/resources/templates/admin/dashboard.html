@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/base :: appLayout(~{::title}, ~{::pageContent}, ~{::pageScripts})}">
+<head>
+    <title>Admin Dashboard | StockPro</title>
+</head>
+<body>
+<th:block th:fragment="adminDashboardHeaderActions">
+    <a class="btn btn--primary" th:href="@{/admin/users}">Manage users</a>
+</th:block>
+
+<th:block th:fragment="pageContent">
+    <section th:replace="~{components/common :: pageHeader('Administration', 'Admin Dashboard', 'System overview, platform status, and quick access to administrative actions.', ~{::adminDashboardHeaderActions})}"></section>
+
+    <section class="kpi-grid">
+        <article class="metric-card">
+            <div class="metric-card__top">
+                <div>
+                    <p class="metric-card__eyebrow">Users</p>
+                    <p class="metric-card__value" th:text="${adminOverview != null and adminOverview.userCount != null ? adminOverview.userCount : 0}">0</p>
+                </div>
+                <span class="metric-card__icon metric-card__icon--primary">US</span>
+            </div>
+            <span class="metric-card__delta">Registered platform users</span>
+        </article>
+
+        <article class="metric-card">
+            <div class="metric-card__top">
+                <div>
+                    <p class="metric-card__eyebrow">Warehouses</p>
+                    <p class="metric-card__value" th:text="${adminOverview != null and adminOverview.warehouseCount != null ? adminOverview.warehouseCount : 0}">0</p>
+                </div>
+                <span class="metric-card__icon metric-card__icon--success">WH</span>
+            </div>
+            <span class="metric-card__delta">Configured warehouse locations</span>
+        </article>
+
+        <article class="metric-card">
+            <div class="metric-card__top">
+                <div>
+                    <p class="metric-card__eyebrow">Reports</p>
+                    <p class="metric-card__value" th:text="${adminOverview != null and adminOverview.reportCount != null ? adminOverview.reportCount : 0}">0</p>
+                </div>
+                <span class="metric-card__icon metric-card__icon--warning">RP</span>
+            </div>
+            <span class="metric-card__delta">Available reporting endpoints</span>
+        </article>
+
+        <article class="metric-card">
+            <div class="metric-card__top">
+                <div>
+                    <p class="metric-card__eyebrow">System Alerts</p>
+                    <p class="metric-card__value" th:text="${adminOverview != null and adminOverview.systemAlertCount != null ? adminOverview.systemAlertCount : 0}">0</p>
+                </div>
+                <span class="metric-card__icon metric-card__icon--critical">AL</span>
+            </div>
+            <span class="metric-card__delta">Open administrative or system-level notifications</span>
+        </article>
+    </section>
+
+    <section class="admin-grid">
+        <a class="admin-action" th:href="@{/admin/users}">
+            <span class="admin-action__icon">UM</span>
+            <strong>User Management</strong>
+            <span class="secondary-text">Update roles, disable accounts, and reset access.</span>
+        </a>
+        <a class="admin-action" th:href="@{/inventory/warehouses}">
+            <span class="admin-action__icon">WH</span>
+            <strong>Warehouse Governance</strong>
+            <span class="secondary-text">Review the location master used by inventory and reporting.</span>
+        </a>
+        <a class="admin-action" th:href="@{/alerts}">
+            <span class="admin-action__icon">SA</span>
+            <strong>System Alerts</strong>
+            <span class="secondary-text">Monitor service, security, and data quality alerts.</span>
+        </a>
+    </section>
+
+    <section class="panel">
+        <div class="panel__header">
+            <div>
+                <h2 class="panel__title">System Overview</h2>
+                <p class="panel__subtitle">Operational health across core platform services.</p>
+            </div>
+        </div>
+
+        <div class="service-grid" th:if="${serviceHealth != null and !#lists.isEmpty(serviceHealth)}">
+            <article class="service-card" th:each="service : ${serviceHealth}">
+                <div class="panel__header">
+                    <div>
+                        <h3 class="panel__title" th:text="${service.name}">Service</h3>
+                        <p class="panel__subtitle" th:text="${service.endpoint != null ? service.endpoint : 'Endpoint not provided'}">Endpoint</p>
+                    </div>
+                    <span th:replace="~{components/badge :: pill(${service.status}, ${service.status == 'DOWN' ? 'critical' : (service.status == 'DEGRADED' ? 'warning' : 'success')})}"></span>
+                </div>
+                <p class="page-note" th:text="${service.description != null ? service.description : 'No additional notes supplied.'}">No additional notes supplied.</p>
+            </article>
+        </div>
+
+        <div th:if="${serviceHealth == null or #lists.isEmpty(serviceHealth)}"
+             th:replace="~{components/common :: emptyState('No service health feed', 'Add service health data to surface platform status on the admin dashboard.')}"></div>
+    </section>
+</th:block>
+
+<th:block th:fragment="pageScripts"></th:block>
+</body>
+</html>

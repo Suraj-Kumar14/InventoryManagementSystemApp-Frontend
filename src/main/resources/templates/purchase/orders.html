@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/base :: appLayout(~{::title}, ~{::pageContent}, ~{::pageScripts})}">
+<head>
+    <title>Purchase Orders | StockPro</title>
+</head>
+<body>
+<th:block th:fragment="purchaseHeaderActions"></th:block>
+
+<th:block th:fragment="purchaseFilters">
+    <form th:action="@{/purchase/orders}" method="get" class="filters-grid" data-auto-submit>
+        <div class="field-group">
+            <label class="field-label" for="po-supplier">Supplier</label>
+            <select id="po-supplier" class="field-control" name="supplierId">
+                <option value="">All suppliers</option>
+                <option th:each="supplier : ${suppliers}"
+                        th:value="${supplier.id}"
+                        th:text="${supplier.name}"
+                        th:selected="${orderFilter != null and orderFilter.supplierId == supplier.id}">Supplier</option>
+            </select>
+        </div>
+
+        <div class="field-group">
+            <label class="field-label" for="po-status">Status</label>
+            <select id="po-status" class="field-control" name="status">
+                <option value="">All statuses</option>
+                <option th:each="status : ${purchaseStatuses}"
+                        th:value="${status}"
+                        th:text="${status}"
+                        th:selected="${orderFilter != null and orderFilter.status == status}">Status</option>
+            </select>
+        </div>
+
+        <div class="field-group">
+            <label class="field-label" for="po-start">From</label>
+            <input id="po-start" class="field-control" type="date" name="startDate"
+                   th:value="${orderFilter != null ? orderFilter.startDate : param.startDate}">
+        </div>
+
+        <div class="field-group">
+            <label class="field-label" for="po-end">To</label>
+            <input id="po-end" class="field-control" type="date" name="endDate"
+                   th:value="${orderFilter != null ? orderFilter.endDate : param.endDate}">
+        </div>
+
+        <div class="field-group field-group--full">
+            <label class="field-label" for="po-search">Search</label>
+            <input id="po-search"
+                   class="field-control"
+                   type="search"
+                   name="search"
+                   th:value="${orderFilter != null and orderFilter.search != null ? orderFilter.search : param.search}"
+                   placeholder="Search by PO number, reference, or supplier">
+        </div>
+    </form>
+</th:block>
+
+<th:block th:fragment="purchaseTableActions">
+    <div class="toolbar__actions">
+        <span class="toolbar__meta"
+              th:text="${ordersPage != null ? ordersPage.totalElements + ' purchase orders' : '0 purchase orders'}">0 purchase orders</span>
+        <a class="btn btn--primary btn--small" th:href="@{/purchase/orders/new}" sec:authorize="hasAnyRole('ADMIN','PURCHASE_OFFICER')">Create PO</a>
+    </div>
+</th:block>
+
+<th:block th:fragment="purchaseTable">
+    <div th:if="${ordersPage != null and ordersPage.content != null and !#lists.isEmpty(ordersPage.content)}">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>PO Number</th>
+                    <th>Supplier</th>
+                    <th>Status</th>
+                    <th>Amount</th>
+                    <th>Order Date</th>
+                    <th>Expected</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="order : ${ordersPage.content}">
+                    <td>
+                        <strong th:text="${order.poNumber}">PO-001</strong>
+                        <p class="secondary-text" th:text="${order.referenceNumber != null ? order.referenceNumber : 'No reference'}">No reference</p>
+                    </td>
+                    <td th:text="${order.supplierName}">Supplier</td>
+                    <td>
+                        <span th:replace="~{components/badge :: pill(${order.status}, ${order.status == 'CANCELLED' ? 'critical' : (order.status == 'PENDING' ? 'warning' : 'success')})}"></span>
+                    </td>
+                    <td th:text="${order.amount != null ? 'INR ' + #numbers.formatDecimal(order.amount, 1, 'COMMA', 2, 'POINT') : 'INR 0.00'}">INR 0.00</td>
+                    <td th:text="${order.orderDate != null ? #temporals.format(order.orderDate, 'dd MMM yyyy') : 'Not set'}">Date</td>
+                    <td th:text="${order.expectedDate != null ? #temporals.format(order.expectedDate, 'dd MMM yyyy') : 'Not set'}">Date</td>
+                    <td>
+                        <div class="row-actions">
+                            <a class="btn btn--secondary btn--small" th:href="@{/purchase/orders/{id}(id=${order.id})}">View</a>
+                            <form th:if="${order.canApprove}" th:action="@{/purchase/orders/{id}/approve(id=${order.id})}" method="post" data-confirm="Approve this purchase order?">
+                                <button type="submit" class="btn btn--primary btn--small" data-loading-text="Approving...">Approve</button>
+                            </form>
+                            <form th:if="${order.canCancel}" th:action="@{/purchase/orders/{id}/cancel(id=${order.id})}" method="post" data-confirm="Cancel this purchase order?">
+                                <button type="submit" class="btn btn--danger btn--small" data-loading-text="Cancelling...">Cancel</button>
+                            </form>
+                            <a class="btn btn--secondary btn--small" th:if="${order.canReceive}" th:href="@{/purchase/orders/{id}/receive(id=${order.id})}">Receive goods</a>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div th:replace="~{components/pagination :: pager(${ordersPager})}"></div>
+    </div>
+
+    <div th:if="${ordersPage == null or ordersPage.content == null or #lists.isEmpty(ordersPage.content)}"
+         th:replace="~{components/common :: emptyState('No purchase orders found', 'Clear some filters or create a new purchase order to populate this list.')}"></div>
+</th:block>
+
+<th:block th:fragment="pageContent">
+    <section th:replace="~{components/common :: pageHeader('Purchase', 'Purchase Orders', 'Track procurement requests, approvals, delivery expectations, and receiving status.', ~{::purchaseHeaderActions})}"></section>
+
+    <section th:replace="~{components/filters :: panel('Purchase Order Filters', 'Filter orders by supplier, status, date range, or PO reference.', ~{::purchaseFilters})}"></section>
+    <section th:replace="~{components/table :: shell('Purchase Order Register', 'Procurement order history and approval actions.', ~{::purchaseTableActions}, ~{::purchaseTable})}"></section>
+</th:block>
+
+<th:block th:fragment="pageScripts"></th:block>
+</body>
+</html>

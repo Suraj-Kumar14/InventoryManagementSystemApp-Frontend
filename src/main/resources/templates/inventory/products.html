@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/base :: appLayout(~{::title}, ~{::pageContent}, ~{::pageScripts})}">
+<head>
+    <title>Products | StockPro</title>
+</head>
+<body>
+<th:block th:fragment="productHeaderActions"></th:block>
+
+<th:block th:fragment="productFilters">
+    <form th:action="@{/inventory/products}" method="get" class="filters-grid" data-auto-submit>
+        <div class="field-group field-group--full">
+            <label class="field-label" for="product-search">Search</label>
+            <input id="product-search"
+                   class="field-control"
+                   type="search"
+                   name="search"
+                   th:value="${productFilter != null and productFilter.search != null ? productFilter.search : param.search}"
+                   placeholder="Search by name, SKU, category, or barcode">
+            <p class="field-hint">Use the search bar to quickly find products across the catalogue.</p>
+        </div>
+
+        <div class="field-group">
+            <label class="field-label" for="product-category">Category</label>
+            <select id="product-category" class="field-control" name="category">
+                <option value="">All categories</option>
+                <option th:each="category : ${productCategories}"
+                        th:value="${category}"
+                        th:text="${category}"
+                        th:selected="${productFilter != null and productFilter.category == category}">Category</option>
+            </select>
+        </div>
+
+        <div class="field-group">
+            <label class="field-label" for="product-status">Status</label>
+            <select id="product-status" class="field-control" name="status">
+                <option value="">All statuses</option>
+                <option value="ACTIVE" th:selected="${productFilter != null and productFilter.status == 'ACTIVE'}">Active</option>
+                <option value="INACTIVE" th:selected="${productFilter != null and productFilter.status == 'INACTIVE'}">Inactive</option>
+            </select>
+        </div>
+
+        <div class="field-group">
+            <label class="field-label" for="product-sort">Sort By</label>
+            <select id="product-sort" class="field-control" name="sortBy">
+                <option value="name" th:selected="${productFilter == null or productFilter.sortBy == null or productFilter.sortBy == 'name'}">Name</option>
+                <option value="sku" th:selected="${productFilter != null and productFilter.sortBy == 'sku'}">SKU</option>
+                <option value="category" th:selected="${productFilter != null and productFilter.sortBy == 'category'}">Category</option>
+                <option value="price" th:selected="${productFilter != null and productFilter.sortBy == 'price'}">Price</option>
+            </select>
+        </div>
+
+        <div class="field-group">
+            <label class="field-label" for="product-direction">Direction</label>
+            <select id="product-direction" class="field-control" name="direction">
+                <option value="ASC" th:selected="${productFilter == null or productFilter.direction == null or productFilter.direction == 'ASC'}">Ascending</option>
+                <option value="DESC" th:selected="${productFilter != null and productFilter.direction == 'DESC'}">Descending</option>
+            </select>
+        </div>
+    </form>
+</th:block>
+
+<th:block th:fragment="productsTableActions">
+    <div class="toolbar__actions">
+        <span class="toolbar__meta"
+              th:text="${productsPage != null ? productsPage.totalElements + ' products available' : '0 products available'}">0 products available</span>
+        <a class="btn btn--secondary btn--small" th:href="@{/reports/low-stock}">Low stock report</a>
+        <a class="btn btn--primary btn--small"
+           th:href="@{/inventory/products/new}"
+           sec:authorize="hasAnyRole('ADMIN','MANAGER','INVENTORY_MANAGER')">Add product</a>
+    </div>
+</th:block>
+
+<th:block th:fragment="productsTable">
+    <div th:if="${productsPage != null and productsPage.content != null and !#lists.isEmpty(productsPage.content)}">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>SKU</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="product : ${productsPage.content}">
+                    <td>
+                        <strong th:text="${product.name}">Product name</strong>
+                        <p class="secondary-text" th:text="${product.description != null ? product.description : 'No description available'}">Description</p>
+                    </td>
+                    <td th:text="${product.sku}">SKU001</td>
+                    <td th:text="${product.category != null ? product.category : 'Uncategorized'}">Category</td>
+                    <td th:text="${product.price != null ? 'INR ' + #numbers.formatDecimal(product.price, 1, 'COMMA', 2, 'POINT') : 'INR 0.00'}">INR 0.00</td>
+                    <td>
+                        <span th:replace="~{components/badge :: pill(${product.statusLabel != null ? product.statusLabel : (product.active ? 'Active' : 'Inactive')}, ${product.active ? 'success' : 'neutral'})}"></span>
+                    </td>
+                    <td>
+                        <div class="row-actions">
+                            <a class="btn btn--secondary btn--small" th:href="@{/inventory/products/{id}(id=${product.id})}">View</a>
+                            <a class="btn btn--secondary btn--small"
+                               th:href="@{/inventory/products/{id}/edit(id=${product.id})}"
+                               sec:authorize="hasAnyRole('ADMIN','MANAGER','INVENTORY_MANAGER')">Edit</a>
+                            <form th:action="@{/inventory/products/{id}/deactivate(id=${product.id})}"
+                                  method="post"
+                                  data-confirm="Deactivate this product? It will remain available in history but will no longer be active."
+                                  sec:authorize="hasAnyRole('ADMIN','MANAGER','INVENTORY_MANAGER')">
+                                <button type="submit" class="btn btn--danger btn--small" data-loading-text="Deactivating...">Deactivate</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div th:replace="~{components/pagination :: pager(${productsPager})}"></div>
+    </div>
+
+    <div th:if="${productsPage == null or productsPage.content == null or #lists.isEmpty(productsPage.content)}"
+         th:replace="~{components/common :: emptyState('No products found', 'Try broadening the search or clear the active filters to see more catalogue records.')}"></div>
+</th:block>
+
+<th:block th:fragment="pageContent">
+    <section th:replace="~{components/common :: pageHeader('Inventory', 'Products', 'Search, review, and maintain the product catalogue used across warehouse and purchase operations.', ~{::productHeaderActions})}"></section>
+
+    <section th:replace="~{components/filters :: panel('Product Filters', 'Search by product name, SKU, category, or lifecycle status.', ~{::productFilters})}"></section>
+    <section th:replace="~{components/table :: shell('Product Catalogue', 'Product master data used in stock, movement, and purchase workflows.', ~{::productsTableActions}, ~{::productsTable})}"></section>
+</th:block>
+
+<th:block th:fragment="pageScripts"></th:block>
+</body>
+</html>

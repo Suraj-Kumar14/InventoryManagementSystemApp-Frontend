@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/base :: appLayout(~{::title}, ~{::pageContent}, ~{::pageScripts})}">
+<head>
+    <title>Suppliers | StockPro</title>
+</head>
+<body>
+<th:block th:fragment="supplierHeaderActions"></th:block>
+
+<th:block th:fragment="supplierFilters">
+    <form th:action="@{/suppliers}" method="get" class="filters-grid" data-auto-submit>
+        <div class="field-group field-group--full">
+            <label class="field-label" for="supplier-search">Search</label>
+            <input id="supplier-search"
+                   class="field-control"
+                   type="search"
+                   name="search"
+                   th:value="${supplierFilter != null and supplierFilter.search != null ? supplierFilter.search : param.search}"
+                   placeholder="Search by supplier name, city, country, or contact">
+        </div>
+
+        <div class="field-group">
+            <label class="field-label" for="supplier-city">City</label>
+            <input id="supplier-city"
+                   class="field-control"
+                   type="search"
+                   name="city"
+                   th:value="${supplierFilter != null and supplierFilter.city != null ? supplierFilter.city : param.city}"
+                   placeholder="Filter by city">
+        </div>
+
+        <div class="field-group">
+            <label class="field-label" for="supplier-country">Country</label>
+            <input id="supplier-country"
+                   class="field-control"
+                   type="search"
+                   name="country"
+                   th:value="${supplierFilter != null and supplierFilter.country != null ? supplierFilter.country : param.country}"
+                   placeholder="Filter by country">
+        </div>
+
+        <div class="field-group">
+            <label class="field-label" for="supplier-status">Status</label>
+            <select id="supplier-status" class="field-control" name="status">
+                <option value="">All suppliers</option>
+                <option value="ACTIVE" th:selected="${supplierFilter != null and supplierFilter.status == 'ACTIVE'}">Active</option>
+                <option value="INACTIVE" th:selected="${supplierFilter != null and supplierFilter.status == 'INACTIVE'}">Inactive</option>
+            </select>
+        </div>
+    </form>
+</th:block>
+
+<th:block th:fragment="supplierTableActions">
+    <div class="toolbar__actions">
+        <span class="toolbar__meta"
+              th:text="${suppliersPage != null ? suppliersPage.totalElements + ' suppliers' : '0 suppliers'}">0 suppliers</span>
+        <a class="btn btn--primary btn--small" th:href="@{/suppliers/new}" sec:authorize="hasAnyRole('ADMIN','PURCHASE_OFFICER')">Add supplier</a>
+    </div>
+</th:block>
+
+<th:block th:fragment="supplierTable">
+    <div th:if="${suppliersPage != null and suppliersPage.content != null and !#lists.isEmpty(suppliersPage.content)}">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>City</th>
+                    <th>Country</th>
+                    <th>Contact</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="supplier : ${suppliersPage.content}">
+                    <td>
+                        <strong th:text="${supplier.name}">Supplier</strong>
+                        <p class="secondary-text" th:text="${supplier.taxId != null ? supplier.taxId : 'No tax id'}">No tax id</p>
+                    </td>
+                    <td th:text="${supplier.city != null ? supplier.city : '-'}">City</td>
+                    <td th:text="${supplier.country != null ? supplier.country : '-'}">Country</td>
+                    <td>
+                        <strong th:text="${supplier.contactPerson != null ? supplier.contactPerson : 'No contact'}">No contact</strong>
+                        <p class="secondary-text" th:text="${supplier.email != null ? supplier.email : 'No email'}">No email</p>
+                    </td>
+                    <td>
+                        <span th:replace="~{components/badge :: pill(${supplier.active ? 'Active' : 'Inactive'}, ${supplier.active ? 'success' : 'neutral'})}"></span>
+                    </td>
+                    <td>
+                        <div class="row-actions">
+                            <a class="btn btn--secondary btn--small" th:href="@{/suppliers/{id}(id=${supplier.id})}">View</a>
+                            <a class="btn btn--secondary btn--small" th:href="@{/suppliers/{id}/edit(id=${supplier.id})}" sec:authorize="hasAnyRole('ADMIN','PURCHASE_OFFICER')">Edit</a>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div th:replace="~{components/pagination :: pager(${suppliersPager})}"></div>
+    </div>
+
+    <div th:if="${suppliersPage == null or suppliersPage.content == null or #lists.isEmpty(suppliersPage.content)}"
+         th:replace="~{components/common :: emptyState('No suppliers found', 'Search by supplier name, city, or country to find matching records.')}"></div>
+</th:block>
+
+<th:block th:fragment="pageContent">
+    <section th:replace="~{components/common :: pageHeader('Purchase', 'Suppliers', 'Maintain the supplier master used for procurement, pricing, and delivery planning.', ~{::supplierHeaderActions})}"></section>
+
+    <section th:replace="~{components/filters :: panel('Supplier Filters', 'Search by name, city, country, or supplier lifecycle status.', ~{::supplierFilters})}"></section>
+    <section th:replace="~{components/table :: shell('Supplier Register', 'Approved and historical supplier records used in purchasing.', ~{::supplierTableActions}, ~{::supplierTable})}"></section>
+</th:block>
+
+<th:block th:fragment="pageScripts"></th:block>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/base :: appLayout(~{::title}, ~{::pageContent}, ~{::pageScripts})}">
+<head>
+    <title>Purchase Order Detail | StockPro</title>
+</head>
+<body>
+<th:block th:fragment="purchaseDetailHeaderActions">
+    <a class="btn btn--secondary" th:href="@{/purchase/orders}">Back to orders</a>
+    <form th:if="${purchaseOrder != null and purchaseOrder.canApprove}" th:action="@{/purchase/orders/{id}/approve(id=${purchaseOrder.id})}" method="post" data-confirm="Approve this purchase order?">
+        <button type="submit" class="btn btn--primary" data-loading-text="Approving...">Approve</button>
+    </form>
+    <form th:if="${purchaseOrder != null and purchaseOrder.canCancel}" th:action="@{/purchase/orders/{id}/cancel(id=${purchaseOrder.id})}" method="post" data-confirm="Cancel this purchase order?">
+        <button type="submit" class="btn btn--danger" data-loading-text="Cancelling...">Cancel</button>
+    </form>
+    <a class="btn btn--secondary" th:if="${purchaseOrder != null and purchaseOrder.canReceive}" th:href="@{/purchase/orders/{id}/receive(id=${purchaseOrder.id})}">Receive goods</a>
+</th:block>
+
+<th:block th:fragment="poLineActions">
+    <span class="toolbar__meta"
+          th:text="${purchaseOrder != null and purchaseOrder.lineItems != null ? purchaseOrder.lineItems.size() + ' line items' : '0 line items'}">0 line items</span>
+</th:block>
+
+<th:block th:fragment="poLineTable">
+    <div th:if="${purchaseOrder != null and purchaseOrder.lineItems != null and !#lists.isEmpty(purchaseOrder.lineItems)}">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>SKU</th>
+                    <th>Ordered</th>
+                    <th>Received</th>
+                    <th>Remaining</th>
+                    <th>Unit Cost</th>
+                    <th>Total</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="line : ${purchaseOrder.lineItems}">
+                    <td th:text="${line.productName}">Product</td>
+                    <td th:text="${line.sku}">SKU001</td>
+                    <td th:text="${line.orderedQuantity}">0</td>
+                    <td th:text="${line.receivedQuantity}">0</td>
+                    <td>
+                        <span th:replace="~{components/badge :: pill(${line.remainingQuantity}, ${line.remainingQuantity == 0 ? 'success' : (line.receivedQuantity > 0 ? 'warning' : 'neutral')})}"></span>
+                    </td>
+                    <td th:text="${line.unitCost != null ? 'INR ' + #numbers.formatDecimal(line.unitCost, 1, 'COMMA', 2, 'POINT') : 'INR 0.00'}">INR 0.00</td>
+                    <td th:text="${line.totalCost != null ? 'INR ' + #numbers.formatDecimal(line.totalCost, 1, 'COMMA', 2, 'POINT') : 'INR 0.00'}">INR 0.00</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div th:if="${purchaseOrder == null or purchaseOrder.lineItems == null or #lists.isEmpty(purchaseOrder.lineItems)}"
+         th:replace="~{components/common :: emptyState('No purchase lines available', 'This purchase order does not currently contain any line items.')}"></div>
+</th:block>
+
+<th:block th:fragment="pageContent">
+    <section th:replace="~{components/common :: pageHeader('Purchase / Detail', ${purchaseOrder != null ? purchaseOrder.poNumber : 'Purchase Order Detail'}, ${purchaseOrder != null ? purchaseOrder.supplierName + ' | ' + purchaseOrder.warehouseName : 'Procurement detail view'}, ~{::purchaseDetailHeaderActions})}"></section>
+
+    <section th:if="${purchaseOrder != null}" class="two-column">
+        <article class="detail-card">
+            <div class="panel__header">
+                <div>
+                    <h2 class="panel__title">Order Summary</h2>
+                    <p class="panel__subtitle">Core procurement and approval information.</p>
+                </div>
+                <span th:replace="~{components/badge :: pill(${purchaseOrder.status}, ${purchaseOrder.status == 'CANCELLED' ? 'critical' : (purchaseOrder.status == 'PENDING' ? 'warning' : 'success')})}"></span>
+            </div>
+
+            <div class="key-value-list">
+                <div class="key-value">
+                    <span class="secondary-text">Supplier</span>
+                    <strong th:text="${purchaseOrder.supplierName}">Supplier</strong>
+                </div>
+                <div class="key-value">
+                    <span class="secondary-text">Warehouse</span>
+                    <strong th:text="${purchaseOrder.warehouseName}">Warehouse</strong>
+                </div>
+                <div class="key-value">
+                    <span class="secondary-text">Order Date</span>
+                    <strong th:text="${purchaseOrder.orderDate != null ? #temporals.format(purchaseOrder.orderDate, 'dd MMM yyyy') : 'Not set'}">Not set</strong>
+                </div>
+                <div class="key-value">
+                    <span class="secondary-text">Expected Date</span>
+                    <strong th:text="${purchaseOrder.expectedDate != null ? #temporals.format(purchaseOrder.expectedDate, 'dd MMM yyyy') : 'Not set'}">Not set</strong>
+                </div>
+                <div class="key-value">
+                    <span class="secondary-text">Reference</span>
+                    <strong th:text="${purchaseOrder.referenceNumber != null ? purchaseOrder.referenceNumber : 'No reference'}">No reference</strong>
+                </div>
+                <div class="key-value">
+                    <span class="secondary-text">Total Amount</span>
+                    <strong th:text="${purchaseOrder.amount != null ? 'INR ' + #numbers.formatDecimal(purchaseOrder.amount, 1, 'COMMA', 2, 'POINT') : 'INR 0.00'}">INR 0.00</strong>
+                </div>
+            </div>
+        </article>
+
+        <article class="detail-card">
+            <div class="panel__header">
+                <div>
+                    <h2 class="panel__title">Receipt Progress</h2>
+                    <p class="panel__subtitle">Goods receipt progress across all ordered lines.</p>
+                </div>
+            </div>
+
+            <div class="info-item">
+                <div class="info-item__label">Received Percentage</div>
+                <div class="info-item__value" th:text="${purchaseOrder.receivedPercent != null ? purchaseOrder.receivedPercent + '%' : '0%'}">0%</div>
+            </div>
+
+            <div class="progress-track">
+                <div class="progress-track__fill"
+                     th:style="${purchaseOrder.receivedPercent != null ? 'width:' + purchaseOrder.receivedPercent + '%' : 'width:0%'}"></div>
+            </div>
+
+            <p class="page-note" th:text="${purchaseOrder.notes != null ? purchaseOrder.notes : 'No internal procurement notes recorded for this order.'}">Notes</p>
+        </article>
+    </section>
+
+    <section th:if="${purchaseOrder == null}" class="panel">
+        <div th:replace="~{components/common :: emptyState('Purchase order unavailable', 'The requested purchase order could not be found or is no longer available.')}"></div>
+    </section>
+
+    <section th:if="${purchaseOrder != null}"
+             th:replace="~{components/table :: shell('Line Items', 'Ordered versus received quantities for each product in this purchase order.', ~{::poLineActions}, ~{::poLineTable})}"></section>
+</th:block>
+
+<th:block th:fragment="pageScripts"></th:block>
+</body>
+</html>

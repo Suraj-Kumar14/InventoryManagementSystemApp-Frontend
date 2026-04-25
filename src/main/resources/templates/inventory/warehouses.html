@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/base :: appLayout(~{::title}, ~{::pageContent}, ~{::pageScripts})}">
+<head>
+    <title>Warehouses | StockPro</title>
+</head>
+<body>
+<th:block th:fragment="warehouseHeaderActions">
+    <a class="btn btn--primary" th:href="@{/inventory/warehouses/new}" sec:authorize="hasAnyRole('ADMIN','INVENTORY_MANAGER')">Add warehouse</a>
+</th:block>
+
+<th:block th:fragment="pageContent">
+    <section th:replace="~{components/common :: pageHeader('Inventory', 'Warehouses', 'List all storage locations, monitor capacity usage, and review operational readiness.', ~{::warehouseHeaderActions})}"></section>
+
+    <section class="warehouse-grid" th:if="${warehouses != null and !#lists.isEmpty(warehouses)}">
+        <article class="detail-card" th:each="warehouse : ${warehouses}">
+            <div class="panel__header">
+                <div>
+                    <h2 class="panel__title" th:text="${warehouse.name}">Warehouse Name</h2>
+                    <p class="panel__subtitle" th:text="${warehouse.location != null ? warehouse.location : 'Location not set'}">Location</p>
+                </div>
+                <span th:replace="~{components/badge :: pill(${warehouse.active ? 'Active' : 'Inactive'}, ${warehouse.active ? 'success' : 'neutral'})}"></span>
+            </div>
+
+            <div class="key-value-list">
+                <div class="key-value">
+                    <span class="secondary-text">Capacity</span>
+                    <strong th:text="${warehouse.capacity != null ? #numbers.formatDecimal(warehouse.capacity, 1, 'COMMA', 0, 'POINT') + ' units' : 'Not set'}">Not set</strong>
+                </div>
+                <div class="key-value">
+                    <span class="secondary-text">Used Capacity</span>
+                    <strong th:text="${warehouse.usedCapacity != null ? #numbers.formatDecimal(warehouse.usedCapacity, 1, 'COMMA', 0, 'POINT') + ' units' : '0 units'}">0 units</strong>
+                </div>
+                <div class="key-value">
+                    <span class="secondary-text">Manager</span>
+                    <strong th:text="${warehouse.managerName != null ? warehouse.managerName : 'Unassigned'}">Unassigned</strong>
+                </div>
+                <div class="key-value">
+                    <span class="secondary-text">Contact</span>
+                    <strong th:text="${warehouse.phone != null ? warehouse.phone : 'No contact number'}">No contact number</strong>
+                </div>
+            </div>
+
+            <div>
+                <div class="toolbar">
+                    <span class="secondary-text">Capacity utilization</span>
+                    <strong th:text="${warehouse.utilizationPercent != null ? warehouse.utilizationPercent + '%' : '0%'}">0%</strong>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-track__fill"
+                         th:classappend="${warehouse.utilizationPercent != null and warehouse.utilizationPercent >= 90} ? ' progress-track__fill--critical' : (${warehouse.utilizationPercent != null and warehouse.utilizationPercent >= 75} ? ' progress-track__fill--warning' : '')"
+                         th:style="${warehouse.utilizationPercent != null ? 'width:' + warehouse.utilizationPercent + '%' : 'width:0%'}"></div>
+                </div>
+            </div>
+
+            <div class="row-actions">
+                <a class="btn btn--secondary btn--small" th:href="@{/inventory/warehouses/{id}(id=${warehouse.id})}">View details</a>
+                <a class="btn btn--secondary btn--small"
+                   th:href="@{/inventory/warehouses/{id}/edit(id=${warehouse.id})}"
+                   sec:authorize="hasAnyRole('ADMIN','INVENTORY_MANAGER')">Edit</a>
+            </div>
+        </article>
+    </section>
+
+    <section th:if="${warehouses == null or #lists.isEmpty(warehouses)}" class="panel">
+        <div th:replace="~{components/common :: emptyState('No warehouses configured', 'Create the first warehouse to begin tracking location level capacity and stock balances.')}"></div>
+    </section>
+</th:block>
+
+<th:block th:fragment="pageScripts"></th:block>
+</body>
+</html>

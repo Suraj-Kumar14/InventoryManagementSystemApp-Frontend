@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{layout/base :: appLayout(~{::title}, ~{::pageContent}, ~{::pageScripts})}">
+<head>
+    <title>Reports Dashboard | StockPro</title>
+</head>
+<body>
+<th:block th:fragment="reportDashboardHeaderActions">
+    <a class="btn btn--secondary" th:href="@{/reports/generate}" sec:authorize="hasRole('ADMIN')">Generate report</a>
+</th:block>
+
+<th:block th:fragment="pageContent">
+    <section th:replace="~{components/common :: pageHeader('Reports', 'Reports Dashboard', 'Inventory health, valuation, and movement analytics for warehouse and procurement teams.', ~{::reportDashboardHeaderActions})}"></section>
+
+    <section class="kpi-grid">
+        <article class="metric-card">
+            <div class="metric-card__top">
+                <div>
+                    <p class="metric-card__eyebrow">Total Stock Value</p>
+                    <p class="metric-card__value"
+                       th:text="${reportSummary != null and reportSummary.totalStockValue != null ? 'INR ' + #numbers.formatDecimal(reportSummary.totalStockValue, 1, 'COMMA', 2, 'POINT') : 'INR 0.00'}">INR 0.00</p>
+                </div>
+                <span class="metric-card__icon metric-card__icon--primary">SV</span>
+            </div>
+            <span class="metric-card__delta"
+                  th:text="${reportSummary != null and reportSummary.snapshotDate != null ? 'Snapshot ' + #temporals.format(reportSummary.snapshotDate, 'dd MMM yyyy') : 'Latest valuation snapshot'}">Latest valuation snapshot</span>
+        </article>
+
+        <article class="metric-card">
+            <div class="metric-card__top">
+                <div>
+                    <p class="metric-card__eyebrow">Low Stock Count</p>
+                    <p class="metric-card__value"
+                       th:text="${reportSummary != null and reportSummary.lowStockCount != null ? reportSummary.lowStockCount : 0}">0</p>
+                </div>
+                <span class="metric-card__icon metric-card__icon--warning">LS</span>
+            </div>
+            <span class="metric-card__delta">Items below configured reorder threshold</span>
+        </article>
+
+        <article class="metric-card">
+            <div class="metric-card__top">
+                <div>
+                    <p class="metric-card__eyebrow">Dead Stock Count</p>
+                    <p class="metric-card__value"
+                       th:text="${reportSummary != null and reportSummary.deadStockCount != null ? reportSummary.deadStockCount : 0}">0</p>
+                </div>
+                <span class="metric-card__icon metric-card__icon--critical">DS</span>
+            </div>
+            <span class="metric-card__delta">Products inactive beyond the tracked threshold</span>
+        </article>
+
+        <article class="metric-card">
+            <div class="metric-card__top">
+                <div>
+                    <p class="metric-card__eyebrow">Total PO Spend</p>
+                    <p class="metric-card__value"
+                       th:text="${reportSummary != null and reportSummary.totalPoSpend != null ? 'INR ' + #numbers.formatDecimal(reportSummary.totalPoSpend, 1, 'COMMA', 2, 'POINT') : 'INR 0.00'}">INR 0.00</p>
+                </div>
+                <span class="metric-card__icon metric-card__icon--success">PO</span>
+            </div>
+            <span class="metric-card__delta">Purchasing spend in the active reporting window</span>
+        </article>
+    </section>
+
+    <section class="two-column">
+        <article class="panel">
+            <div class="panel__header">
+                <div>
+                    <h2 class="panel__title">Snapshot Highlights</h2>
+                    <p class="panel__subtitle">Quick interpretation of the latest reporting output.</p>
+                </div>
+            </div>
+            <div class="stats-list">
+                <div class="stat-list__item">
+                    <div class="stat-list__label">Top Warehouse</div>
+                    <div class="stat-list__value" th:text="${reportSummary != null and reportSummary.topWarehouseName != null ? reportSummary.topWarehouseName : 'Not available'}">Not available</div>
+                </div>
+                <div class="stat-list__item">
+                    <div class="stat-list__label">Warehouse Coverage</div>
+                    <div class="stat-list__value" th:text="${reportSummary != null and reportSummary.warehouseCount != null ? reportSummary.warehouseCount : 0}">0</div>
+                </div>
+                <div class="stat-list__item">
+                    <div class="stat-list__label">Most Active Category</div>
+                    <div class="stat-list__value" th:text="${reportSummary != null and reportSummary.topCategory != null ? reportSummary.topCategory : 'Not available'}">Not available</div>
+                </div>
+                <div class="stat-list__item">
+                    <div class="stat-list__label">Report Freshness</div>
+                    <div class="stat-list__value"
+                         th:text="${reportSummary != null and reportSummary.snapshotDate != null ? #temporals.format(reportSummary.snapshotDate, 'dd MMM yyyy') : 'Not available'}">Not available</div>
+                </div>
+            </div>
+        </article>
+
+        <article class="panel">
+            <div class="panel__header">
+                <div>
+                    <h2 class="panel__title">Report Access</h2>
+                    <p class="panel__subtitle">Open the reports available for your current role.</p>
+                </div>
+            </div>
+            <div class="report-grid">
+                <a class="report-card" th:href="@{/reports/low-stock}">
+                    <span class="report-card__icon">LS</span>
+                    <strong>Low Stock Report</strong>
+                    <span class="secondary-text">Prioritize replenishment by warehouse and product.</span>
+                </a>
+                <a class="report-card" th:href="@{/reports/top-moving}" sec:authorize="hasAnyRole('ADMIN','INVENTORY_MANAGER')">
+                    <span class="report-card__icon">TM</span>
+                    <strong>Top Moving Products</strong>
+                    <span class="secondary-text">Rank the fastest moving products in the selected period.</span>
+                </a>
+                <a class="report-card" th:href="@{/reports/dead-stock}" sec:authorize="hasAnyRole('ADMIN','INVENTORY_MANAGER')">
+                    <span class="report-card__icon">DS</span>
+                    <strong>Dead Stock Report</strong>
+                    <span class="secondary-text">Review inventory that has not moved within the threshold.</span>
+                </a>
+            </div>
+        </article>
+    </section>
+</th:block>
+
+<th:block th:fragment="pageScripts"></th:block>
+</body>
+</html>
