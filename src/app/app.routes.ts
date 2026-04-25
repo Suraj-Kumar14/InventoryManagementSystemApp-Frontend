@@ -237,7 +237,7 @@ export const routes: Routes = [
       {
         path: "suppliers",
         canActivate: [roleGuard],
-        data: { roles: ["ADMIN", "PURCHASE_OFFICER"] },
+        data: { roles: ["ADMIN", "PURCHASE_OFFICER", "INVENTORY_MANAGER"] },
         children: [
           {
             path: "",
@@ -248,6 +248,8 @@ export const routes: Routes = [
           },
           {
             path: "new",
+            canActivate: [roleGuard],
+            data: { roles: ["ADMIN", "PURCHASE_OFFICER"] },
             loadComponent: () =>
               import("./features/suppliers/supplier-form/supplier-form.component").then(
                 (m) => m.SupplierFormComponent,
@@ -255,9 +257,18 @@ export const routes: Routes = [
           },
           {
             path: ":id/edit",
+            canActivate: [roleGuard],
+            data: { roles: ["ADMIN", "PURCHASE_OFFICER"] },
             loadComponent: () =>
               import("./features/suppliers/supplier-form/supplier-form.component").then(
                 (m) => m.SupplierFormComponent,
+              ),
+          },
+          {
+            path: ":id",
+            loadComponent: () =>
+              import("./features/suppliers/supplier-detail/supplier-detail.component").then(
+                (m) => m.SupplierDetailComponent,
               ),
           },
         ],
@@ -266,10 +277,10 @@ export const routes: Routes = [
       {
         path: "movements",
         canActivate: [roleGuard],
-        data: { roles: ["ADMIN", "INVENTORY_MANAGER", "WAREHOUSE_STAFF"] },
-        loadComponent: () =>
-          import("./features/movements/movement-list/movement-list.component").then(
-            (m) => m.MovementListComponent,
+        data: { roles: ["ADMIN", "INVENTORY_MANAGER", "WAREHOUSE_STAFF", "PURCHASE_OFFICER"] },
+        loadChildren: () =>
+          import("./features/movements/routes/movement.routes").then(
+            (m) => m.MOVEMENT_ROUTES,
           ),
       },
 

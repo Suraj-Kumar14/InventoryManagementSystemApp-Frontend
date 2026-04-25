@@ -46,8 +46,13 @@ export class SidebarComponent {
         route: '/purchase-orders',
         roles: ['ROLE_ADMIN', 'ROLE_PURCHASE_OFFICER', 'ROLE_INVENTORY_MANAGER']
       },
-      { label: 'Suppliers', icon: 'SU', route: '/suppliers', roles: ['ROLE_ADMIN', 'ROLE_PURCHASE_OFFICER'] },
-      { label: 'Movements', icon: 'MV', route: '/movements', roles: ['ROLE_ADMIN', 'ROLE_INVENTORY_MANAGER', 'ROLE_WAREHOUSE_STAFF'] },
+      { label: 'Suppliers', icon: 'SU', route: '/suppliers', roles: ['ROLE_ADMIN', 'ROLE_PURCHASE_OFFICER', 'ROLE_INVENTORY_MANAGER'] },
+      {
+        label: 'Movements',
+        icon: 'MV',
+        route: '/movements',
+        roles: ['ROLE_ADMIN', 'ROLE_INVENTORY_MANAGER', 'ROLE_WAREHOUSE_STAFF', 'ROLE_PURCHASE_OFFICER']
+      },
       { label: 'Alerts', icon: 'AL', route: '/alerts' },
       { label: 'Reports', icon: 'RP', route: '/reports', roles: ['ROLE_ADMIN', 'ROLE_INVENTORY_MANAGER', 'ROLE_PURCHASE_OFFICER'] },
       { label: 'Admin', icon: 'AD', route: '/admin', roles: ['ROLE_ADMIN'] }

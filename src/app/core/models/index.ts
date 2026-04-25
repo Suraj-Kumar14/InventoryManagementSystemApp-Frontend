@@ -349,25 +349,64 @@ export type CreatePoRequest = CreatePurchaseOrderRequest;
 
 // ── Suppliers ─────────────────────────────────────────────────────────────────
 
-export type SupplierStatus = 'ACTIVE' | 'INACTIVE' | 'BLACKLISTED';
+export type SupplierStatus = 'ACTIVE' | 'INACTIVE';
 
 export interface Supplier {
+  supplierId: number;
   id: number;
   name: string;
-  code: string;
-  contactPerson?: string;
-  email?: string;
-  phone?: string;
-  address?: string;
+  contactPerson: string;
+  email: string;
+  phone?: string | null;
+  address?: string | null;
+  city: string;
+  country: string;
+  taxId: string;
+  paymentTerms: string;
+  leadTimeDays: number;
+  rating: number;
+  isActive: boolean;
+  active: boolean;
+  createdAt?: string;
+
+  // Compatibility fields used by older templates.
+  code?: string;
+  status: SupplierStatus;
+  totalOrders?: number;
+  totalOrderValue?: number;
+}
+
+export interface CreateSupplierRequest {
+  name: string;
+  contactPerson: string;
+  email: string;
+  phone?: string | null;
+  address: string;
+  city: string;
+  country: string;
+  taxId: string;
+  paymentTerms: string;
+  leadTimeDays: number;
+}
+
+export interface UpdateSupplierRequest extends CreateSupplierRequest {
+  isActive?: boolean;
+  rating?: number | null;
+}
+
+export interface UpdateSupplierRatingRequest {
+  newRating: number;
+}
+
+export interface SupplierFilter {
+  page?: number;
+  size?: number;
+  search?: string;
   city?: string;
   country?: string;
-  taxId?: string;
-  rating: number;
-  active: boolean;
-  status: SupplierStatus;
-  totalOrders: number;
-  totalOrderValue: number;
-  createdAt: string;
+  isActive?: boolean | '' | null;
+  sortBy?: 'name' | 'city' | 'country' | 'rating' | 'leadTimeDays' | 'createdAt';
+  sortDir?: 'asc' | 'desc';
 }
 
 // ── Alerts ────────────────────────────────────────────────────────────────────
