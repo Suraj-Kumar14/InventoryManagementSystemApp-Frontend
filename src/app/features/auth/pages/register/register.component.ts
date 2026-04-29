@@ -4,7 +4,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../../core/auth/services/auth.service';
 import { NotificationService } from '../../../../core/services/notification.service';
-import { ROLE_LABELS, ROLE_REGISTRATION_ALLOWED, UserRole } from '../../../../shared/config/app-config';
+import { INDIAN_PHONE_REGEX, ROLE_LABELS, ROLE_REGISTRATION_ALLOWED, UserRole } from '../../../../shared/config/app-config';
 
 const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;
 
@@ -49,7 +49,10 @@ const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$
               </p>
             </div>
 
-            <input type="text" formControlName="phone" placeholder="Phone (optional)" class="w-full px-4 py-2 border border-neutral-300 rounded-lg" />
+            <div>
+              <input type="tel" formControlName="phone" placeholder="Phone (optional, e.g. 9876543210)" class="w-full px-4 py-2 border border-neutral-300 rounded-lg" />
+              <p *ngIf="showError('phone')" class="mt-1 text-sm text-danger-700">Enter a valid 10-digit Indian mobile number (starts with 6–9).</p>
+            </div>
             <input type="text" formControlName="department" placeholder="Department (optional)" class="w-full px-4 py-2 border border-neutral-300 rounded-lg" />
 
             <p *ngIf="serverError" class="text-sm text-danger-700">{{ serverError }}</p>
@@ -86,7 +89,7 @@ export class RegisterComponent implements OnInit {
       email: ['', [Validators.required, Validators.email]],
       role: ['', [Validators.required]],
       password: ['', [Validators.required, Validators.pattern(PASSWORD_PATTERN)]],
-      phone: [''],
+      phone: ['', [Validators.pattern(INDIAN_PHONE_REGEX)]],
       department: [''],
     });
   }

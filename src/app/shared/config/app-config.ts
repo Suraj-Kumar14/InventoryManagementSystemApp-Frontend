@@ -38,7 +38,8 @@ export const API_ENDPOINTS = {
     UPDATE_PROFILE: '/auth/profile',
     CHANGE_PASSWORD: '/auth/password',
     USERS: '/auth/users',
-    DEACTIVATE_USER: (id: number) => `/auth/user/${id}`,
+    DEACTIVATE_USER: (id: number) => `/auth/users/${id}/deactivate`,
+    ACTIVATE_USER: (id: number) => `/auth/users/${id}/activate`,
     GOOGLE_LOGIN: '/oauth2/authorization/google',
   },
   PRODUCTS: {
@@ -155,3 +156,6 @@ export const UI_CONSTANTS = {
   API_TIMEOUT: 30000,
   DEFAULT_REPORT_DAYS: 30,
 } as const;
+
+/** Indian mobile number: starts with 6-9, followed by 9 digits */
+export const INDIAN_PHONE_REGEX = /^[6-9][0-9]{9}$/;
