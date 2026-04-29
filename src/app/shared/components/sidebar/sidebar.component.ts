@@ -23,10 +23,10 @@ export class SidebarComponent {
   private authService = inject(AuthService);
 
   private readonly menuItems: MenuItem[] = [
-    { label: 'Dashboard', route: '/dashboard/admin', roles: [UserRole.ADMIN], icon: '🏠' },
-    { label: 'Dashboard', route: '/dashboard/manager', roles: [UserRole.MANAGER], icon: '🏠' },
-    { label: 'Dashboard', route: '/dashboard/officer', roles: [UserRole.OFFICER], icon: '🏠' },
-    { label: 'Dashboard', route: '/dashboard/staff', roles: [UserRole.STAFF], icon: '🏠' },
+    { label: 'Admin Dashboard',     route: '/dashboard/admin',   roles: [UserRole.ADMIN],   icon: '🛡️' },
+    { label: 'Inventory Dashboard', route: '/dashboard/manager', roles: [UserRole.MANAGER], icon: '📦' },
+    { label: 'Purchase Dashboard',  route: '/dashboard/officer', roles: [UserRole.OFFICER], icon: '🛒' },
+    { label: 'Warehouse Dashboard', route: '/dashboard/staff',   roles: [UserRole.STAFF],   icon: '🏭' },
     { label: 'Users', route: '/admin/users', roles: [UserRole.ADMIN], icon: '👥' },
     { label: 'Warehouses', route: '/admin/warehouses', roles: [UserRole.ADMIN], icon: '🏭' },
     { label: 'Audit Logs', route: '/admin/logs', roles: [UserRole.ADMIN], icon: '📋' },
