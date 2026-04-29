@@ -1,9 +1,0 @@
-.admin-tabs { display:flex;gap:4px;margin-bottom:1.25rem;border-bottom:2px solid var(--border-color);padding-bottom:0; }
-.admin-tab { padding:.625rem 1.25rem;font-size:.9rem;font-weight:600;background:none;border:none;cursor:pointer;color:var(--text-muted);border-bottom:2px solid transparent;margin-bottom:-2px;font-family:var(--font-sans);transition:all var(--transition-fast); }
-.admin-tab.active { color:var(--color-primary);border-bottom-color:var(--color-primary); }
-.section-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:.875rem; }
-.system-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1.25rem; }
-.sys-card { display:flex;flex-direction:column;align-items:center;gap:.5rem;text-align:center;padding:1.5rem 1rem; }
-.sys-icon  { font-size:2rem; }
-.sys-label { font-size:.8125rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em; }
-.sys-value { font-size:.9375rem;font-weight:700;font-family:var(--font-mono); }

@@ -1,29 +1,32 @@
-import { inject } from "@angular/core";
-import { CanActivateChildFn, CanActivateFn, Router } from "@angular/router";
-import { AuthService } from "../services/auth.service";
+import { Injectable, inject } from '@angular/core';
+import {
+  Router,
+  CanActivateFn,
+  ActivatedRouteSnapshot,
+  RouterStateSnapshot,
+} from '@angular/router';
+import { AuthService } from '../auth/services/auth.service';
 
-export const authGuard: CanActivateFn = () => {
-  const auth = inject(AuthService);
-  const router = inject(Router);
+@Injectable({
+  providedIn: 'root',
+})
+export class AuthGuardService {
+  private authService = inject(AuthService);
+  private router = inject(Router);
 
-  if (auth.isLoggedIn()) {
-    return true;
+  canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
+    if (this.authService.isAuthenticated() && this.authService.isTokenValid()) {
+      return true;
+    }
+
+    // Redirect to login
+    this.router.navigate(['/login'], { queryParams: { returnUrl: state.url } });
+    return false;
   }
+}
 
-  auth.clearSession();
-  return router.createUrlTree(["/auth/login"]);
+export const authGuard: CanActivateFn = (route, state) => {
+  const authGuardService = inject(AuthGuardService);
+  return authGuardService.canActivate(route, state);
 };
 
-export const guestGuard: CanActivateFn = () => {
-  const auth = inject(AuthService);
-  const router = inject(Router);
-
-  if (auth.isLoggedIn()) {
-    return router.createUrlTree(["/dashboard"]);
-  }
-
-  return true;
-};
-
-export const guestChildGuard: CanActivateChildFn = (childRoute, state) =>
-  guestGuard(childRoute, state);

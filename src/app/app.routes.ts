@@ -1,336 +1,91 @@
-import { Routes } from "@angular/router";
-import { authGuard, guestChildGuard, guestGuard } from "./core/guards/auth.guard";
-import { roleGuard } from "./core/guards/role.guard";
-
-const loadAuthLayout = () =>
-  import("./core/layout/auth-layout/auth-layout.component").then(
-    (m) => m.AuthLayoutComponent,
-  );
-
-const loadShell = () =>
-  import("./core/layout/shell/shell.component").then((m) => m.ShellComponent);
-
-const loadOauthCallback = () =>
-  import("./features/auth/oauth-callback/oauth-callback.component").then(
-    (m) => m.OauthCallbackComponent,
-  );
+import { Routes } from '@angular/router';
+import { authGuard } from './core/guards/auth.guard';
+import { roleGuard } from './core/guards/role.guard';
+import { LayoutComponent } from './shared/components/layout/layout.component';
+import { LoginComponent } from './features/auth/pages/login/login.component';
+import { RegisterComponent } from './features/auth/pages/register/register.component';
+import { VerifyOtpComponent } from './features/auth/pages/verify-otp/verify-otp.component';
+import { ForgotPasswordComponent } from './features/auth/pages/forgot-password/forgot-password.component';
+import { ResetPasswordComponent } from './features/auth/pages/reset-password/reset-password.component';
+import { VerifyResetOtpComponent } from './features/auth/pages/verify-reset-otp/verify-reset-otp.component';
+import { OauthSuccessComponent } from './features/auth/pages/oauth-success/oauth-success.component';
+import { UnauthorizedComponent } from './features/auth/pages/unauthorized/unauthorized.component';
+import { dashboardRoutes } from './features/dashboard/dashboard.routes';
+import { settingsRoutes } from './features/settings/settings.routes';
+import { UserRole } from './shared/config/app-config';
+import { guestGuard } from './core/guards/guest.guard';
 
 export const routes: Routes = [
-  // Public auth routes
+  { path: 'login', component: LoginComponent, canActivate: [guestGuard] },
+  { path: 'register', component: RegisterComponent, canActivate: [guestGuard] },
+  { path: 'verify-otp', component: VerifyOtpComponent, canActivate: [guestGuard] },
+  { path: 'forgot-password', component: ForgotPasswordComponent, canActivate: [guestGuard] },
+  { path: 'verify-reset-otp', component: VerifyResetOtpComponent, canActivate: [guestGuard] },
+  { path: 'reset-password', component: ResetPasswordComponent, canActivate: [guestGuard] },
+  { path: 'oauth-success', component: OauthSuccessComponent, canActivate: [guestGuard] },
+  { path: '403', component: UnauthorizedComponent },
+  { path: 'unauthorized', redirectTo: '/403', pathMatch: 'full' },
   {
-    path: "auth",
-    loadComponent: loadAuthLayout,
-    canActivate: [guestGuard],
-    canActivateChild: [guestChildGuard],
-    children: [
-      {
-        path: "login",
-        loadComponent: () =>
-          import("./features/auth/login/login.component").then(
-            (m) => m.LoginComponent,
-          ),
-      },
-      {
-        path: "register",
-        loadComponent: () =>
-          import("./features/auth/register/register.component").then(
-            (m) => m.RegisterComponent,
-          ),
-      },
-      {
-        path: "verify-email-otp",
-        loadComponent: () =>
-          import("./features/auth/verify-email-otp/verify-email-otp.component").then(
-            (m) => m.VerifyEmailOtpComponent,
-          ),
-      },
-      {
-        path: "forgot-password",
-        loadComponent: () =>
-          import("./features/auth/forgot-password/forgot-password.component").then(
-            (m) => m.ForgotPasswordComponent,
-          ),
-      },
-      {
-        path: "verify-forgot-password-otp",
-        loadComponent: () =>
-          import("./features/auth/verify-forgot-password-otp/verify-forgot-password-otp.component").then(
-            (m) => m.VerifyForgotPasswordOtpComponent,
-          ),
-      },
-      {
-        path: "reset-password",
-        loadComponent: () =>
-          import("./features/auth/reset-password/reset-password.component").then(
-            (m) => m.ResetPasswordComponent,
-          ),
-      },
-      {
-        path: "",
-        pathMatch: "full",
-        redirectTo: "login",
-      },
-    ],
-  },
-
-  // OAuth callback route
-  {
-    path: "oauth-callback",
-    loadComponent: loadAuthLayout,
-    children: [
-      {
-        path: "",
-        loadComponent: loadOauthCallback,
-      },
-    ],
-  },
-
-  // Authenticated app
-  {
-    path: "",
-    loadComponent: loadShell,
+    path: 'dashboard',
+    component: LayoutComponent,
     canActivate: [authGuard],
+    children: dashboardRoutes,
+  },
+  {
+    path: 'settings',
+    component: LayoutComponent,
+    canActivate: [authGuard],
+    children: settingsRoutes,
+  },
+  {
+    path: 'admin',
+    component: LayoutComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: [UserRole.ADMIN] },
     children: [
-      {
-        path: "dashboard",
-        loadComponent: () =>
-          import("./features/dashboard/dashboard.component").then(
-            (m) => m.DashboardComponent,
-          ),
-      },
-
-      // Products
-      {
-        path: "products",
-        canActivate: [roleGuard],
-        data: {
-          roles: [
-            "ADMIN",
-            "INVENTORY_MANAGER",
-            "WAREHOUSE_STAFF",
-            "PURCHASE_OFFICER",
-          ],
-        },
-        loadChildren: () =>
-          import("./features/products/routes/product.routes").then(
-            (m) => m.PRODUCT_ROUTES,
-          ),
-      },
-
-      // Warehouses
-      {
-        path: "warehouses",
-        canActivate: [roleGuard],
-        data: { roles: ["ADMIN", "INVENTORY_MANAGER"] },
-        children: [
-          {
-            path: "",
-            loadComponent: () =>
-              import("./features/warehouses/warehouse-list/warehouse-list.component").then(
-                (m) => m.WarehouseListComponent,
-              ),
-          },
-          {
-            path: "new",
-            loadComponent: () =>
-              import("./features/warehouses/warehouse-form/warehouse-form.component").then(
-                (m) => m.WarehouseFormComponent,
-              ),
-          },
-          {
-            path: ":id/edit",
-            loadComponent: () =>
-              import("./features/warehouses/warehouse-form/warehouse-form.component").then(
-                (m) => m.WarehouseFormComponent,
-              ),
-          },
-        ],
-      },
-
-      // Stock
-      {
-        path: "stock",
-        canActivate: [roleGuard],
-        data: { roles: ["ADMIN", "INVENTORY_MANAGER", "WAREHOUSE_STAFF"] },
-        children: [
-          {
-            path: "",
-            loadComponent: () =>
-              import("./features/stock/stock-list/stock-list.component").then(
-                (m) => m.StockListComponent,
-              ),
-          },
-          {
-            path: "transfer",
-            loadComponent: () =>
-              import("./features/stock/stock-transfer/stock-transfer.component").then(
-                (m) => m.StockTransferComponent,
-              ),
-          },
-          {
-            path: "adjust",
-            loadComponent: () =>
-              import("./features/stock/stock-adjust/stock-adjust.component").then(
-                (m) => m.StockAdjustComponent,
-              ),
-          },
-          {
-            path: "barcode",
-            data: {
-              sectionLabel: "Stock",
-              backRoute: "/stock",
-              backLabel: "Back to Stock",
-            },
-            loadComponent: () =>
-              import("./features/products/pages/barcode-lookup/barcode-lookup-page.component").then(
-                (m) => m.BarcodeLookupPageComponent,
-              ),
-          },
-        ],
-      },
-
-      // Purchase Orders
-      {
-        path: "purchase-orders",
-        canActivate: [roleGuard],
-        data: { roles: ["ADMIN", "PURCHASE_OFFICER", "INVENTORY_MANAGER", "WAREHOUSE_STAFF"] },
-        children: [
-          {
-            path: "",
-            loadComponent: () =>
-              import("./features/purchase-orders/po-list/po-list.component").then(
-                (m) => m.PoListComponent,
-              ),
-          },
-          {
-            path: "new",
-            loadComponent: () =>
-              import("./features/purchase-orders/po-form/po-form.component").then(
-                (m) => m.PoFormComponent,
-              ),
-          },
-          {
-            path: ":id",
-            loadComponent: () =>
-              import("./features/purchase-orders/po-detail/po-detail.component").then(
-                (m) => m.PoDetailComponent,
-              ),
-          },
-          {
-            path: ":id/edit",
-            loadComponent: () =>
-              import("./features/purchase-orders/po-form/po-form.component").then(
-                (m) => m.PoFormComponent,
-              ),
-          },
-          {
-            path: ":id/receive",
-            loadComponent: () =>
-              import("./features/purchase-orders/receive-goods/receive-goods.component").then(
-                (m) => m.ReceiveGoodsComponent,
-              ),
-          },
-        ],
-      },
-
-      // Suppliers
-      {
-        path: "suppliers",
-        canActivate: [roleGuard],
-        data: { roles: ["ADMIN", "PURCHASE_OFFICER", "INVENTORY_MANAGER"] },
-        children: [
-          {
-            path: "",
-            loadComponent: () =>
-              import("./features/suppliers/supplier-list/supplier-list.component").then(
-                (m) => m.SupplierListComponent,
-              ),
-          },
-          {
-            path: "new",
-            canActivate: [roleGuard],
-            data: { roles: ["ADMIN", "PURCHASE_OFFICER"] },
-            loadComponent: () =>
-              import("./features/suppliers/supplier-form/supplier-form.component").then(
-                (m) => m.SupplierFormComponent,
-              ),
-          },
-          {
-            path: ":id/edit",
-            canActivate: [roleGuard],
-            data: { roles: ["ADMIN", "PURCHASE_OFFICER"] },
-            loadComponent: () =>
-              import("./features/suppliers/supplier-form/supplier-form.component").then(
-                (m) => m.SupplierFormComponent,
-              ),
-          },
-          {
-            path: ":id",
-            loadComponent: () =>
-              import("./features/suppliers/supplier-detail/supplier-detail.component").then(
-                (m) => m.SupplierDetailComponent,
-              ),
-          },
-        ],
-      },
-
-      {
-        path: "movements",
-        canActivate: [roleGuard],
-        data: { roles: ["ADMIN", "INVENTORY_MANAGER", "WAREHOUSE_STAFF", "PURCHASE_OFFICER"] },
-        loadChildren: () =>
-          import("./features/movements/routes/movement.routes").then(
-            (m) => m.MOVEMENT_ROUTES,
-          ),
-      },
-
-      {
-        path: "alerts",
-        loadComponent: () =>
-          import("./features/alerts/alert-center/alert-center.component").then(
-            (m) => m.AlertCenterComponent,
-          ),
-      },
-
-      {
-        path: "reports",
-        canActivate: [roleGuard],
-        data: { roles: ["ADMIN", "INVENTORY_MANAGER", "PURCHASE_OFFICER", "WAREHOUSE_STAFF"] },
-        loadChildren: () =>
-          import("./features/reports/routes/report.routes").then(
-            (m) => m.REPORT_ROUTES,
-          ),
-      },
-
-      {
-        path: "admin",
-        canActivate: [roleGuard],
-        data: { roles: ["ADMIN"] },
-        loadComponent: () =>
-          import("./features/admin/admin/admin.component").then(
-            (m) => m.AdminComponent,
-          ),
-      },
-
-      {
-        path: "profile",
-        loadComponent: () =>
-          import("./features/profile/profile/profile.component").then(
-            (m) => m.ProfileComponent,
-          ),
-      },
-
-      {
-        path: "",
-        pathMatch: "full",
-        redirectTo: "dashboard",
-      },
+      { path: 'users', loadChildren: () => import('./features/admin/users/users.routes').then((m) => m.usersRoutes) },
+      { path: 'warehouses', loadChildren: () => import('./features/admin/warehouses/warehouses.routes').then((m) => m.warehousesRoutes) },
+      { path: 'logs', loadChildren: () => import('./features/admin/logs/logs.routes').then((m) => m.logsRoutes) },
     ],
   },
-
-  // final fallback
   {
-    path: "**",
-    redirectTo: "auth/login",
+    path: 'inventory',
+    component: LayoutComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF] },
+    children: [
+      { path: 'products', loadChildren: () => import('./features/inventory/products/products.routes').then((m) => m.productsRoutes) },
+      { path: 'stock', loadChildren: () => import('./features/inventory/stock/stock.routes').then((m) => m.stockRoutes) },
+      { path: 'alerts', loadChildren: () => import('./features/inventory/alerts/alerts.routes').then((m) => m.alertsRoutes) },
+    ],
   },
+  {
+    path: 'purchase',
+    component: LayoutComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: [UserRole.ADMIN, UserRole.OFFICER] },
+    children: [
+      { path: 'orders', loadChildren: () => import('./features/purchase/orders/orders.routes').then((m) => m.ordersRoutes) },
+      { path: 'suppliers', loadChildren: () => import('./features/purchase/suppliers/suppliers.routes').then((m) => m.suppliersRoutes) },
+    ],
+  },
+  {
+    path: 'warehouse',
+    component: LayoutComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: [UserRole.ADMIN, UserRole.STAFF, UserRole.MANAGER] },
+    children: [
+      { path: 'movements', loadChildren: () => import('./features/warehouse/movements/movements.routes').then((m) => m.movementsRoutes) },
+      { path: 'bins', loadChildren: () => import('./features/warehouse/bins/bins.routes').then((m) => m.binsRoutes) },
+    ],
+  },
+  {
+    path: 'reports',
+    component: LayoutComponent,
+    canActivate: [authGuard, roleGuard],
+    data: { roles: [UserRole.ADMIN, UserRole.MANAGER] },
+    loadChildren: () => import('./features/reports/reports.routes').then((m) => m.reportsRoutes),
+  },
+  { path: '', redirectTo: '/login', pathMatch: 'full' },
+  { path: '**', redirectTo: '/403' },
 ];

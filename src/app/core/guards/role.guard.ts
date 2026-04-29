@@ -1,20 +1,50 @@
-import { inject } from '@angular/core';
-import { CanActivateFn, ActivatedRouteSnapshot, Router } from '@angular/router';
-import { roleMatches } from '../constants/roles';
-import { AuthService } from '../services/auth.service';
+import { Injectable, inject } from '@angular/core';
+import {
+  Router,
+  CanActivateFn,
+  ActivatedRouteSnapshot,
+  RouterStateSnapshot,
+} from '@angular/router';
+import { AuthService } from '../auth/services/auth.service';
+import { UserRole } from '../../shared/config/app-config';
 
-export const roleGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
-  const auth    = inject(AuthService);
-  const router  = inject(Router);
-  const allowed = route.data['roles'] as string[] | undefined;
+@Injectable({
+  providedIn: 'root',
+})
+export class RoleGuardService {
+  private authService = inject(AuthService);
+  private router = inject(Router);
 
-  if (!allowed || allowed.length === 0) return true;
+  canActivate(
+    route: ActivatedRouteSnapshot,
+    state: RouterStateSnapshot
+  ): boolean {
+    if (!this.authService.isAuthenticated()) {
+      this.router.navigate(['/login']);
+      return false;
+    }
 
-  const user = auth.currentUser();
-  if (!user) return router.createUrlTree(['/auth/login']);
+    // Get required roles from route data
+    const requiredRoles = route.data['roles'] as UserRole[] | undefined;
 
-  if (allowed.some(role => roleMatches(user.role, role))) return true;
+    if (!requiredRoles || requiredRoles.length === 0) {
+      // If no roles are specified, allow access
+      return true;
+    }
 
-  // Redirect to dashboard with an access-denied state
-  return router.createUrlTree(['/dashboard']);
+    // Check if user has required role
+    if (this.authService.hasRole(requiredRoles)) {
+      return true;
+    }
+
+    // User doesn't have required role
+    this.router.navigate(['/403']);
+    return false;
+  }
+}
+
+export const roleGuard: CanActivateFn = (route, state) => {
+  const roleGuardService = inject(RoleGuardService);
+  return roleGuardService.canActivate(route, state);
 };
+
