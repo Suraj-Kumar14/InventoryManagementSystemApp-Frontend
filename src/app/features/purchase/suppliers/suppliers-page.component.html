@@ -1,0 +1,52 @@
+<section class="page">
+  <div class="page-header">
+    <h1 class="page-header__title">Suppliers</h1>
+    <p class="page-header__subtitle">Manage suppliers using purchase-service APIs only.</p>
+  </div>
+
+  <div class="page-actions">
+    <input [formControl]="searchControl" placeholder="Search suppliers" class="page-input" style="width:auto;min-width:260px" />
+    <button type="button" (click)="loadSuppliers()" [disabled]="loading" class="btn-primary">{{ loading ? 'Loading...' : 'Search' }}</button>
+  </div>
+
+  <form *ngIf="canManage" [formGroup]="form" (ngSubmit)="save()" class="form-card">
+    <input formControlName="name" placeholder="Supplier name" class="page-input" />
+    <input formControlName="contactPerson" placeholder="Contact person" class="page-input" />
+    <input formControlName="email" placeholder="Email" class="page-input" />
+    <input formControlName="phone" placeholder="Phone" class="page-input" />
+    <input formControlName="city" placeholder="City" class="page-input" />
+    <input formControlName="country" placeholder="Country" class="page-input" />
+    <input formControlName="taxId" placeholder="Tax ID" class="page-input" />
+    <input formControlName="paymentTerms" placeholder="Payment terms" class="page-input" />
+    <input formControlName="leadTimeDays" type="number" placeholder="Lead time days" class="page-input" />
+    <textarea formControlName="address" placeholder="Address" class="page-textarea form-card__full"></textarea>
+    <div class="page-actions form-card__full">
+      <button type="submit" [disabled]="form.invalid || saving" class="btn-primary">{{ saving ? 'Saving...' : editingId ? 'Update Supplier' : 'Create Supplier' }}</button>
+      <button type="button" (click)="resetForm()" class="btn-secondary">Clear</button>
+    </div>
+  </form>
+
+  <div *ngIf="loading" class="page-loading">Loading suppliers...</div>
+  <div *ngIf="!loading && suppliers.length === 0" class="page-empty">No suppliers returned by the backend.</div>
+
+  <div *ngIf="!loading && suppliers.length > 0" class="table-card">
+    <div class="table-wrapper">
+      <table class="page-table">
+        <thead><tr><th>Name</th><th>City</th><th>Email</th><th>Rating</th><th>Actions</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let supplier of suppliers">
+            <td><strong>{{ supplier.name }}</strong></td>
+            <td>{{ supplier.city }}, {{ supplier.country }}</td>
+            <td>{{ supplier.email }}</td>
+            <td>{{ supplier.rating ?? 0 }}</td>
+            <td>
+              <button *ngIf="canManage" type="button" (click)="edit(supplier)" class="btn-neutral">Edit</button>
+              <button *ngIf="canManage" type="button" (click)="deactivate(supplier)" [disabled]="actionId === supplier.supplierId || !supplier.isActive" class="btn-danger">Deactivate</button>
+              <button *ngIf="canManage" type="button" (click)="remove(supplier)" [disabled]="actionId === supplier.supplierId" class="btn-danger">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>

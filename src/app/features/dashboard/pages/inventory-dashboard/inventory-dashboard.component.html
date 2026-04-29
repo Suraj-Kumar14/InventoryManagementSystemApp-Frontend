@@ -1,0 +1,37 @@
+<div class="dashboard">
+  <div class="dashboard-header">
+    <h1 class="dashboard-header__title">Inventory Dashboard</h1>
+    <p class="dashboard-header__subtitle">Inventory analytics from report-service and movement-service.</p>
+  </div>
+
+  <div *ngIf="loading" class="dashboard-loading">Loading dashboard...</div>
+
+  <div *ngIf="!loading" class="stats-grid">
+    <div class="stat-card">
+      <p class="stat-card__label">Total Inventory Value</p>
+      <p class="stat-card__value">{{ totalValue }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-card__label">Low Stock Alerts</p>
+      <p class="stat-card__value">{{ lowStockCount }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-card__label">Top Moving Products</p>
+      <p class="stat-card__value">{{ topMovingCount }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-card__label">Dead Stock Items</p>
+      <p class="stat-card__value">{{ deadStockCount }}</p>
+    </div>
+  </div>
+
+  <div *ngIf="!loading && recentMovements.length > 0" class="movements-card">
+    <h2 class="movements-card__title">Recent Stock Movements</h2>
+    <div class="movements-list">
+      <div *ngFor="let movement of recentMovements" class="movement-row">
+        <span>{{ movement.movementType }} for product {{ movement.productId }} in warehouse {{ movement.warehouseId }}</span>
+        <span class="movement-row__qty">{{ movement.quantity }}</span>
+      </div>
+    </div>
+  </div>
+</div>

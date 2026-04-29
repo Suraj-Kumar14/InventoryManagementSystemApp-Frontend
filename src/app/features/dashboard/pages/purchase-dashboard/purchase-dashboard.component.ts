@@ -7,18 +7,8 @@ import { DashboardService } from '../../services/dashboard.service';
   selector: 'app-purchase-dashboard',
   standalone: true,
   imports: [CommonModule],
-  template: `
-    <div class="space-y-6">
-      <div><h1 class="text-3xl font-bold text-neutral-900">Purchase Dashboard</h1><p class="text-neutral-600 mt-2">Purchase metrics from purchase-service and report-service.</p></div>
-      <div *ngIf="loading" class="rounded-xl border border-neutral-200 bg-white p-6 text-neutral-600">Loading dashboard...</div>
-      <div *ngIf="!loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div class="bg-white rounded-lg shadow border border-neutral-200 p-6"><p class="text-neutral-600 text-sm">Total Orders</p><p class="text-3xl font-bold text-neutral-900 mt-2">{{ totalOrders }}</p></div>
-        <div class="bg-white rounded-lg shadow border border-neutral-200 p-6"><p class="text-neutral-600 text-sm">Overdue Orders</p><p class="text-3xl font-bold text-neutral-900 mt-2">{{ overdueOrders }}</p></div>
-        <div class="bg-white rounded-lg shadow border border-neutral-200 p-6"><p class="text-neutral-600 text-sm">Total Spend</p><p class="text-3xl font-bold text-neutral-900 mt-2">{{ totalSpend }}</p></div>
-        <div class="bg-white rounded-lg shadow border border-neutral-200 p-6"><p class="text-neutral-600 text-sm">Top Suppliers</p><p class="text-3xl font-bold text-neutral-900 mt-2">{{ topSuppliers }}</p></div>
-      </div>
-    </div>
-  `,
+  templateUrl: './purchase-dashboard.component.html',
+  styleUrls: ['./purchase-dashboard.component.css'],
 })
 export class PurchaseDashboardComponent {
   private dashboardService = inject(DashboardService);

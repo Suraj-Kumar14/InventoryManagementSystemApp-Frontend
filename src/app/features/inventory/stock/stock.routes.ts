@@ -41,16 +41,9 @@ class StockService {
 
   getMovementHistory(warehouseId?: number, productId?: number) {
     let params = new HttpParams();
-    if (warehouseId) {
-      params = params.set('warehouseId', warehouseId);
-    }
-    if (productId) {
-      params = params.set('productId', productId);
-    }
-
-    return this.http.get<WarehouseStockMovementResponse[]>(`${this.baseUrl}${API_ENDPOINTS.STOCK.MOVEMENTS}`, {
-      params,
-    });
+    if (warehouseId) params = params.set('warehouseId', warehouseId);
+    if (productId) params = params.set('productId', productId);
+    return this.http.get<WarehouseStockMovementResponse[]>(`${this.baseUrl}${API_ENDPOINTS.STOCK.MOVEMENTS}`, { params });
   }
 
   updateStock(warehouseId: number, payload: StockUpdateRequest) {
@@ -84,73 +77,8 @@ class StockService {
 @Component({
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
-  template: `
-    <section class="space-y-6">
-      <div>
-        <h1 class="text-3xl font-bold text-neutral-900">Stock Levels</h1>
-        <p class="mt-2 text-neutral-600">View real stock, low-stock items, and warehouse transfers.</p>
-      </div>
-
-      <div class="grid gap-4 md:grid-cols-3">
-        <select [formControl]="warehouseIdControl" class="rounded-lg border border-neutral-300 px-4 py-2">
-          <option [ngValue]="0">Select warehouse</option>
-          <option *ngFor="let warehouse of warehouses" [ngValue]="warehouse.warehouseId">{{ warehouse.name }}</option>
-        </select>
-        <input [formControl]="thresholdControl" type="number" class="rounded-lg border border-neutral-300 px-4 py-2" placeholder="Low stock threshold" />
-        <div class="flex gap-3">
-          <button type="button" (click)="loadWarehouseStock()" [disabled]="loading || !warehouseIdControl.value" class="rounded-lg bg-primary-600 px-4 py-2 text-white disabled:opacity-50">Warehouse Stock</button>
-          <button type="button" (click)="loadLowStock()" [disabled]="loading" class="rounded-lg border border-neutral-300 px-4 py-2">Low Stock</button>
-        </div>
-      </div>
-
-      <form [formGroup]="updateForm" (ngSubmit)="updateStock()" class="grid gap-4 rounded-xl border border-neutral-200 bg-white p-6 md:grid-cols-2">
-        <input formControlName="productId" type="number" placeholder="Product ID" class="rounded-lg border border-neutral-300 px-4 py-2" />
-        <input formControlName="quantity" type="number" placeholder="Quantity" class="rounded-lg border border-neutral-300 px-4 py-2" />
-        <input formControlName="binLocation" placeholder="Bin location" class="rounded-lg border border-neutral-300 px-4 py-2" />
-        <button type="submit" [disabled]="updateForm.invalid || !warehouseIdControl.value || saving" class="rounded-lg bg-primary-600 px-4 py-2 text-white disabled:opacity-50">
-          {{ saving ? 'Updating...' : 'Update Stock' }}
-        </button>
-      </form>
-
-      <form [formGroup]="transferForm" (ngSubmit)="transferStock()" class="grid gap-4 rounded-xl border border-neutral-200 bg-white p-6 md:grid-cols-2">
-        <input formControlName="fromWarehouseId" type="number" placeholder="From warehouse ID" class="rounded-lg border border-neutral-300 px-4 py-2" />
-        <input formControlName="toWarehouseId" type="number" placeholder="To warehouse ID" class="rounded-lg border border-neutral-300 px-4 py-2" />
-        <input formControlName="productId" type="number" placeholder="Product ID" class="rounded-lg border border-neutral-300 px-4 py-2" />
-        <input formControlName="quantity" type="number" placeholder="Quantity" class="rounded-lg border border-neutral-300 px-4 py-2" />
-        <input formControlName="reason" placeholder="Reason" class="rounded-lg border border-neutral-300 px-4 py-2 md:col-span-2" />
-        <button type="submit" [disabled]="transferForm.invalid || transferring" class="rounded-lg bg-primary-600 px-4 py-2 text-white disabled:opacity-50 md:col-span-2">
-          {{ transferring ? 'Transferring...' : 'Transfer Stock' }}
-        </button>
-      </form>
-
-      <div *ngIf="loading" class="rounded-xl border border-neutral-200 bg-white p-6 text-neutral-600">Loading stock data...</div>
-      <div *ngIf="!loading && stock.length === 0" class="rounded-xl border border-dashed border-neutral-300 bg-white p-8 text-center text-neutral-600">No stock data returned by the backend.</div>
-      <div *ngIf="!loading && stock.length > 0" class="overflow-hidden rounded-xl border border-neutral-200 bg-white">
-        <table class="min-w-full divide-y divide-neutral-200 text-sm">
-          <thead class="bg-neutral-50 text-left text-neutral-600">
-            <tr>
-              <th class="px-4 py-3">Warehouse</th>
-              <th class="px-4 py-3">Product</th>
-              <th class="px-4 py-3">Quantity</th>
-              <th class="px-4 py-3">Reserved</th>
-              <th class="px-4 py-3">Available</th>
-              <th class="px-4 py-3">Bin</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-neutral-200">
-            <tr *ngFor="let item of stock">
-              <td class="px-4 py-3">{{ item.warehouseId }}</td>
-              <td class="px-4 py-3">{{ item.productId }}</td>
-              <td class="px-4 py-3">{{ item.quantity }}</td>
-              <td class="px-4 py-3">{{ item.reservedQuantity }}</td>
-              <td class="px-4 py-3">{{ item.availableQuantity }}</td>
-              <td class="px-4 py-3">{{ item.binLocation || 'Not set' }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-  `,
+  templateUrl: './stock-page.component.html',
+  styleUrls: ['./stock-page.component.css'],
 })
 class StockPageComponent {
   private service = inject(StockService);
@@ -188,10 +116,7 @@ class StockPageComponent {
 
   loadWarehouseStock(): void {
     const warehouseId = this.warehouseIdControl.value;
-    if (!warehouseId) {
-      return;
-    }
-
+    if (!warehouseId) return;
     this.loading = true;
     this.service.getStockByWarehouse(warehouseId).pipe(finalize(() => (this.loading = false))).subscribe({
       next: (stock) => (this.stock = stock),
@@ -208,37 +133,21 @@ class StockPageComponent {
   }
 
   updateStock(): void {
-    if (this.updateForm.invalid || !this.warehouseIdControl.value) {
-      return;
-    }
-
+    if (this.updateForm.invalid || !this.warehouseIdControl.value) return;
     this.saving = true;
     this.service
       .updateStock(this.warehouseIdControl.value, this.updateForm.getRawValue())
       .pipe(finalize(() => (this.saving = false)))
-      .subscribe({
-        next: () => {
-          this.notifications.success('Stock updated successfully.');
-          this.loadWarehouseStock();
-        },
-      });
+      .subscribe({ next: () => { this.notifications.success('Stock updated successfully.'); this.loadWarehouseStock(); } });
   }
 
   transferStock(): void {
-    if (this.transferForm.invalid) {
-      return;
-    }
-
+    if (this.transferForm.invalid) return;
     this.transferring = true;
     this.service
       .transferStock(this.transferForm.getRawValue())
       .pipe(finalize(() => (this.transferring = false)))
-      .subscribe({
-        next: (message) => {
-          this.notifications.success(message || 'Stock transferred successfully.');
-          this.loadWarehouseStock();
-        },
-      });
+      .subscribe({ next: (message) => { this.notifications.success(message || 'Stock transferred successfully.'); this.loadWarehouseStock(); } });
   }
 }
 

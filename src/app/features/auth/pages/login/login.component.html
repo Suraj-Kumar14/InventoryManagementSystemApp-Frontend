@@ -1,0 +1,51 @@
+<div class="auth-page">
+  <div class="auth-container">
+    <div class="auth-header">
+      <h1 class="auth-header__title">StockPro</h1>
+      <p class="auth-header__subtitle">Inventory Management System</p>
+    </div>
+
+    <div class="auth-card">
+      <h2 class="auth-card__title">Sign In</h2>
+
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="auth-form">
+        <div class="form-group">
+          <label for="email" class="form-label">Email Address</label>
+          <input id="email" type="email" formControlName="email"
+                 placeholder="user@example.com" class="form-input" />
+          <p *ngIf="showError('email')" class="form-error">Invalid email.</p>
+        </div>
+
+        <div class="form-group">
+          <label for="password" class="form-label">Password</label>
+          <input id="password" type="password" formControlName="password" class="form-input" />
+          <p *ngIf="showError('password')" class="form-error">Password is required.</p>
+        </div>
+
+        <p *ngIf="serverError" class="form-server-error">{{ serverError }}</p>
+
+        <button type="submit" [disabled]="loginForm.invalid || isLoading" class="btn-primary">
+          {{ isLoading ? 'Signing in...' : 'Sign In' }}
+        </button>
+      </form>
+
+      <button type="button" (click)="loginWithGoogle()" [disabled]="isLoading" class="btn-google">
+        <svg *ngIf="!isLoading" aria-hidden="true" viewBox="0 0 24 24" class="btn-google__icon">
+          <path fill="#EA4335" d="M12 10.2v3.9h5.4c-.2 1.3-1.5 3.9-5.4 3.9-3.2 0-5.9-2.7-5.9-6s2.7-6 5.9-6c1.8 0 3 .8 3.7 1.5l2.5-2.4C16.6 3.6 14.5 2.8 12 2.8 6.9 2.8 2.8 7 2.8 12s4.1 9.2 9.2 9.2c5.3 0 8.8-3.7 8.8-8.9 0-.6-.1-1.1-.2-1.6H12Z"/>
+          <path fill="#34A853" d="M2.8 12c0 5 4.1 9.2 9.2 9.2 5.3 0 8.8-3.7 8.8-8.9 0-.6-.1-1.1-.2-1.6H12v3.9h5.4c-.2 1.3-1.5 3.9-5.4 3.9-3.2 0-5.9-2.7-5.9-6Z"/>
+          <path fill="#4A90E2" d="M2.8 6.7l3.2 2.3C6.9 7.2 9.2 5.9 12 5.9c1.8 0 3 .8 3.7 1.5l2.5-2.4C16.6 3.6 14.5 2.8 12 2.8c-3.5 0-6.6 2-8.1 4.9Z"/>
+          <path fill="#FBBC05" d="M2.8 12c0 1.5.4 2.9 1.2 4.1L7.5 13c-.2-.3-.3-.7-.3-1s.1-.7.3-1L4 7.9C3.2 9.1 2.8 10.5 2.8 12Z"/>
+        </svg>
+        {{ isLoading ? 'Please wait...' : 'Login with Google' }}
+      </button>
+
+      <p class="auth-footer">
+        <a routerLink="/forgot-password" class="auth-link">Forgot password?</a>
+      </p>
+      <p class="auth-footer">
+        Don't have an account?
+        <a routerLink="/register" class="auth-link">Sign Up</a>
+      </p>
+    </div>
+  </div>
+</div>

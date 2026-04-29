@@ -1,0 +1,25 @@
+<aside class="sidebar" [class.sidebar--collapsed]="isCollapsed">
+  <nav class="sidebar-nav">
+    <ng-container *ngFor="let item of getMenuItems()">
+      <a
+        [routerLink]="item.route"
+        routerLinkActive="sidebar-link--active"
+        class="sidebar-link"
+        [title]="item.label"
+      >
+        <span class="sidebar-link__icon">{{ item.icon }}</span>
+        <span *ngIf="!isCollapsed" class="sidebar-link__label">{{ item.label }}</span>
+      </a>
+    </ng-container>
+
+    <a
+      routerLink="/settings"
+      routerLinkActive="sidebar-link--active"
+      class="sidebar-link sidebar-link--settings"
+      title="Settings"
+    >
+      <span class="sidebar-link__icon">⚙</span>
+      <span *ngIf="!isCollapsed" class="sidebar-link__label">Settings</span>
+    </a>
+  </nav>
+</aside>

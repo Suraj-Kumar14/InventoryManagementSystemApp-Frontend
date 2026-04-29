@@ -1,0 +1,27 @@
+<div class="dashboard">
+  <div class="dashboard-header">
+    <h1 class="dashboard-header__title">Admin Dashboard</h1>
+    <p class="dashboard-header__subtitle">Live admin metrics sourced from backend APIs.</p>
+  </div>
+
+  <div *ngIf="loading" class="dashboard-loading">Loading dashboard...</div>
+
+  <div *ngIf="!loading" class="stats-grid">
+    <div class="stat-card">
+      <p class="stat-card__label">Total Users</p>
+      <p class="stat-card__value">{{ usersCount }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-card__label">Warehouses</p>
+      <p class="stat-card__value">{{ warehousesCount }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-card__label">Stock Value</p>
+      <p class="stat-card__value">{{ stockValue }}</p>
+    </div>
+    <div class="stat-card">
+      <p class="stat-card__label">Recent Alerts</p>
+      <p class="stat-card__value">{{ recentAlerts }}</p>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,16 @@
+@import '../../shared/styles/page-common.css';
+
+/* Stats grid reused from admin-dashboard pattern */
+.stats-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+.stat-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+}
+.stat-card__label { font-size: 13px; color: #6b7280; margin: 0 0 8px; }
+.stat-card__value { font-size: 28px; font-weight: 700; color: #111827; margin: 0; }

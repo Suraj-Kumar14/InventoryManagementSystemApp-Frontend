@@ -1,0 +1,159 @@
+<!-- Confirmation Modal -->
+<div *ngIf="confirmModal.visible" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-icon" [class.modal-icon--danger]="confirmModal.action === 'deactivate'"
+           [class.modal-icon--success]="confirmModal.action === 'activate'">
+        <svg *ngIf="confirmModal.action === 'deactivate'" xmlns="http://www.w3.org/2000/svg"
+             class="modal-icon__svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M18.364 5.636a9 9 0 11-12.728 12.728A9 9 0 0118.364 5.636z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9.172 9.172l5.656 5.656M14.828 9.172l-5.656 5.656"/>
+        </svg>
+        <svg *ngIf="confirmModal.action === 'activate'" xmlns="http://www.w3.org/2000/svg"
+             class="modal-icon__svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+        </svg>
+      </div>
+      <h3 class="modal-title">
+        {{ confirmModal.action === 'deactivate' ? 'Deactivate User' : 'Activate User' }}
+      </h3>
+    </div>
+    <p class="modal-body">
+      Are you sure you want to <strong>{{ confirmModal.action }}</strong>
+      <span class="modal-body__name"> {{ confirmModal.userName }}</span>?
+      {{ confirmModal.action === 'deactivate' ? 'They will not be able to log in.' : 'They will regain access.' }}
+    </p>
+    <div class="modal-footer">
+      <button type="button" (click)="closeModal()" class="btn-cancel">Cancel</button>
+      <button type="button" (click)="confirmAction()"
+              class="btn-confirm"
+              [class.btn-confirm--danger]="confirmModal.action === 'deactivate'"
+              [class.btn-confirm--success]="confirmModal.action === 'activate'">
+        Confirm {{ confirmModal.action === 'deactivate' ? 'Deactivate' : 'Activate' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Page -->
+<section class="users-page">
+
+  <!-- Header -->
+  <div class="users-header">
+    <div>
+      <h1 class="users-header__title">Users</h1>
+      <p class="users-header__subtitle">Manage registered users from the auth service.</p>
+    </div>
+    <button type="button" id="refresh-users-btn" (click)="loadUsers()"
+            [disabled]="loading" class="btn-refresh">
+      <svg *ngIf="!loading" xmlns="http://www.w3.org/2000/svg" class="btn-icon" fill="none"
+           viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+      </svg>
+      <svg *ngIf="loading" class="btn-icon animate-spin" xmlns="http://www.w3.org/2000/svg"
+           fill="none" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" style="opacity:0.25"></circle>
+        <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" style="opacity:0.75"></path>
+      </svg>
+      {{ loading ? 'Refreshing...' : 'Refresh' }}
+    </button>
+  </div>
+
+  <!-- Loading skeleton -->
+  <div *ngIf="loading" class="table-card">
+    <div class="skeleton-header"></div>
+    <div *ngFor="let i of [1,2,3,4,5]" class="skeleton-row">
+      <div class="skeleton skeleton-cell skeleton-cell--sm"></div>
+      <div class="skeleton skeleton-cell skeleton-cell--md"></div>
+      <div class="skeleton skeleton-cell skeleton-cell--lg"></div>
+      <div class="skeleton skeleton-cell skeleton-cell--md"></div>
+      <div class="skeleton skeleton-cell skeleton-cell--sm"></div>
+      <div class="skeleton skeleton-cell skeleton-cell--sm"></div>
+    </div>
+  </div>
+
+  <!-- Error state -->
+  <div *ngIf="!loading && loadError" class="error-banner">
+    <svg xmlns="http://www.w3.org/2000/svg" class="error-banner__icon" fill="none"
+         viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>
+    <span>{{ loadError }}</span>
+    <button (click)="loadUsers()" class="error-banner__retry">Retry</button>
+  </div>
+
+  <!-- Empty state -->
+  <div *ngIf="!loading && !loadError && users.length === 0" class="empty-state">
+    <svg xmlns="http://www.w3.org/2000/svg" class="empty-state__icon" fill="none"
+         viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+    </svg>
+    No users returned by the backend.
+  </div>
+
+  <!-- Users table -->
+  <div *ngIf="!loading && !loadError && users.length > 0" class="table-card">
+
+    <!-- Stats bar -->
+    <div class="stats-bar">
+      <span class="stats-bar__item">Total: <strong>{{ users.length }}</strong></span>
+      <span class="stats-bar__item stats-bar__item--success">Active: <strong>{{ activeCount }}</strong></span>
+      <span class="stats-bar__item stats-bar__item--danger">Inactive: <strong>{{ inactiveCount }}</strong></span>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="users-table">
+        <thead class="users-table__head">
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Department</th>
+            <th>Status</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let user of users; let i = index" class="users-table__row">
+            <td class="cell-index">{{ i + 1 }}</td>
+            <td class="cell-name">{{ user.name }}</td>
+            <td class="cell-email">{{ user.email }}</td>
+            <td>
+              <span class="badge badge--role">{{ getRoleLabel(user.role) }}</span>
+            </td>
+            <td class="cell-dept">{{ user.department || '—' }}</td>
+            <td>
+              <span class="badge" [class.badge--active]="user.isActive" [class.badge--inactive]="!user.isActive">
+                <span class="badge__dot" [class.badge__dot--active]="user.isActive" [class.badge__dot--inactive]="!user.isActive"></span>
+                {{ user.isActive ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+            <td class="cell-actions">
+              <button type="button"
+                      [id]="'user-action-btn-' + user.userId"
+                      (click)="openConfirmModal(user)"
+                      [disabled]="actionUserId === user.userId"
+                      class="btn-action"
+                      [class.btn-action--danger]="user.isActive"
+                      [class.btn-action--success]="!user.isActive">
+                <svg *ngIf="actionUserId === user.userId" class="btn-icon animate-spin"
+                     xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" style="opacity:0.25"></circle>
+                  <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" style="opacity:0.75"></path>
+                </svg>
+                <span *ngIf="actionUserId !== user.userId">{{ user.isActive ? 'Deactivate' : 'Activate' }}</span>
+                <span *ngIf="actionUserId === user.userId">Working...</span>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>

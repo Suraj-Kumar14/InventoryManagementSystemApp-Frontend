@@ -1,0 +1,13 @@
+<div class="dashboard">
+  <div class="dashboard-header">
+    <h1 class="dashboard-header__title">Warehouse Dashboard</h1>
+    <p class="dashboard-header__subtitle">Warehouse activity and stock health from backend services.</p>
+  </div>
+  <div *ngIf="loading" class="dashboard-loading">Loading dashboard...</div>
+  <div *ngIf="!loading" class="stats-grid">
+    <div class="stat-card"><p class="stat-card__label">Warehouses</p><p class="stat-card__value">{{ warehouses }}</p></div>
+    <div class="stat-card"><p class="stat-card__label">Movements</p><p class="stat-card__value">{{ movements }}</p></div>
+    <div class="stat-card"><p class="stat-card__label">Recent Alerts</p><p class="stat-card__value">{{ alerts }}</p></div>
+    <div class="stat-card"><p class="stat-card__label">Low Stock Records</p><p class="stat-card__value">{{ lowStock }}</p></div>
+  </div>
+</div>

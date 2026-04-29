@@ -7,18 +7,8 @@ import { DashboardService } from '../../services/dashboard.service';
   selector: 'app-admin-dashboard',
   standalone: true,
   imports: [CommonModule],
-  template: `
-    <div class="space-y-6">
-      <div><h1 class="text-3xl font-bold text-neutral-900">Admin Dashboard</h1><p class="text-neutral-600 mt-2">Live admin metrics sourced from backend APIs.</p></div>
-      <div *ngIf="loading" class="rounded-xl border border-neutral-200 bg-white p-6 text-neutral-600">Loading dashboard...</div>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" *ngIf="!loading">
-        <div class="bg-white rounded-lg shadow border border-neutral-200 p-6"><p class="text-neutral-600 text-sm">Total Users</p><p class="text-3xl font-bold text-neutral-900 mt-2">{{ usersCount }}</p></div>
-        <div class="bg-white rounded-lg shadow border border-neutral-200 p-6"><p class="text-neutral-600 text-sm">Warehouses</p><p class="text-3xl font-bold text-neutral-900 mt-2">{{ warehousesCount }}</p></div>
-        <div class="bg-white rounded-lg shadow border border-neutral-200 p-6"><p class="text-neutral-600 text-sm">Stock Value</p><p class="text-3xl font-bold text-neutral-900 mt-2">{{ stockValue }}</p></div>
-        <div class="bg-white rounded-lg shadow border border-neutral-200 p-6"><p class="text-neutral-600 text-sm">Recent Alerts</p><p class="text-3xl font-bold text-neutral-900 mt-2">{{ recentAlerts }}</p></div>
-      </div>
-    </div>
-  `,
+  templateUrl: './admin-dashboard.component.html',
+  styleUrls: ['./admin-dashboard.component.css'],
 })
 export class AdminDashboardComponent {
   private dashboardService = inject(DashboardService);

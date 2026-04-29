@@ -1,0 +1,13 @@
+<div class="dashboard">
+  <div class="dashboard-header">
+    <h1 class="dashboard-header__title">Purchase Dashboard</h1>
+    <p class="dashboard-header__subtitle">Purchase metrics from purchase-service and report-service.</p>
+  </div>
+  <div *ngIf="loading" class="dashboard-loading">Loading dashboard...</div>
+  <div *ngIf="!loading" class="stats-grid">
+    <div class="stat-card"><p class="stat-card__label">Total Orders</p><p class="stat-card__value">{{ totalOrders }}</p></div>
+    <div class="stat-card"><p class="stat-card__label">Overdue Orders</p><p class="stat-card__value">{{ overdueOrders }}</p></div>
+    <div class="stat-card"><p class="stat-card__label">Total Spend</p><p class="stat-card__value">{{ totalSpend }}</p></div>
+    <div class="stat-card"><p class="stat-card__label">Top Suppliers</p><p class="stat-card__value">{{ topSuppliers }}</p></div>
+  </div>
+</div>

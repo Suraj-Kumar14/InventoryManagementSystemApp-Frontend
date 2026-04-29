@@ -1,0 +1,50 @@
+<section class="page">
+  <div class="page-header">
+    <h1 class="page-header__title">Stock Movements</h1>
+    <p class="page-header__subtitle">Record and review immutable stock movement events.</p>
+  </div>
+
+  <div class="filter-card filter-card--4col">
+    <input [formControl]="filterProductIdControl" type="number" placeholder="Filter by product ID" class="page-input" />
+    <input [formControl]="filterWarehouseIdControl" type="number" placeholder="Filter by warehouse ID" class="page-input" />
+    <input [formControl]="startDateControl" type="date" class="page-input" />
+    <input [formControl]="endDateControl" type="date" class="page-input" />
+    <div class="page-actions filter-card__full">
+      <button type="button" (click)="loadMovements()" [disabled]="loading" class="btn-primary">{{ loading ? 'Loading...' : 'Apply Filters' }}</button>
+      <button type="button" (click)="resetFilters()" [disabled]="loading" class="btn-secondary">Reset</button>
+    </div>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="create()" class="form-card">
+    <input formControlName="productId" type="number" placeholder="Product ID" class="page-input" />
+    <input formControlName="warehouseId" type="number" placeholder="Warehouse ID" class="page-input" />
+    <input formControlName="movementType" placeholder="Movement type" class="page-input" />
+    <input formControlName="quantity" type="number" placeholder="Quantity" class="page-input" />
+    <input formControlName="balanceAfter" type="number" placeholder="Balance after" class="page-input" />
+    <input formControlName="referenceId" type="number" placeholder="Reference ID" class="page-input" />
+    <input formControlName="referenceType" placeholder="Reference type" class="page-input" />
+    <textarea formControlName="notes" placeholder="Notes" class="page-textarea form-card__full"></textarea>
+    <button type="submit" [disabled]="form.invalid || saving" class="btn-primary form-card__full">{{ saving ? 'Recording...' : 'Record Movement' }}</button>
+  </form>
+
+  <div *ngIf="loading" class="page-loading">Loading movements...</div>
+  <div *ngIf="!loading && movements.length === 0" class="page-empty">No movements returned by the backend.</div>
+
+  <div *ngIf="!loading && movements.length > 0" class="table-card">
+    <div class="table-wrapper">
+      <table class="page-table">
+        <thead><tr><th>Date</th><th>Type</th><th>Product</th><th>Warehouse</th><th>Qty</th><th>Balance</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let movement of movements">
+            <td>{{ movement.movementDate || 'N/A' }}</td>
+            <td>{{ movement.movementType }}</td>
+            <td>{{ movement.productId }}</td>
+            <td>{{ movement.warehouseId }}</td>
+            <td>{{ movement.quantity }}</td>
+            <td>{{ movement.balanceAfter }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>

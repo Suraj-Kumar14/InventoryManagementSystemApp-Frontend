@@ -1,0 +1,11 @@
+<div class="app-shell">
+  <app-navbar (toggleSidebar)="sidebarCollapsed.set(!sidebarCollapsed())"></app-navbar>
+  <div class="app-body">
+    <app-sidebar [isCollapsed]="sidebarCollapsed()"></app-sidebar>
+    <main class="main-content">
+      <div class="main-content-inner">
+        <router-outlet></router-outlet>
+      </div>
+    </main>
+  </div>
+</div>

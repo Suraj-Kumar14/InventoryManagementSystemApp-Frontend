@@ -1,0 +1,37 @@
+@import '../admin-dashboard/admin-dashboard.component.css';
+
+.movements-card {
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  padding: 20px;
+}
+
+.movements-card__title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 16px;
+}
+
+.movements-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.movement-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 8px;
+  background: #f9fafb;
+  padding: 12px 16px;
+  font-size: 14px;
+  color: #374151;
+}
+
+.movement-row__qty {
+  font-weight: 600;
+  color: #111827;
+}

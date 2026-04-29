@@ -1,0 +1,62 @@
+<section class="page">
+  <div class="page-header">
+    <h1 class="page-header__title">Stock Levels</h1>
+    <p class="page-header__subtitle">View real stock, low-stock items, and warehouse transfers.</p>
+  </div>
+
+  <div class="filter-card filter-card--3col">
+    <select [formControl]="warehouseIdControl" class="page-select">
+      <option [ngValue]="0">Select warehouse</option>
+      <option *ngFor="let warehouse of warehouses" [ngValue]="warehouse.warehouseId">{{ warehouse.name }}</option>
+    </select>
+    <input [formControl]="thresholdControl" type="number" class="page-input" placeholder="Low stock threshold" />
+    <div class="page-actions">
+      <button type="button" (click)="loadWarehouseStock()" [disabled]="loading || !warehouseIdControl.value" class="btn-primary">Warehouse Stock</button>
+      <button type="button" (click)="loadLowStock()" [disabled]="loading" class="btn-secondary">Low Stock</button>
+    </div>
+  </div>
+
+  <form [formGroup]="updateForm" (ngSubmit)="updateStock()" class="form-card">
+    <input formControlName="productId" type="number" placeholder="Product ID" class="page-input" />
+    <input formControlName="quantity" type="number" placeholder="Quantity" class="page-input" />
+    <input formControlName="binLocation" placeholder="Bin location" class="page-input" />
+    <button type="submit" [disabled]="updateForm.invalid || !warehouseIdControl.value || saving" class="btn-primary">
+      {{ saving ? 'Updating...' : 'Update Stock' }}
+    </button>
+  </form>
+
+  <form [formGroup]="transferForm" (ngSubmit)="transferStock()" class="form-card">
+    <input formControlName="fromWarehouseId" type="number" placeholder="From warehouse ID" class="page-input" />
+    <input formControlName="toWarehouseId" type="number" placeholder="To warehouse ID" class="page-input" />
+    <input formControlName="productId" type="number" placeholder="Product ID" class="page-input" />
+    <input formControlName="quantity" type="number" placeholder="Quantity" class="page-input" />
+    <input formControlName="reason" placeholder="Reason" class="page-input form-card__full" />
+    <button type="submit" [disabled]="transferForm.invalid || transferring" class="btn-primary form-card__full">
+      {{ transferring ? 'Transferring...' : 'Transfer Stock' }}
+    </button>
+  </form>
+
+  <div *ngIf="loading" class="page-loading">Loading stock data...</div>
+  <div *ngIf="!loading && stock.length === 0" class="page-empty">No stock data returned by the backend.</div>
+
+  <div *ngIf="!loading && stock.length > 0" class="table-card">
+    <div class="table-wrapper">
+      <table class="page-table">
+        <thead><tr>
+          <th>Warehouse</th><th>Product</th><th>Quantity</th>
+          <th>Reserved</th><th>Available</th><th>Bin</th>
+        </tr></thead>
+        <tbody>
+          <tr *ngFor="let item of stock">
+            <td>{{ item.warehouseId }}</td>
+            <td>{{ item.productId }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>{{ item.reservedQuantity }}</td>
+            <td>{{ item.availableQuantity }}</td>
+            <td>{{ item.binLocation || 'Not set' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>

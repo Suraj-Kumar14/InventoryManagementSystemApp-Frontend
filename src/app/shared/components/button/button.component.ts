@@ -5,18 +5,8 @@ import { CommonModule } from '@angular/common';
   selector: 'app-button',
   standalone: true,
   imports: [CommonModule],
-  template: `
-    <button
-      type="button"
-      (click)="onClick()"
-      [disabled]="isLoading || disabled"
-      [ngClass]="getButtonClasses()"
-      class="inline-flex items-center justify-center gap-2 px-4 py-2 font-medium rounded-lg transition-all duration-200"
-    >
-      <span *ngIf="isLoading" class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></span>
-      <span>{{ label }}</span>
-    </button>
-  `,
+  templateUrl: './button.component.html',
+  styleUrls: ['./button.component.css'],
 })
 export class ButtonComponent {
   @Input() label = 'Button';
@@ -26,24 +16,6 @@ export class ButtonComponent {
   @Output() clicked = new EventEmitter<void>();
 
   onClick(): void {
-    if (!this.isLoading && !this.disabled) {
-      this.clicked.emit();
-    }
-  }
-
-  getButtonClasses(): string {
-    const baseClasses = 'font-medium rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed';
-
-    const variantClasses = {
-      primary: 'bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800',
-      secondary: 'bg-neutral-200 text-neutral-900 hover:bg-neutral-300 active:bg-neutral-400',
-      danger: 'bg-danger-600 text-white hover:bg-danger-700 active:bg-danger-800',
-      success: 'bg-success-600 text-white hover:bg-success-700 active:bg-success-800',
-    };
-
-    return `${baseClasses} ${variantClasses[this.variant]}`;
+    if (!this.isLoading && !this.disabled) this.clicked.emit();
   }
 }
-
-
-

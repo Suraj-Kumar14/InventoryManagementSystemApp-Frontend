@@ -1,0 +1,69 @@
+<section class="page">
+  <div class="page-header">
+    <h1 class="page-header__title">Products</h1>
+    <p class="page-header__subtitle">Search and manage products strictly through product-service APIs.</p>
+  </div>
+
+  <div class="filter-card filter-card--4col">
+    <input [formControl]="searchControl" placeholder="Search name, SKU, barcode, category, or brand" class="page-input form-card__full" />
+    <select [formControl]="categoryControl" class="page-select">
+      <option value="">All categories</option>
+      <option *ngFor="let category of categories" [value]="category">{{ category }}</option>
+    </select>
+    <select [formControl]="brandControl" class="page-select">
+      <option value="">All brands</option>
+      <option *ngFor="let brand of brands" [value]="brand">{{ brand }}</option>
+    </select>
+    <div class="page-actions">
+      <button type="button" (click)="loadProducts()" [disabled]="loading" class="btn-primary">{{ loading ? 'Loading...' : 'Search' }}</button>
+      <button type="button" (click)="resetFilters()" [disabled]="loading" class="btn-secondary">Reset Filters</button>
+    </div>
+  </div>
+
+  <form *ngIf="canManage" [formGroup]="form" (ngSubmit)="save()" class="form-card">
+    <input formControlName="sku" placeholder="SKU" class="page-input" />
+    <input formControlName="name" placeholder="Name" class="page-input" />
+    <input formControlName="category" placeholder="Category" class="page-input" />
+    <input formControlName="brand" placeholder="Brand" class="page-input" />
+    <input formControlName="unitOfMeasure" placeholder="Unit of measure" class="page-input" />
+    <input formControlName="barcode" placeholder="Barcode" class="page-input" />
+    <input formControlName="costPrice" type="number" step="0.01" placeholder="Cost price" class="page-input" />
+    <input formControlName="sellingPrice" type="number" step="0.01" placeholder="Selling price" class="page-input" />
+    <input formControlName="reorderLevel" type="number" placeholder="Reorder level" class="page-input" />
+    <input formControlName="maxStockLevel" type="number" placeholder="Max stock level" class="page-input" />
+    <input formControlName="leadTimeDays" type="number" placeholder="Lead time days" class="page-input" />
+    <input formControlName="imageUrl" placeholder="Image URL" class="page-input" />
+    <textarea formControlName="description" placeholder="Description" class="page-textarea form-card__full"></textarea>
+    <div class="page-actions form-card__full">
+      <button type="submit" [disabled]="form.invalid || saving" class="btn-primary">{{ saving ? 'Saving...' : editingId ? 'Update Product' : 'Create Product' }}</button>
+      <button type="button" (click)="resetForm()" class="btn-secondary">Clear</button>
+    </div>
+  </form>
+
+  <div *ngIf="!canManage" class="page-notice">Product create, update, deactivate, and delete actions are available only for Inventory Managers and Admins.</div>
+
+  <div *ngIf="loading" class="page-loading">Loading products...</div>
+  <div *ngIf="!loading && products.length === 0" class="page-empty">No products returned by the backend.</div>
+
+  <div *ngIf="!loading && products.length > 0" class="table-card">
+    <div class="table-wrapper">
+      <table class="page-table">
+        <thead><tr><th>SKU</th><th>Name</th><th>Category</th><th>Prices</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let product of products">
+            <td><strong>{{ product.sku }}</strong></td>
+            <td>{{ product.name }}</td>
+            <td>{{ product.category }}</td>
+            <td>Cost {{ product.costPrice }} / Sell {{ product.sellingPrice }}</td>
+            <td>{{ product.isActive ? 'Active' : 'Inactive' }}</td>
+            <td>
+              <button *ngIf="canManage" type="button" (click)="edit(product)" class="btn-neutral">Edit</button>
+              <button *ngIf="canManage" type="button" (click)="deactivate(product)" [disabled]="actionId === product.productId || !product.isActive" class="btn-danger">Deactivate</button>
+              <button *ngIf="canManage" type="button" (click)="remove(product)" [disabled]="actionId === product.productId" class="btn-danger">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>

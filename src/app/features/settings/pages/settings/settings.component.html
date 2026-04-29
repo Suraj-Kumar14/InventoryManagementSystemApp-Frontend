@@ -1,0 +1,77 @@
+<div class="settings-page">
+  <div class="settings-header">
+    <h1 class="settings-header__title">Settings</h1>
+    <p class="settings-header__subtitle">Manage your profile and password using auth-service APIs.</p>
+  </div>
+
+  <!-- Profile Card -->
+  <div class="settings-card">
+    <h2 class="settings-card__title">Profile Settings</h2>
+
+    <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="settings-form">
+      <div class="form-group">
+        <label for="name" class="form-label">Full Name</label>
+        <input id="name" type="text" formControlName="name" class="form-input" />
+      </div>
+
+      <div class="form-group">
+        <label for="email" class="form-label">Email Address</label>
+        <input id="email" type="email" formControlName="email"
+               [attr.disabled]="true" class="form-input form-input--disabled" />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="phone" class="form-label">Phone</label>
+          <input id="phone" type="text" formControlName="phone" class="form-input" />
+        </div>
+        <div class="form-group">
+          <label for="department" class="form-label">Department</label>
+          <input id="department" type="text" formControlName="department" class="form-input" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="role" class="form-label">Role</label>
+        <input id="role" type="text" formControlName="roleLabel"
+               [attr.disabled]="true" class="form-input form-input--disabled" />
+      </div>
+
+      <button type="submit"
+              [disabled]="profileForm.invalid || profileSaving || loadingProfile"
+              class="btn-primary">
+        {{ profileSaving ? 'Saving...' : 'Save Changes' }}
+      </button>
+    </form>
+  </div>
+
+  <!-- Password Card -->
+  <div class="settings-card">
+    <h2 class="settings-card__title">Change Password</h2>
+
+    <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="settings-form">
+      <div class="form-group">
+        <label for="currentPassword" class="form-label">Current Password</label>
+        <input id="currentPassword" type="password" formControlName="currentPassword" class="form-input" />
+      </div>
+
+      <div class="form-group">
+        <label for="newPassword" class="form-label">New Password</label>
+        <input id="newPassword" type="password" formControlName="newPassword" class="form-input" />
+      </div>
+
+      <div class="form-group">
+        <label for="confirmNewPassword" class="form-label">Confirm New Password</label>
+        <input id="confirmNewPassword" type="password" formControlName="confirmNewPassword" class="form-input" />
+      </div>
+
+      <p *ngIf="passwordError" class="form-error">{{ passwordError }}</p>
+
+      <button type="submit"
+              [disabled]="passwordForm.invalid || passwordSaving"
+              class="btn-primary">
+        {{ passwordSaving ? 'Updating...' : 'Update Password' }}
+      </button>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,33 @@
+<section class="page">
+  <div class="page-header">
+    <h1 class="page-header__title">Bin Locations</h1>
+    <p class="page-header__subtitle">Bin data is sourced from stock-service binLocation fields.</p>
+  </div>
+
+  <div class="page-actions">
+    <select [formControl]="warehouseControl" class="page-select" style="width:auto">
+      <option [ngValue]="0">Select warehouse</option>
+      <option *ngFor="let warehouse of warehouses" [ngValue]="warehouse.warehouseId">{{ warehouse.name }}</option>
+    </select>
+    <button type="button" (click)="loadBins()" [disabled]="loading || !warehouseControl.value" class="btn-primary">Load Bins</button>
+  </div>
+
+  <div *ngIf="loading" class="page-loading">Loading bin data...</div>
+  <div *ngIf="!loading && bins.length === 0" class="page-empty">No bin locations returned by the backend.</div>
+
+  <div *ngIf="!loading && bins.length > 0" class="table-card">
+    <div class="table-wrapper">
+      <table class="page-table">
+        <thead><tr><th>Bin</th><th>Product</th><th>Quantity</th><th>Available</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let item of bins">
+            <td>{{ item.binLocation || 'Unassigned' }}</td>
+            <td>{{ item.productId }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>{{ item.availableQuantity }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
