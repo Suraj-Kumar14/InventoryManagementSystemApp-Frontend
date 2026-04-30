@@ -6,7 +6,9 @@
 
   <div class="page-actions">
     <input [formControl]="statusControl" placeholder="Filter by status" class="page-input" style="width:auto" />
-    <button type="button" (click)="loadOrders()" [disabled]="loading" class="btn-primary">{{ loading ? 'Loading...' : 'Filter' }}</button>
+    <button type="button" (click)="loadOrders()" [disabled]="loading" class="btn-primary">
+      {{ loading ? 'Loading...' : 'Filter' }}
+    </button>
   </div>
 
   <form [formGroup]="form" (ngSubmit)="create()" class="form-card">
@@ -24,7 +26,9 @@
     <input formControlName="expectedDate" type="date" class="page-input" />
     <input formControlName="referenceNumber" placeholder="Reference number" class="page-input" />
     <textarea formControlName="notes" placeholder="Notes" class="page-textarea form-card__full"></textarea>
-    <button type="submit" [disabled]="form.invalid || saving" class="btn-primary form-card__full">{{ saving ? 'Creating...' : 'Create Purchase Order' }}</button>
+    <button type="submit" [disabled]="form.invalid || saving" class="btn-primary form-card__full">
+      {{ saving ? 'Creating...' : 'Create Purchase Order' }}
+    </button>
   </form>
 
   <div *ngIf="loading" class="page-loading">Loading purchase orders...</div>
@@ -34,16 +38,32 @@
     <article *ngFor="let order of orders" class="card-item">
       <div class="card-item__header">
         <div>
-          <h2 class="card-item__title">PO #{{ order.poId }} • {{ order.status }}</h2>
-          <p class="card-item__meta">Supplier {{ order.supplierId }} • Warehouse {{ order.warehouseId }} • Amount {{ order.totalAmount }}</p>
+          <h2 class="card-item__title">PO #{{ order.poId }} &bull; {{ order.status }}</h2>
+          <p class="card-item__meta">
+            Supplier {{ order.supplierId }} &bull; Warehouse {{ order.warehouseId }} &bull; Amount {{ order.totalAmount }}
+          </p>
+          <p class="card-item__meta">Payment: {{ getPaymentStatus(order) }}</p>
           <p class="card-item__body">{{ order.notes || 'No notes' }}</p>
         </div>
         <div class="page-actions">
-          <button type="button" (click)="submit(order.poId)" class="btn-neutral">Submit</button>
-          <button type="button" (click)="approve(order.poId)" class="btn-neutral">Approve</button>
-          <button type="button" (click)="reject(order.poId)" class="btn-danger">Reject</button>
-          <button type="button" (click)="cancel(order.poId)" class="btn-danger">Cancel</button>
-          <button type="button" (click)="receive(order)" class="btn-neutral">Receive</button>
+          <button type="button" (click)="submit(order.poId)" [disabled]="actionOrderId === order.poId" class="btn-neutral">
+            {{ actionOrderId === order.poId ? 'Working...' : 'Submit' }}
+          </button>
+          <button type="button" (click)="approve(order.poId)" [disabled]="actionOrderId === order.poId" class="btn-neutral">
+            {{ actionOrderId === order.poId ? 'Working...' : 'Approve' }}
+          </button>
+          <button type="button" (click)="reject(order.poId)" [disabled]="actionOrderId === order.poId" class="btn-danger">
+            {{ actionOrderId === order.poId ? 'Working...' : 'Reject' }}
+          </button>
+          <button type="button" (click)="cancel(order.poId)" [disabled]="actionOrderId === order.poId" class="btn-danger">
+            {{ actionOrderId === order.poId ? 'Working...' : 'Cancel' }}
+          </button>
+          <button type="button" (click)="receive(order)" [disabled]="actionOrderId === order.poId" class="btn-neutral">
+            {{ actionOrderId === order.poId ? 'Working...' : 'Receive' }}
+          </button>
+          <button *ngIf="canPay(order)" type="button" (click)="pay(order)" [disabled]="payingOrderId === order.poId" class="btn-primary">
+            {{ payingOrderId === order.poId ? 'Paying...' : getPaymentStatus(order) === 'FAILED' ? 'Retry Payment' : 'Pay' }}
+          </button>
         </div>
       </div>
     </article>
