@@ -1,34 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Component, Injectable, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Routes } from '@angular/router';
 import { finalize } from 'rxjs/operators';
 import { AlertRequest, AlertResponse } from '../../../core/http/backend.models';
 import { AuthService } from '../../../core/auth/services/auth.service';
+import { AlertService } from '../../../core/services/alert.service';
 import { NotificationService } from '../../../core/services/notification.service';
-import { API_ENDPOINTS, UserRole } from '../../../shared/config/app-config';
-import { environment } from '../../../../environments/environment';
+import { UserRole } from '../../../shared/config/app-config';
 import { roleGuard } from '../../../core/guards/role.guard';
-
-@Injectable({ providedIn: 'root' })
-class AlertsService {
-  private http = inject(HttpClient);
-  private baseUrl = environment.apiUrl;
-  getRecent(days: number) {
-    const params = new HttpParams().set('days', days);
-    return this.http.get<AlertResponse[]>(`${this.baseUrl}${API_ENDPOINTS.ALERTS.RECENT}`, { params });
-  }
-  getUnread(recipientId: number) {
-    return this.http.get<AlertResponse[]>(`${this.baseUrl}${API_ENDPOINTS.ALERTS.UNREAD(recipientId)}`);
-  }
-  create(payload: AlertRequest) {
-    return this.http.post<AlertResponse>(`${this.baseUrl}${API_ENDPOINTS.ALERTS.ROOT}`, payload);
-  }
-  markRead(id: number) {
-    return this.http.put(`${this.baseUrl}${API_ENDPOINTS.ALERTS.MARK_READ(id)}`, {}, { responseType: 'text' });
-  }
-}
 
 @Component({
   standalone: true,
@@ -37,15 +17,16 @@ class AlertsService {
   styleUrls: ['./alerts-page.component.css'],
 })
 class AlertsPageComponent {
-  private service = inject(AlertsService);
-  private auth = inject(AuthService);
-  private fb = inject(FormBuilder);
-  private notifications = inject(NotificationService);
+  private readonly service = inject(AlertService);
+  private readonly auth = inject(AuthService);
+  private readonly fb = inject(FormBuilder);
+  private readonly notifications = inject(NotificationService);
 
   alerts: AlertResponse[] = [];
   loading = false;
   saving = false;
   actionId: number | null = null;
+  private activeView: 'all' | 'unread' | 'recent' = 'all';
   readonly canManage = this.auth.hasRole([UserRole.ADMIN, UserRole.MANAGER]);
 
   form = this.fb.nonNullable.group({
@@ -56,47 +37,127 @@ class AlertsPageComponent {
     message: ['', Validators.required],
   });
 
-  constructor() { this.loadUnread(); }
+  constructor() {
+    this.loadAlerts();
+  }
+
+  loadAlerts(): void {
+    const userId = this.auth.getUserId();
+    if (!userId) {
+      this.alerts = [];
+      return;
+    }
+
+    this.activeView = 'all';
+    this.loading = true;
+    this.service
+      .getAlertsByRecipient(userId)
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: (alerts) => (this.alerts = alerts),
+        error: () => (this.alerts = []),
+      });
+  }
 
   loadUnread(): void {
     const userId = this.auth.getUserId();
-    if (!userId) { this.alerts = []; return; }
+    if (!userId) {
+      this.alerts = [];
+      return;
+    }
+
+    this.activeView = 'unread';
     this.loading = true;
-    this.service.getUnread(userId).pipe(finalize(() => (this.loading = false))).subscribe({
-      next: (alerts) => (this.alerts = alerts),
-      error: () => (this.alerts = []),
-    });
+    this.service
+      .getUnreadAlerts(userId)
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: (alerts) => (this.alerts = alerts),
+        error: () => (this.alerts = []),
+      });
   }
 
   loadRecent(): void {
+    this.activeView = 'recent';
     this.loading = true;
-    this.service.getRecent(7).pipe(finalize(() => (this.loading = false))).subscribe({
-      next: (alerts: AlertResponse[]) => (this.alerts = alerts),
-      error: () => (this.alerts = []),
-    });
+    this.service
+      .getRecentAlerts(7)
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: (alerts) => (this.alerts = alerts),
+        error: () => (this.alerts = []),
+      });
   }
 
   create(): void {
-    if (this.form.invalid || !this.canManage) return;
+    if (this.form.invalid || !this.canManage) {
+      return;
+    }
+
     this.saving = true;
-    const payload: AlertRequest = { ...this.form.getRawValue(), channel: 'IN_APP' };
-    this.service.create(payload).pipe(finalize(() => (this.saving = false))).subscribe({
-      next: () => {
-        this.notifications.success('Alert created successfully.');
-        this.form.reset({ recipientId: 0, type: '', severity: '', title: '', message: '' });
-        this.loadRecent();
-      },
-    });
+    const payload: AlertRequest = {
+      ...this.form.getRawValue(),
+      channel: 'IN_APP',
+    };
+
+    this.service
+      .createAlert(payload)
+      .pipe(finalize(() => (this.saving = false)))
+      .subscribe({
+        next: () => {
+          this.notifications.success('Alert created successfully.');
+          this.form.reset({ recipientId: 0, type: '', severity: '', title: '', message: '' });
+          this.loadRecent();
+        },
+      });
   }
 
   markRead(alert: AlertResponse): void {
     this.actionId = alert.alertId;
-    this.service.markRead(alert.alertId).pipe(finalize(() => (this.actionId = null))).subscribe({
-      next: () => { this.notifications.success('Alert marked as read.'); this.loadUnread(); },
-    });
+    this.service
+      .markRead(alert.alertId)
+      .pipe(finalize(() => (this.actionId = null)))
+      .subscribe({
+        next: () => {
+          this.notifications.success('Alert marked as read.');
+          this.reloadActiveView();
+        },
+      });
+  }
+
+  acknowledge(alert: AlertResponse): void {
+    this.actionId = alert.alertId;
+    this.service
+      .acknowledgeAlert(alert.alertId)
+      .pipe(finalize(() => (this.actionId = null)))
+      .subscribe({
+        next: () => {
+          this.notifications.success('Alert acknowledged.');
+          this.reloadActiveView();
+        },
+      });
+  }
+
+  private reloadActiveView(): void {
+    switch (this.activeView) {
+      case 'unread':
+        this.loadUnread();
+        break;
+      case 'recent':
+        this.loadRecent();
+        break;
+      default:
+        this.loadAlerts();
+        break;
+    }
   }
 }
 
 export const alertsRoutes: Routes = [
-  { path: '', component: AlertsPageComponent, canActivate: [roleGuard], data: { roles: [UserRole.ADMIN, UserRole.MANAGER] } },
+  {
+    path: '',
+    component: AlertsPageComponent,
+    canActivate: [roleGuard],
+    data: { roles: [UserRole.ADMIN, UserRole.MANAGER] },
+  },
 ];

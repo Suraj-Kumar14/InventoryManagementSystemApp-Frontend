@@ -1,78 +1,18 @@
 import { CommonModule } from '@angular/common';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Component, Injectable, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Routes } from '@angular/router';
 import { finalize } from 'rxjs/operators';
 import {
-  AcknowledgeWarehouseStockAlertRequest,
-  BarcodeStockLookupResponse,
-  StockAuditRequest,
-  StockAuditResponse,
   StockLevelResponse,
   StockTransferRequest,
   StockUpdateRequest,
   WarehouseResponse,
-  WarehouseStockAlertResponse,
-  WarehouseStockMovementResponse,
 } from '../../../core/http/backend.models';
 import { NotificationService } from '../../../core/services/notification.service';
-import { API_ENDPOINTS, UserRole } from '../../../shared/config/app-config';
-import { environment } from '../../../../environments/environment';
+import { WarehouseService } from '../../../core/services/warehouse.service';
+import { UserRole } from '../../../shared/config/app-config';
 import { roleGuard } from '../../../core/guards/role.guard';
-
-@Injectable({ providedIn: 'root' })
-class StockService {
-  private http = inject(HttpClient);
-  private baseUrl = environment.apiUrl;
-
-  getWarehouses() {
-    return this.http.get<WarehouseResponse[]>(`${this.baseUrl}${API_ENDPOINTS.WAREHOUSES.ROOT}`);
-  }
-
-  getStockByWarehouse(warehouseId: number) {
-    return this.http.get<StockLevelResponse[]>(`${this.baseUrl}${API_ENDPOINTS.STOCK.BY_WAREHOUSE(warehouseId)}`);
-  }
-
-  getLowStock(threshold: number) {
-    const params = new HttpParams().set('threshold', threshold);
-    return this.http.get<StockLevelResponse[]>(`${this.baseUrl}${API_ENDPOINTS.STOCK.LOW_STOCK}`, { params });
-  }
-
-  getMovementHistory(warehouseId?: number, productId?: number) {
-    let params = new HttpParams();
-    if (warehouseId) params = params.set('warehouseId', warehouseId);
-    if (productId) params = params.set('productId', productId);
-    return this.http.get<WarehouseStockMovementResponse[]>(`${this.baseUrl}${API_ENDPOINTS.STOCK.MOVEMENTS}`, { params });
-  }
-
-  updateStock(warehouseId: number, payload: StockUpdateRequest) {
-    return this.http.put<StockLevelResponse>(`${this.baseUrl}${API_ENDPOINTS.STOCK.UPDATE(warehouseId)}`, payload);
-  }
-
-  transferStock(payload: StockTransferRequest) {
-    return this.http.post(`${this.baseUrl}${API_ENDPOINTS.STOCK.TRANSFER}`, payload, { responseType: 'text' });
-  }
-
-  performAudit(payload: StockAuditRequest) {
-    return this.http.post<StockAuditResponse>(`${this.baseUrl}${API_ENDPOINTS.STOCK.AUDIT}`, payload);
-  }
-
-  lookupByBarcode(barcode: string) {
-    return this.http.get<BarcodeStockLookupResponse>(`${this.baseUrl}${API_ENDPOINTS.STOCK.BARCODE(barcode)}`);
-  }
-
-  getStockAlerts() {
-    return this.http.get<WarehouseStockAlertResponse[]>(`${this.baseUrl}${API_ENDPOINTS.STOCK.ALERTS}`);
-  }
-
-  acknowledgeStockAlert(alertId: number, payload: AcknowledgeWarehouseStockAlertRequest) {
-    return this.http.post<WarehouseStockAlertResponse>(
-      `${this.baseUrl}${API_ENDPOINTS.STOCK.ACKNOWLEDGE_ALERT(alertId)}`,
-      payload
-    );
-  }
-}
 
 @Component({
   standalone: true,
@@ -81,9 +21,9 @@ class StockService {
   styleUrls: ['./stock-page.component.css'],
 })
 class StockPageComponent {
-  private service = inject(StockService);
-  private fb = inject(FormBuilder);
-  private notifications = inject(NotificationService);
+  private readonly service = inject(WarehouseService);
+  private readonly fb = inject(FormBuilder);
+  private readonly notifications = inject(NotificationService);
 
   warehouses: WarehouseResponse[] = [];
   stock: StockLevelResponse[] = [];
@@ -116,38 +56,69 @@ class StockPageComponent {
 
   loadWarehouseStock(): void {
     const warehouseId = this.warehouseIdControl.value;
-    if (!warehouseId) return;
+    if (!warehouseId) {
+      return;
+    }
+
     this.loading = true;
-    this.service.getStockByWarehouse(warehouseId).pipe(finalize(() => (this.loading = false))).subscribe({
-      next: (stock) => (this.stock = stock),
-      error: () => (this.stock = []),
-    });
+    this.service
+      .getStockByWarehouse(warehouseId)
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: (stock) => (this.stock = stock),
+        error: () => (this.stock = []),
+      });
   }
 
   loadLowStock(): void {
     this.loading = true;
-    this.service.getLowStock(this.thresholdControl.value).pipe(finalize(() => (this.loading = false))).subscribe({
-      next: (stock) => (this.stock = stock),
-      error: () => (this.stock = []),
-    });
+    this.service
+      .getLowStock(this.thresholdControl.value)
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: (stock) => (this.stock = stock),
+        error: () => (this.stock = []),
+      });
   }
 
   updateStock(): void {
-    if (this.updateForm.invalid || !this.warehouseIdControl.value) return;
+    if (this.updateForm.invalid || !this.warehouseIdControl.value) {
+      return;
+    }
+
     this.saving = true;
+    const payload: StockUpdateRequest = {
+      ...this.updateForm.getRawValue(),
+      binLocation: this.updateForm.getRawValue().binLocation || null,
+    };
+
     this.service
-      .updateStock(this.warehouseIdControl.value, this.updateForm.getRawValue())
+      .updateStock(this.warehouseIdControl.value, payload)
       .pipe(finalize(() => (this.saving = false)))
-      .subscribe({ next: () => { this.notifications.success('Stock updated successfully.'); this.loadWarehouseStock(); } });
+      .subscribe({
+        next: () => {
+          this.notifications.success('Stock updated successfully.');
+          this.loadWarehouseStock();
+        },
+      });
   }
 
   transferStock(): void {
-    if (this.transferForm.invalid) return;
+    if (this.transferForm.invalid) {
+      return;
+    }
+
     this.transferring = true;
+    const payload: StockTransferRequest = this.transferForm.getRawValue();
     this.service
-      .transferStock(this.transferForm.getRawValue())
+      .transferStock(payload)
       .pipe(finalize(() => (this.transferring = false)))
-      .subscribe({ next: (message) => { this.notifications.success(message || 'Stock transferred successfully.'); this.loadWarehouseStock(); } });
+      .subscribe({
+        next: (message) => {
+          this.notifications.success(message || 'Stock transferred successfully.');
+          this.loadWarehouseStock();
+        },
+      });
   }
 }
 

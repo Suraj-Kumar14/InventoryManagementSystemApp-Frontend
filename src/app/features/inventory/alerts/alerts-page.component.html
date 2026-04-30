@@ -1,10 +1,11 @@
 <section class="page">
   <div class="page-header">
     <h1 class="page-header__title">Alerts</h1>
-    <p class="page-header__subtitle">View unread alerts for the signed-in user and create new alerts when your role allows it.</p>
+    <p class="page-header__subtitle">View live alerts from the API Gateway and manage read and acknowledgement state without leaving the page.</p>
   </div>
 
   <div class="page-actions">
+    <button type="button" (click)="loadAlerts()" [disabled]="loading" class="btn-secondary">All Alerts</button>
     <button type="button" (click)="loadUnread()" [disabled]="loading" class="btn-primary">Unread Alerts</button>
     <button type="button" (click)="loadRecent()" [disabled]="loading" class="btn-secondary">Recent Alerts</button>
   </div>
@@ -30,13 +31,30 @@
       <div class="card-item__header">
         <div>
           <h2 class="card-item__title">{{ alert.title }}</h2>
-          <p class="card-item__meta">{{ alert.type }} • {{ alert.severity }} • Recipient {{ alert.recipientId }}</p>
+          <p class="card-item__meta">{{ alert.type }} | {{ alert.severity }} | Recipient {{ alert.recipientId }}</p>
           <p class="card-item__body">{{ alert.message }}</p>
+          <p class="card-item__meta">
+            {{ alert.isRead ? 'Read' : 'Unread' }} | {{ alert.isAcknowledged ? 'Acknowledged' : 'Pending acknowledgement' }}
+          </p>
         </div>
-        <button type="button" (click)="markRead(alert)"
-                [disabled]="alert.isRead || actionId === alert.alertId" class="btn-neutral">
-          {{ actionId === alert.alertId ? 'Working...' : alert.isRead ? 'Read' : 'Mark Read' }}
-        </button>
+        <div class="card-item__actions">
+          <button
+            type="button"
+            (click)="markRead(alert)"
+            [disabled]="alert.isRead || actionId === alert.alertId"
+            class="btn-neutral"
+          >
+            {{ actionId === alert.alertId ? 'Working...' : alert.isRead ? 'Read' : 'Mark Read' }}
+          </button>
+          <button
+            type="button"
+            (click)="acknowledge(alert)"
+            [disabled]="alert.isAcknowledged || actionId === alert.alertId"
+            class="btn-secondary"
+          >
+            {{ actionId === alert.alertId ? 'Working...' : alert.isAcknowledged ? 'Acknowledged' : 'Acknowledge' }}
+          </button>
+        </div>
       </div>
     </article>
   </div>

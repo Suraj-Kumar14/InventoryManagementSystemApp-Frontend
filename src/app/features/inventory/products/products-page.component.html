@@ -1,9 +1,10 @@
 <section class="page">
   <div class="page-header">
     <h1 class="page-header__title">Products</h1>
-    <p class="page-header__subtitle">Search and manage products strictly through product-service APIs.</p>
+    <p class="page-header__subtitle">Search and manage products through product-service APIs.</p>
   </div>
 
+  <!-- ── Search / Filter Bar ── -->
   <div class="filter-card filter-card--4col">
     <input [formControl]="searchControl" placeholder="Search name, SKU, barcode, category, or brand" class="page-input form-card__full" />
     <select [formControl]="categoryControl" class="page-select">
@@ -20,46 +21,156 @@
     </div>
   </div>
 
-  <form *ngIf="canManage" [formGroup]="form" (ngSubmit)="save()" class="form-card">
-    <input formControlName="sku" placeholder="SKU" class="page-input" />
-    <input formControlName="name" placeholder="Name" class="page-input" />
-    <input formControlName="category" placeholder="Category" class="page-input" />
-    <input formControlName="brand" placeholder="Brand" class="page-input" />
-    <input formControlName="unitOfMeasure" placeholder="Unit of measure" class="page-input" />
-    <input formControlName="barcode" placeholder="Barcode" class="page-input" />
-    <input formControlName="costPrice" type="number" step="0.01" placeholder="Cost price" class="page-input" />
-    <input formControlName="sellingPrice" type="number" step="0.01" placeholder="Selling price" class="page-input" />
-    <input formControlName="reorderLevel" type="number" placeholder="Reorder level" class="page-input" />
-    <input formControlName="maxStockLevel" type="number" placeholder="Max stock level" class="page-input" />
-    <input formControlName="leadTimeDays" type="number" placeholder="Lead time days" class="page-input" />
-    <input formControlName="imageUrl" placeholder="Image URL" class="page-input" />
-    <textarea formControlName="description" placeholder="Description" class="page-textarea form-card__full"></textarea>
+  <!-- ── Create / Edit Form (MANAGER / ADMIN only) ── -->
+  <form *ngIf="canManage" [formGroup]="form" (ngSubmit)="save()" class="form-card" novalidate>
+
+    <div class="field-group">
+      <label class="field-label">SKU <span class="field-required">*</span></label>
+      <input formControlName="sku" placeholder="e.g. LAP-DELL-001" class="page-input"
+             [class.page-input--error]="isInvalid('sku')" />
+      <span *ngIf="isInvalid('sku')" class="field-error">SKU is required (max 50 chars)</span>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Name <span class="field-required">*</span></label>
+      <input formControlName="name" placeholder="e.g. Dell Latitude Laptop" class="page-input"
+             [class.page-input--error]="isInvalid('name')" />
+      <span *ngIf="isInvalid('name')" class="field-error">Product name is required (max 200 chars)</span>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Category <span class="field-required">*</span></label>
+      <input formControlName="category" placeholder="e.g. Electronics" class="page-input"
+             [class.page-input--error]="isInvalid('category')" />
+      <span *ngIf="isInvalid('category')" class="field-error">Category is required</span>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Unit of Measure <span class="field-required">*</span></label>
+      <input formControlName="unitOfMeasure" placeholder="e.g. PCS, KG, LTR" class="page-input"
+             [class.page-input--error]="isInvalid('unitOfMeasure')" />
+      <span *ngIf="isInvalid('unitOfMeasure')" class="field-error">Unit of measure is required</span>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Cost Price (₹) <span class="field-required">*</span></label>
+      <input formControlName="costPrice" type="number" step="0.01" min="0.01"
+             placeholder="e.g. 45000" class="page-input"
+             [class.page-input--error]="isInvalid('costPrice')" />
+      <span *ngIf="isInvalid('costPrice')" class="field-error">Cost price must be greater than 0</span>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Selling Price (₹) <span class="field-required">*</span></label>
+      <input formControlName="sellingPrice" type="number" step="0.01" min="0.01"
+             placeholder="e.g. 52000" class="page-input"
+             [class.page-input--error]="isInvalid('sellingPrice')" />
+      <span *ngIf="isInvalid('sellingPrice')" class="field-error">Selling price must be greater than 0</span>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Reorder Level <span class="field-required">*</span></label>
+      <input formControlName="reorderLevel" type="number" min="0"
+             placeholder="e.g. 10" class="page-input"
+             [class.page-input--error]="isInvalid('reorderLevel')" />
+      <span *ngIf="isInvalid('reorderLevel')" class="field-error">Reorder level must be ≥ 0</span>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Max Stock Level <span class="field-required">*</span></label>
+      <input formControlName="maxStockLevel" type="number" min="1"
+             placeholder="e.g. 100" class="page-input"
+             [class.page-input--error]="isInvalid('maxStockLevel')" />
+      <span *ngIf="isInvalid('maxStockLevel')" class="field-error">Max stock level must be ≥ 1</span>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Lead Time (days) <span class="field-required">*</span></label>
+      <input formControlName="leadTimeDays" type="number" min="1"
+             placeholder="e.g. 7" class="page-input"
+             [class.page-input--error]="isInvalid('leadTimeDays')" />
+      <span *ngIf="isInvalid('leadTimeDays')" class="field-error">Lead time must be ≥ 1 day</span>
+    </div>
+
+    <!-- Optional fields -->
+    <div class="field-group">
+      <label class="field-label">Brand <span class="field-optional">(optional)</span></label>
+      <input formControlName="brand" placeholder="e.g. Dell" class="page-input" />
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Barcode <span class="field-optional">(optional)</span></label>
+      <input formControlName="barcode" placeholder="e.g. 890100100001" class="page-input" />
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">Image URL <span class="field-optional">(optional)</span></label>
+      <input formControlName="imageUrl" placeholder="https://..." class="page-input" />
+    </div>
+
+    <div class="field-group form-card__full">
+      <label class="field-label">Description <span class="field-optional">(optional, max 1000 chars)</span></label>
+      <textarea formControlName="description" placeholder="Product description..."
+                class="page-textarea" rows="3"></textarea>
+    </div>
+
     <div class="page-actions form-card__full">
-      <button type="submit" [disabled]="form.invalid || saving" class="btn-primary">{{ saving ? 'Saving...' : editingId ? 'Update Product' : 'Create Product' }}</button>
+      <button type="submit" [disabled]="saving" class="btn-primary">
+        {{ saving ? 'Saving...' : editingId ? 'Update Product' : 'Create Product' }}
+      </button>
       <button type="button" (click)="resetForm()" class="btn-secondary">Clear</button>
+    </div>
+
+    <!-- Summary of remaining errors (shown only after attempted submit) -->
+    <div *ngIf="submitAttempted && form.invalid" class="form-validation-summary form-card__full">
+      ⚠️ Please fix the highlighted fields above before submitting.
     </div>
   </form>
 
-  <div *ngIf="!canManage" class="page-notice">Product create, update, deactivate, and delete actions are available only for Inventory Managers and Admins.</div>
+  <div *ngIf="!canManage" class="page-notice">
+    Product create, update, deactivate, and delete actions are available only for Inventory Managers and Admins.
+  </div>
 
+  <!-- ── Product List ── -->
   <div *ngIf="loading" class="page-loading">Loading products...</div>
   <div *ngIf="!loading && products.length === 0" class="page-empty">No products returned by the backend.</div>
 
   <div *ngIf="!loading && products.length > 0" class="table-card">
     <div class="table-wrapper">
       <table class="page-table">
-        <thead><tr><th>SKU</th><th>Name</th><th>Category</th><th>Prices</th><th>Status</th><th>Actions</th></tr></thead>
+        <thead>
+          <tr>
+            <th>SKU</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Brand</th>
+            <th>Cost / Sell</th>
+            <th>Unit</th>
+            <th>Status</th>
+            <th *ngIf="canManage">Actions</th>
+          </tr>
+        </thead>
         <tbody>
           <tr *ngFor="let product of products">
             <td><strong>{{ product.sku }}</strong></td>
             <td>{{ product.name }}</td>
             <td>{{ product.category }}</td>
-            <td>Cost {{ product.costPrice }} / Sell {{ product.sellingPrice }}</td>
-            <td>{{ product.isActive ? 'Active' : 'Inactive' }}</td>
+            <td>{{ product.brand || '—' }}</td>
+            <td>₹{{ product.costPrice }} / ₹{{ product.sellingPrice }}</td>
+            <td>{{ product.unitOfMeasure }}</td>
             <td>
-              <button *ngIf="canManage" type="button" (click)="edit(product)" class="btn-neutral">Edit</button>
-              <button *ngIf="canManage" type="button" (click)="deactivate(product)" [disabled]="actionId === product.productId || !product.isActive" class="btn-danger">Deactivate</button>
-              <button *ngIf="canManage" type="button" (click)="remove(product)" [disabled]="actionId === product.productId" class="btn-danger">Delete</button>
+              <span [class]="product.isActive ? 'badge badge--active' : 'badge badge--inactive'">
+                {{ product.isActive ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+            <td *ngIf="canManage">
+              <button type="button" (click)="edit(product)" class="btn-neutral btn--sm">Edit</button>
+              <button type="button" (click)="deactivate(product)"
+                      [disabled]="actionId === product.productId || !product.isActive"
+                      class="btn-danger btn--sm">Deactivate</button>
+              <button type="button" (click)="remove(product)"
+                      [disabled]="actionId === product.productId"
+                      class="btn-danger btn--sm">Delete</button>
             </td>
           </tr>
         </tbody>
