@@ -1,12 +1,11 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { forkJoin, map } from 'rxjs';
+import { Observable, forkJoin, shareReplay } from 'rxjs';
 import {
   AlertResponse,
   DeadStockItem,
+  InventorySnapshot,
   POSummary,
   PurchaseOrderResponse,
-  StockLevelResponse,
   StockMovementResponse,
   StockValuation,
   SupplierResponse,
@@ -14,71 +13,130 @@ import {
   UserProfile,
   WarehouseResponse,
 } from '../../../core/http/backend.models';
+import { AuthService } from '../../../core/auth/services/auth.service';
+import { AlertService } from '../../../core/services/alert.service';
+import { MovementService } from '../../../core/services/movement.service';
+import { PurchaseService } from '../../../core/services/purchase.service';
+import { ReportService } from '../../../core/services/report.service';
+import { WarehouseService } from '../../../core/services/warehouse.service';
 import { API_ENDPOINTS, UI_CONSTANTS } from '../../../shared/config/app-config';
-import { environment } from '../../../../environments/environment';
+
+interface CacheEntry<T> {
+  expiresAt: number;
+  stream$: Observable<T>;
+}
 
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
-  private http = inject(HttpClient);
-  private baseUrl = environment.apiUrl;
+  private readonly authService = inject(AuthService);
+  private readonly warehouseService = inject(WarehouseService);
+  private readonly purchaseService = inject(PurchaseService);
+  private readonly reportService = inject(ReportService);
+  private readonly alertService = inject(AlertService);
+  private readonly movementService = inject(MovementService);
+  private readonly cache = new Map<string, CacheEntry<unknown>>();
+  private readonly cacheTtlMs = 30_000;
 
-  getAdminSummary() {
-    return forkJoin({
-      users: this.http.get<UserProfile[]>(`${this.baseUrl}${API_ENDPOINTS.AUTH.USERS}`),
-      warehouses: this.http.get<WarehouseResponse[]>(`${this.baseUrl}${API_ENDPOINTS.WAREHOUSES.ROOT}`),
-      valuation: this.http.get<StockValuation>(`${this.baseUrl}${API_ENDPOINTS.REPORTS.TOTAL_VALUATION}`),
-      alerts: this.http.get<AlertResponse[]>(`${this.baseUrl}${API_ENDPOINTS.ALERTS.RECENT}`, {
-        params: new HttpParams().set('days', 7),
+  getAdminSummary(forceRefresh = false): Observable<{
+    users: UserProfile[];
+    warehouses: WarehouseResponse[];
+    valuation: StockValuation;
+    alerts: AlertResponse[];
+  }> {
+    return this.getCached('adminSummary', () =>
+      forkJoin({
+        users: this.authService.getUsers(),
+        warehouses: this.warehouseService.getWarehouses(),
+        valuation: this.reportService.getTotalValuation(),
+        alerts: this.alertService.getRecentAlerts(7),
       }),
-    });
+      forceRefresh
+    );
   }
 
-  getInventorySummary() {
-    return forkJoin({
-      valuation: this.http.get<StockValuation>(`${this.baseUrl}${API_ENDPOINTS.REPORTS.TOTAL_VALUATION}`),
-      lowStock: this.http.get<StockLevelResponse[]>(`${this.baseUrl}${API_ENDPOINTS.REPORTS.LOW_STOCK}`),
-      topMoving: this.http.get<TopMovingProduct[]>(`${this.baseUrl}${API_ENDPOINTS.REPORTS.TOP_MOVING}`),
-      deadStock: this.http.get<DeadStockItem[]>(`${this.baseUrl}${API_ENDPOINTS.REPORTS.DEAD_STOCK}`),
-      movements: this.http.get<StockMovementResponse[]>(`${this.baseUrl}${API_ENDPOINTS.MOVEMENTS.ROOT}`),
-    });
-  }
-
-  getPurchaseSummary() {
-    const params = this.buildDateRangeParams();
-    return forkJoin({
-      orders: this.http.get<PurchaseOrderResponse[]>(`${this.baseUrl}${API_ENDPOINTS.PURCHASE_ORDERS.ROOT}`),
-      overdue: this.http.get<PurchaseOrderResponse[]>(`${this.baseUrl}${API_ENDPOINTS.PURCHASE_ORDERS.OVERDUE}`),
-      summary: this.http.get<POSummary>(`${this.baseUrl}${API_ENDPOINTS.REPORTS.PO_SUMMARY}`, { params }),
-      suppliers: this.http.get<SupplierResponse[]>(`${this.baseUrl}${API_ENDPOINTS.SUPPLIERS.TOP_RATED}`, {
-        params: new HttpParams().set('minRating', 0),
+  getInventorySummary(forceRefresh = false): Observable<{
+    valuation: StockValuation;
+    lowStock: InventorySnapshot[];
+    topMoving: TopMovingProduct[];
+    deadStock: DeadStockItem[];
+    movements: StockMovementResponse[];
+  }> {
+    return this.getCached('inventorySummary', () =>
+      forkJoin({
+        valuation: this.reportService.getTotalValuation(),
+        lowStock: this.reportService.getLowStockReport(),
+        topMoving: this.reportService.getTopMovingProducts(),
+        deadStock: this.reportService.getDeadStock(),
+        movements: this.movementService.getMovements(),
       }),
-    });
+      forceRefresh
+    );
   }
 
-  getWarehouseSummary() {
-    return forkJoin({
-      warehouses: this.http.get<WarehouseResponse[]>(`${this.baseUrl}${API_ENDPOINTS.WAREHOUSES.ROOT}`),
-      movements: this.http.get<StockMovementResponse[]>(`${this.baseUrl}${API_ENDPOINTS.MOVEMENTS.ROOT}`),
-      alerts: this.http.get<AlertResponse[]>(`${this.baseUrl}${API_ENDPOINTS.ALERTS.RECENT}`, {
-        params: new HttpParams().set('days', 7),
+  getPurchaseSummary(forceRefresh = false): Observable<{
+    orders: PurchaseOrderResponse[];
+    overdue: PurchaseOrderResponse[];
+    summary: POSummary;
+    suppliers: SupplierResponse[];
+  }> {
+    const range = this.buildDateRangeQuery();
+    return this.getCached('purchaseSummary', () =>
+      forkJoin({
+        orders: this.purchaseService.getPurchaseOrders(),
+        overdue: this.purchaseService.getOverduePurchaseOrders(),
+        summary: this.reportService.getPurchaseOrderSummary(range),
+        suppliers: this.purchaseService.getTopRatedSuppliers(0),
       }),
-      lowStock: this.http.get<StockLevelResponse[]>(`${this.baseUrl}${API_ENDPOINTS.STOCK.LOW_STOCK}`),
-    });
+      forceRefresh
+    );
   }
 
-  getTurnover() {
-    return this.http.get<Record<string, unknown>>(`${this.baseUrl}${API_ENDPOINTS.REPORTS.TURNOVER}`, {
-      params: this.buildDateRangeParams(),
-    });
+  getWarehouseSummary(forceRefresh = false): Observable<{
+    warehouses: WarehouseResponse[];
+    movements: StockMovementResponse[];
+    alerts: AlertResponse[];
+    lowStock: InventorySnapshot[];
+  }> {
+    return this.getCached('warehouseSummary', () =>
+      forkJoin({
+        warehouses: this.warehouseService.getWarehouses(),
+        movements: this.movementService.getMovements(),
+        alerts: this.alertService.getRecentAlerts(7),
+        lowStock: this.reportService.getLowStockReport(),
+      }),
+      forceRefresh
+    );
   }
 
-  private buildDateRangeParams() {
+  invalidateCache(): void {
+    this.cache.clear();
+  }
+
+  private getCached<T>(key: string, factory: () => Observable<T>, forceRefresh: boolean): Observable<T> {
+    const now = Date.now();
+    const cached = this.cache.get(key) as CacheEntry<T> | undefined;
+
+    if (!forceRefresh && cached && cached.expiresAt > now) {
+      return cached.stream$;
+    }
+
+    const stream$ = factory().pipe(shareReplay(1));
+    this.cache.set(key, {
+      expiresAt: now + this.cacheTtlMs,
+      stream$,
+    });
+
+    return stream$;
+  }
+
+  private buildDateRangeQuery() {
     const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(endDate.getDate() - UI_CONSTANTS.DEFAULT_REPORT_DAYS);
 
-    return new HttpParams()
-      .set('startDate', startDate.toISOString().slice(0, 10))
-      .set('endDate', endDate.toISOString().slice(0, 10));
+    return {
+      startDate: startDate.toISOString().slice(0, 10),
+      endDate: endDate.toISOString().slice(0, 10),
+    };
   }
 }

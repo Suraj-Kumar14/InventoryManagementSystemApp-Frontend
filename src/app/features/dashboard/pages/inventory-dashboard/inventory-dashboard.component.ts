@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { finalize } from 'rxjs/operators';
 import { DashboardService } from '../../services/dashboard.service';
 
@@ -12,12 +13,17 @@ import { DashboardService } from '../../services/dashboard.service';
 })
 export class InventoryDashboardComponent {
   private dashboardService = inject(DashboardService);
+  private router = inject(Router);
   loading = false;
   totalValue = 0;
   lowStockCount = 0;
   topMovingCount = 0;
   deadStockCount = 0;
   recentMovements: Array<{ movementType: string; productId: number; warehouseId: number; quantity: number }> = [];
+
+  goToAddProduct(): void {
+    this.router.navigate(['/inventory/products']);
+  }
 
   constructor() {
     this.loading = true;

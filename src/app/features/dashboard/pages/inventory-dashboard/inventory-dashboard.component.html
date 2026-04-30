@@ -1,8 +1,14 @@
 <div class="dashboard">
   <div class="dashboard-header">
-    <h1 class="dashboard-header__title">Inventory Dashboard</h1>
-    <p class="dashboard-header__subtitle">Inventory analytics from report-service and movement-service.</p>
+    <div class="dashboard-header__text">
+      <h1 class="dashboard-header__title">Inventory Dashboard</h1>
+      <p class="dashboard-header__subtitle">Inventory analytics from report-service and movement-service.</p>
+    </div>
+    <button type="button" (click)="goToAddProduct()" class="dashboard-action-btn">
+      ➕ Add Product
+    </button>
   </div>
+
 
   <div *ngIf="loading" class="dashboard-loading">Loading dashboard...</div>
 
