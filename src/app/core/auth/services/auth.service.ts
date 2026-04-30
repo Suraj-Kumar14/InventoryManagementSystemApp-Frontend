@@ -34,7 +34,7 @@ interface MessageResponse {
   providedIn: 'root',
 })
 export class AuthService {
-  private readonly apiUrl = environment.apiUrl;
+  private readonly apiUrl = environment.apiGatewayUrl || environment.apiUrl;
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   readonly currentUser$ = this.currentUserSubject.asObservable();
 
@@ -58,14 +58,26 @@ export class AuthService {
       return;
     }
 
+    // Token is valid — restore session immediately from decoded token data
     this.currentUserSubject.next(decodedUser);
     this.isAuthenticatedSubject.next(true);
 
+    // Enrich user data from backend profile in the background.
+    // If the call fails (backend blip / restart), keep the session alive
+    // using the decoded token — do NOT log the user out.
     this.getProfile().subscribe({
       next: (profile) => this.currentUserSubject.next(this.mapProfileToUser(profile)),
-      error: () => this.logoutLocal(),
+      error: (err) => {
+        console.warn('[AuthService] getProfile() failed during init — keeping session from token.', err?.status);
+        // Only force-logout on explicit 401 (token rejected by server), not on
+        // network errors (0), 503 (service unavailable), etc.
+        if (err?.status === 401) {
+          this.logoutLocal();
+        }
+      },
     });
   }
+
 
   login(credentials: LoginRequest): Observable<AuthResponse> {
     this.isLoadingSubject.next(true);
@@ -133,7 +145,7 @@ export class AuthService {
   }
 
   startGoogleLogin(): void {
-    window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+    window.location.href = `${this.apiUrl}${API_ENDPOINTS.AUTH.GOOGLE_LOGIN}`;
   }
 
   completeOAuthLogin(accessToken: string, refreshToken: string): Observable<User> {
@@ -188,6 +200,22 @@ export class AuthService {
 
   changePassword(payload: ChangePasswordRequest): Observable<string> {
     return this.http.put(`${this.apiUrl}${API_ENDPOINTS.AUTH.CHANGE_PASSWORD}`, payload, {
+      responseType: 'text',
+    });
+  }
+
+  getUsers(): Observable<UserProfile[]> {
+    return this.http.get<UserProfile[]>(`${this.apiUrl}${API_ENDPOINTS.AUTH.USERS}`);
+  }
+
+  activateUser(id: number): Observable<string> {
+    return this.http.put(`${this.apiUrl}${API_ENDPOINTS.AUTH.ACTIVATE_USER(id)}`, {}, {
+      responseType: 'text',
+    });
+  }
+
+  deactivateUser(id: number): Observable<string> {
+    return this.http.put(`${this.apiUrl}${API_ENDPOINTS.AUTH.DEACTIVATE_USER(id)}`, {}, {
       responseType: 'text',
     });
   }

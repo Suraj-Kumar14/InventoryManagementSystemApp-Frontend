@@ -345,9 +345,11 @@ export interface StockValuation {
 export interface InventoryTurnover {
   startDate?: string;
   endDate?: string;
-  startInventoryValue: number;
-  endInventoryValue: number;
+  startInventoryValue?: number;
+  endInventoryValue?: number;
+  cogs?: number;
   averageInventoryValue: number;
+  inventoryTurnover?: number;
   note?: string;
 }
 
@@ -377,6 +379,16 @@ export interface POSummary {
   pendingPOs: number;
   cancelledPOs: number;
   fullyReceivedPOs: number;
+}
+
+export interface StockMovementSummary {
+  warehouseId: number | 'ALL';
+  fromDate: string;
+  toDate: string;
+  totalStockIn: number;
+  totalStockOut: number;
+  totalAdjustments: number;
+  totalTransfers: number;
 }
 
 export interface PaymentOrderRequest {

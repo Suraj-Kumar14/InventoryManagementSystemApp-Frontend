@@ -1,51 +1,89 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { ApiParamValue, buildHttpParams } from './http.utils';
+
+export type BackendServiceKey =
+  | 'auth'
+  | 'product'
+  | 'warehouse'
+  | 'supplier'
+  | 'purchase'
+  | 'movement'
+  | 'alert'
+  | 'report'
+  | 'payment';
+
+export interface ApiRequestOptions {
+  params?: HttpParams | object;
+  headers?: HttpHeaders | Record<string, string | string[]>;
+  service?: BackendServiceKey;
+  useGateway?: boolean;
+  responseType?: 'json' | 'text' | 'blob';
+}
 
 @Injectable({
   providedIn: 'root',
 })
 export class ApiService {
-  private readonly apiUrl = environment.apiUrl;
+  private readonly gatewayUrl = environment.apiGatewayUrl || environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 
-  /**
-   * GET request
-   */
-  get<T>(endpoint: string, params?: HttpParams): Observable<T> {
-    return this.http.get<T>(`${this.apiUrl}${endpoint}`, {
-      params,
-    });
+  get<T>(endpoint: string, options?: ApiRequestOptions): Observable<T> {
+    return this.request<T>('GET', endpoint, undefined, options);
   }
 
-  /**
-   * POST request
-   */
-  post<T>(endpoint: string, data: any): Observable<T> {
-    return this.http.post<T>(`${this.apiUrl}${endpoint}`, data);
+  post<T>(endpoint: string, data: unknown, options?: ApiRequestOptions): Observable<T> {
+    return this.request<T>('POST', endpoint, data, options);
   }
 
-  /**
-   * PUT request
-   */
-  put<T>(endpoint: string, data: any): Observable<T> {
-    return this.http.put<T>(`${this.apiUrl}${endpoint}`, data);
+  put<T>(endpoint: string, data: unknown, options?: ApiRequestOptions): Observable<T> {
+    return this.request<T>('PUT', endpoint, data, options);
   }
 
-  /**
-   * PATCH request
-   */
-  patch<T>(endpoint: string, data: any): Observable<T> {
-    return this.http.patch<T>(`${this.apiUrl}${endpoint}`, data);
+  patch<T>(endpoint: string, data: unknown, options?: ApiRequestOptions): Observable<T> {
+    return this.request<T>('PATCH', endpoint, data, options);
   }
 
-  /**
-   * DELETE request
-   */
-  delete<T>(endpoint: string): Observable<T> {
-    return this.http.delete<T>(`${this.apiUrl}${endpoint}`);
+  delete<T>(endpoint: string, options?: ApiRequestOptions): Observable<T> {
+    return this.request<T>('DELETE', endpoint, undefined, options);
+  }
+
+  private request<T>(
+    method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
+    endpoint: string,
+    body?: unknown,
+    options: ApiRequestOptions = {}
+  ): Observable<T> {
+    const requestOptions = {
+      body,
+      headers: options.headers,
+      params: this.normalizeParams(options.params),
+      responseType: options.responseType ?? 'json',
+    };
+
+    return this.http.request(method, this.buildUrl(endpoint), {
+      ...requestOptions,
+      observe: 'body',
+    }) as Observable<T>;
+  }
+
+  private buildUrl(endpoint: string): string {
+    if (/^https?:\/\//i.test(endpoint)) {
+      return endpoint;
+    }
+
+    return `${this.gatewayUrl}${endpoint}`;
+  }
+
+  private normalizeParams(params?: HttpParams | object): HttpParams | undefined {
+    if (!params) {
+      return undefined;
+    }
+
+    return params instanceof HttpParams ? params : buildHttpParams(params as Record<string, ApiParamValue>);
   }
 }
 

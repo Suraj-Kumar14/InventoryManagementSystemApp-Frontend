@@ -32,6 +32,10 @@ export class ErrorInterceptor implements HttpInterceptor {
     const message = this.extractMessage(error);
 
     switch (error.status) {
+      case 0:
+        this.notification.error('Unable to reach the backend services. Please check that the API gateway and required services are running.', 'Connection Error');
+        break;
+
       case 401:
         if (!this.isPublicAuthRequest(error.url)) {
           this.authService.logoutLocal();
@@ -76,6 +80,10 @@ export class ErrorInterceptor implements HttpInterceptor {
   private extractMessage(error: HttpErrorResponse): string {
     if (typeof error.error === 'string' && error.error.trim()) {
       return error.error;
+    }
+
+    if (error.error?.error && typeof error.error.error === 'string') {
+      return error.error.error;
     }
 
     if (error.error?.message) {

@@ -14,28 +14,28 @@ export class TokenService {
    * Store JWT token in sessionStorage
    */
   setToken(token: string): void {
-    sessionStorage.setItem(this.tokenKey, token);
+    localStorage.setItem(this.tokenKey, token);
   }
 
   /**
    * Retrieve JWT token from sessionStorage
    */
   getToken(): string | null {
-    return sessionStorage.getItem(this.tokenKey);
+    return localStorage.getItem(this.tokenKey);
   }
 
   /**
    * Store refresh token in sessionStorage
    */
   setRefreshToken(refreshToken: string): void {
-    sessionStorage.setItem(this.refreshTokenKey, refreshToken);
+    localStorage.setItem(this.refreshTokenKey, refreshToken);
   }
 
   /**
    * Retrieve refresh token from sessionStorage
    */
   getRefreshToken(): string | null {
-    return sessionStorage.getItem(this.refreshTokenKey);
+    return localStorage.getItem(this.refreshTokenKey);
   }
 
   /**
@@ -95,8 +95,8 @@ export class TokenService {
    * Clear all tokens from storage
    */
   clearTokens(): void {
-    sessionStorage.removeItem(this.tokenKey);
-    sessionStorage.removeItem(this.refreshTokenKey);
+    localStorage.removeItem(this.tokenKey);
+    localStorage.removeItem(this.refreshTokenKey);
   }
 
   /**
