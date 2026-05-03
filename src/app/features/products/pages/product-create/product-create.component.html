@@ -1,0 +1,13 @@
+<section class="page">
+  <div class="page-header">
+    <h1 class="page-header__title">Create Product</h1>
+    <p class="page-header__subtitle">Add a new catalog item through the gateway-backed product service.</p>
+  </div>
+
+  <app-product-form
+    mode="create"
+    [loading]="saving"
+    (submitted)="createProduct($event)"
+    (cancelled)="goBack()"
+  />
+</section>

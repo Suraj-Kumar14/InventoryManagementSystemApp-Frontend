@@ -11,30 +11,32 @@ import { API_ENDPOINTS } from '../../shared/config/app-config';
 
 @Injectable()
 export class JwtInterceptor implements HttpInterceptor {
-  // Public endpoints that should NOT have JWT token
-  private publicEndpoints = [
+  private readonly publicEndpoints = [
     API_ENDPOINTS.AUTH.LOGIN,
     API_ENDPOINTS.AUTH.REGISTER,
+    '/api/v1/auth/register',
+    '/api/v1/auth/register-request',
     API_ENDPOINTS.AUTH.REFRESH_TOKEN,
+    '/api/v1/auth/refresh-token',
     API_ENDPOINTS.AUTH.FORGOT_PASSWORD,
     API_ENDPOINTS.AUTH.VERIFY_OTP,
     API_ENDPOINTS.AUTH.RESET_PASSWORD,
     '/auth/send-otp',
+    '/api/v1/auth/login',
+    '/api/v1/auth/verify-otp',
     API_ENDPOINTS.AUTH.GOOGLE_LOGIN,
+    '/login/oauth2/code/google',
   ];
 
   constructor(private tokenService: TokenService) {}
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    // Skip token injection for public endpoints
     if (this.isPublicEndpoint(req.url)) {
       return next.handle(req);
     }
 
-    // Get token from storage
     const token = this.tokenService.getToken();
     if (token) {
-      // Clone request and add Authorization header
       req = req.clone({
         setHeaders: {
           Authorization: `Bearer ${token}`,
@@ -45,9 +47,6 @@ export class JwtInterceptor implements HttpInterceptor {
     return next.handle(req);
   }
 
-  /**
-   * Check if endpoint is public
-   */
   private isPublicEndpoint(url: string): boolean {
     return this.publicEndpoints.some((endpoint) => url.includes(endpoint));
   }

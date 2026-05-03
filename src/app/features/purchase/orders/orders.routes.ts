@@ -1,11 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Routes } from '@angular/router';
+import { Router, Routes } from '@angular/router';
 import { catchError, finalize, map, of, switchMap } from 'rxjs';
 import {
   GoodsReceiptRequest,
-  PaymentResponse,
   PurchaseOrderRequest,
   PurchaseOrderResponse,
   SupplierResponse,
@@ -18,6 +17,7 @@ import { PurchaseService } from '../../../core/services/purchase.service';
 import { WarehouseService } from '../../../core/services/warehouse.service';
 import { UserRole } from '../../../shared/config/app-config';
 import { roleGuard } from '../../../core/guards/role.guard';
+import { PaymentResponse } from '../../payments/models/payment.model';
 
 @Component({
   standalone: true,
@@ -32,6 +32,7 @@ class OrdersPageComponent {
   private readonly auth = inject(AuthService);
   private readonly fb = inject(FormBuilder);
   private readonly notifications = inject(NotificationService);
+  private readonly router = inject(Router);
 
   suppliers: SupplierResponse[] = [];
   warehouses: WarehouseResponse[] = [];
@@ -149,51 +150,7 @@ class OrdersPageComponent {
   }
 
   pay(order: PurchaseOrderResponse): void {
-    const currentUser = this.auth.getCurrentUser();
-    const userId = currentUser?.userId ?? this.auth.getUserId();
-    const amount = Number(order.totalAmount ?? 0);
-
-    if (!userId || amount <= 0) {
-      this.notifications.error('This order cannot be paid because the amount or user context is missing.');
-      return;
-    }
-
-    this.payingOrderId = order.poId;
-    this.paymentService
-      .processPayment(
-        {
-          amount,
-          currency: 'INR',
-          purchaseOrderId: order.poId,
-          userId,
-          description: `Payment for PO #${order.poId}`,
-        },
-        {
-          name: currentUser?.name || 'StockPro User',
-          email: currentUser?.email,
-          contact: currentUser?.phone,
-          description: `Purchase order #${order.poId}`,
-          notes: {
-            purchaseOrderId: String(order.poId),
-            referenceNumber: order.referenceNumber || '',
-          },
-        }
-      )
-      .pipe(finalize(() => (this.payingOrderId = null)))
-      .subscribe({
-        next: (payment) => {
-          this.paymentStatuses[order.poId] = payment;
-          this.notifications.success('Payment verified successfully.');
-          this.loadOrders();
-        },
-        error: (error) => {
-          this.notifications.error(
-            error?.message || error?.error?.message || 'Unable to complete the payment. Please retry.',
-            'Payment Failed'
-          );
-          this.loadOrders();
-        },
-      });
+    this.router.navigate(['/payments/create'], { queryParams: { purchaseOrderId: order.poId } });
   }
 
   getPaymentStatus(order: PurchaseOrderResponse): string {
@@ -202,7 +159,7 @@ class OrdersPageComponent {
 
   canPay(order: PurchaseOrderResponse): boolean {
     const paymentStatus = this.getPaymentStatus(order);
-    return order.status === 'APPROVED' && paymentStatus !== 'SUCCESS';
+    return ['RECEIVED', 'PARTIALLY_RECEIVED'].includes(order.status) && !['PAID', 'PARTIALLY_PAID'].includes(paymentStatus);
   }
 
   private loadLookups(): void {

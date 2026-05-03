@@ -1,0 +1,155 @@
+.po-form {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.po-form__section {
+  padding: 1.25rem;
+  border-radius: 1.2rem;
+  background: #ffffff;
+  border: 1px solid #dbe4f0;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.05);
+}
+
+.field-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.field-grid label,
+.field-block {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.field-grid span,
+.field-block span {
+  font-size: 0.85rem;
+  color: #475569;
+  font-weight: 700;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  border-radius: 0.85rem;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  padding: 0.8rem 0.9rem;
+  font: inherit;
+}
+
+textarea {
+  resize: vertical;
+}
+
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.section-title h3,
+.section-title p {
+  margin: 0;
+}
+
+.section-title p {
+  color: #64748b;
+  margin-top: 0.35rem;
+}
+
+.line-items {
+  display: grid;
+  gap: 1rem;
+}
+
+.line-item {
+  padding: 1rem;
+  border-radius: 1rem;
+  background: #f8fafc;
+  border: 1px solid #dbe4f0;
+}
+
+.line-item__grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.line-item__grid label {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.line-item__footer {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.8rem;
+}
+
+.totals-card {
+  display: grid;
+  align-content: center;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: linear-gradient(145deg, #0f172a, #1e293b);
+  color: #fff;
+}
+
+.totals-card p {
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+}
+
+.totals-card p + p {
+  margin-top: 0.55rem;
+}
+
+.po-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.btn {
+  border: none;
+  border-radius: 999px;
+  padding: 0.85rem 1.3rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: #0f172a;
+  color: #fff;
+}
+
+.btn-accent {
+  background: linear-gradient(135deg, #0ea5e9, #2563eb);
+  color: #fff;
+}
+
+.btn-secondary {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.btn-danger {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.btn-danger--ghost {
+  justify-self: end;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

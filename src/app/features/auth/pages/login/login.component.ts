@@ -77,7 +77,10 @@ export class LoginComponent implements OnInit {
   private mapLoginError(error: unknown): string {
     const message = this.extractMessage(error).toLowerCase();
     if (message.includes('invalid credentials') || message.includes('user not found')) {
-      return 'Invalid credentials';
+      return 'Invalid email or password';
+    }
+    if (message.includes('inactive')) {
+      return 'Your account is inactive. Please contact administrator.';
     }
     return this.extractMessage(error) || 'Login failed. Please try again.';
   }

@@ -1,0 +1,30 @@
+@import '../supplier-detail/supplier-detail.component.css';
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.supplier-card {
+  padding: 1.1rem;
+  border-radius: 1.1rem;
+  border: 1px solid #dbe7f3;
+  background: #fbfdff;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.supplier-card__header,
+.supplier-card__footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+}
+
+.supplier-card__header span,
+.supplier-card__footer span {
+  color: #64748b;
+  font-size: 0.85rem;
+}

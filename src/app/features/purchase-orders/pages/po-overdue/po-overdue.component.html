@@ -1,0 +1,28 @@
+<section class="simple-page">
+  <header class="panel panel--header">
+    <div>
+      <p class="eyebrow">Follow-up Queue</p>
+      <h1>Overdue Purchase Orders</h1>
+      <p>Monitor approved orders whose expected delivery date has already passed.</p>
+    </div>
+    <a routerLink="/purchase-orders" class="btn btn-secondary">Back to List</a>
+  </header>
+
+  <section class="panel">
+    <div *ngIf="loading" class="empty-state">Loading overdue purchase orders...</div>
+    <div *ngIf="!loading && purchaseOrders.length === 0" class="empty-state">No overdue purchase orders were found.</div>
+
+    <div *ngIf="!loading && purchaseOrders.length > 0" class="overdue-list">
+      <a *ngFor="let order of purchaseOrders" [routerLink]="['/purchase-orders', order.purchaseOrderId ?? order.poId]" class="overdue-card">
+        <div>
+          <strong>{{ order.poNumber || ('PO #' + (order.purchaseOrderId ?? order.poId)) }}</strong>
+          <p>{{ order.supplierName || ('Supplier #' + order.supplierId) }}</p>
+        </div>
+        <div>
+          <app-po-status-badge [status]="order.status" [overdue]="true"></app-po-status-badge>
+          <p>Expected {{ order.expectedDeliveryDate || order.expectedDate | date:'mediumDate' }}</p>
+        </div>
+      </a>
+    </div>
+  </section>
+</section>

@@ -1,0 +1,5 @@
+@import '../../../../shared/styles/page-common.css';
+
+.filter-size {
+  min-width: 130px;
+}

@@ -16,21 +16,22 @@
     </div>
   </div>
 
-  <form [formGroup]="updateForm" (ngSubmit)="updateStock()" class="form-card">
+  <form *ngIf="canMutate" [formGroup]="updateForm" (ngSubmit)="updateStock()" class="form-card">
     <input formControlName="productId" type="number" placeholder="Product ID" class="page-input" />
     <input formControlName="quantity" type="number" placeholder="Quantity" class="page-input" />
-    <input formControlName="binLocation" placeholder="Bin location" class="page-input" />
+    <input formControlName="reason" placeholder="Reason" class="page-input" />
     <button type="submit" [disabled]="updateForm.invalid || !warehouseIdControl.value || saving" class="btn-primary">
       {{ saving ? 'Updating...' : 'Update Stock' }}
     </button>
   </form>
 
-  <form [formGroup]="transferForm" (ngSubmit)="transferStock()" class="form-card">
-    <input formControlName="fromWarehouseId" type="number" placeholder="From warehouse ID" class="page-input" />
-    <input formControlName="toWarehouseId" type="number" placeholder="To warehouse ID" class="page-input" />
+  <form *ngIf="canMutate" [formGroup]="transferForm" (ngSubmit)="transferStock()" class="form-card">
+    <input formControlName="sourceWarehouseId" type="number" placeholder="Source warehouse ID" class="page-input" />
+    <input formControlName="destinationWarehouseId" type="number" placeholder="Destination warehouse ID" class="page-input" />
     <input formControlName="productId" type="number" placeholder="Product ID" class="page-input" />
     <input formControlName="quantity" type="number" placeholder="Quantity" class="page-input" />
-    <input formControlName="reason" placeholder="Reason" class="page-input form-card__full" />
+    <input formControlName="reasonCode" placeholder="Reason code" class="page-input" />
+    <input formControlName="notes" placeholder="Notes" class="page-input form-card__full" />
     <button type="submit" [disabled]="transferForm.invalid || transferring" class="btn-primary form-card__full">
       {{ transferring ? 'Transferring...' : 'Transfer Stock' }}
     </button>
@@ -43,17 +44,18 @@
     <div class="table-wrapper">
       <table class="page-table">
         <thead><tr>
-          <th>Warehouse</th><th>Product</th><th>Quantity</th>
-          <th>Reserved</th><th>Available</th><th>Bin</th>
+          <th>Warehouse</th><th>Product</th><th>SKU</th><th>Quantity</th>
+          <th>Reserved</th><th>Available</th><th>Location</th>
         </tr></thead>
         <tbody>
           <tr *ngFor="let item of stock">
-            <td>{{ item.warehouseId }}</td>
-            <td>{{ item.productId }}</td>
+            <td>{{ item.warehouseName || item.warehouseId }}</td>
+            <td>{{ item.productName || item.productId }}</td>
+            <td>{{ item.sku || 'N/A' }}</td>
             <td>{{ item.quantity }}</td>
             <td>{{ item.reservedQuantity }}</td>
             <td>{{ item.availableQuantity }}</td>
-            <td>{{ item.binLocation || 'Not set' }}</td>
+            <td>{{ item.locationCode || 'Not set' }}</td>
           </tr>
         </tbody>
       </table>

@@ -1,0 +1,28 @@
+<section class="purchase-shell">
+  <header class="header">
+    <div>
+      <p class="eyebrow">Refine Draft</p>
+      <h1>Edit Purchase Order</h1>
+      <p *ngIf="purchaseOrder">You are editing {{ purchaseOrder.poNumber || ('PO #' + (purchaseOrder.purchaseOrderId ?? purchaseOrder.poId)) }}.</p>
+    </div>
+    <a routerLink="/purchase-orders" class="back-link">Back to Purchase Orders</a>
+  </header>
+
+  <div *ngIf="pageLoading" class="loading-card">Loading purchase order...</div>
+
+  <div *ngIf="!pageLoading && !editable" class="warning-card">
+    This purchase order can no longer be edited because its current status is {{ purchaseOrder?.status }}.
+  </div>
+
+  <app-po-form
+    *ngIf="!pageLoading && editable && initialValue"
+    [suppliers]="suppliers"
+    [warehouses]="warehouses"
+    [products]="products"
+    [loading]="loading"
+    submitLabel="Update"
+    [showSubmitAndApprove]="false"
+    [initialValue]="initialValue"
+    (save)="update($event)"
+  ></app-po-form>
+</section>

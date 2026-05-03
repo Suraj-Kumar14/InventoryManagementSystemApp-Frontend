@@ -11,6 +11,7 @@ import {
 } from '../../../core/http/backend.models';
 import { NotificationService } from '../../../core/services/notification.service';
 import { WarehouseService } from '../../../core/services/warehouse.service';
+import { AuthService } from '../../../core/auth/services/auth.service';
 import { UserRole } from '../../../shared/config/app-config';
 import { roleGuard } from '../../../core/guards/role.guard';
 
@@ -24,27 +25,30 @@ class StockPageComponent {
   private readonly service = inject(WarehouseService);
   private readonly fb = inject(FormBuilder);
   private readonly notifications = inject(NotificationService);
+  private readonly authService = inject(AuthService);
 
   warehouses: WarehouseResponse[] = [];
   stock: StockLevelResponse[] = [];
   loading = false;
   saving = false;
   transferring = false;
+  readonly canMutate = this.authService.hasRole([UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF]);
   warehouseIdControl = this.fb.nonNullable.control(0);
   thresholdControl = this.fb.nonNullable.control(10);
 
   updateForm = this.fb.nonNullable.group({
     productId: [0, [Validators.required, Validators.min(1)]],
     quantity: [0, [Validators.required, Validators.min(0)]],
-    binLocation: [''],
+    reason: ['Manual update'],
   });
 
   transferForm = this.fb.nonNullable.group({
-    fromWarehouseId: [0, [Validators.required, Validators.min(1)]],
-    toWarehouseId: [0, [Validators.required, Validators.min(1)]],
+    sourceWarehouseId: [0, [Validators.required, Validators.min(1)]],
+    destinationWarehouseId: [0, [Validators.required, Validators.min(1)]],
     productId: [0, [Validators.required, Validators.min(1)]],
     quantity: [0, [Validators.required, Validators.min(1)]],
-    reason: ['', [Validators.required]],
+    reasonCode: ['', [Validators.required]],
+    notes: [''],
   });
 
   constructor() {
@@ -73,7 +77,7 @@ class StockPageComponent {
   loadLowStock(): void {
     this.loading = true;
     this.service
-      .getLowStock(this.thresholdControl.value)
+      .getLowStock()
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: (stock) => (this.stock = stock),
@@ -88,12 +92,14 @@ class StockPageComponent {
 
     this.saving = true;
     const payload: StockUpdateRequest = {
+      warehouseId: this.warehouseIdControl.value,
       ...this.updateForm.getRawValue(),
-      binLocation: this.updateForm.getRawValue().binLocation || null,
+      reason: this.updateForm.getRawValue().reason || 'Manual update',
+      notes: null,
     };
 
     this.service
-      .updateStock(this.warehouseIdControl.value, payload)
+      .updateStock(payload)
       .pipe(finalize(() => (this.saving = false)))
       .subscribe({
         next: () => {
@@ -114,8 +120,8 @@ class StockPageComponent {
       .transferStock(payload)
       .pipe(finalize(() => (this.transferring = false)))
       .subscribe({
-        next: (message) => {
-          this.notifications.success(message || 'Stock transferred successfully.');
+        next: () => {
+          this.notifications.success('Stock transferred successfully.');
           this.loadWarehouseStock();
         },
       });
@@ -127,6 +133,6 @@ export const stockRoutes: Routes = [
     path: '',
     component: StockPageComponent,
     canActivate: [roleGuard],
-    data: { roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF] },
+    data: { roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.OFFICER] },
   },
 ];

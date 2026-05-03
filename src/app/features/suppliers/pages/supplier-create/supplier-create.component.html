@@ -1,0 +1,12 @@
+<section class="supplier-page">
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Supplier Onboarding</p>
+      <h1>Create Supplier</h1>
+      <p class="hero__subtitle">Capture contact, tax, payment, and lead-time details in one guided flow.</p>
+    </div>
+    <a routerLink="/suppliers" class="btn btn-secondary">Back to Suppliers</a>
+  </header>
+
+  <app-supplier-form mode="create" [loading]="loading" (submitted)="save($event)" (cancelled)="router.navigate(['/suppliers'])"></app-supplier-form>
+</section>

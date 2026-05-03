@@ -1,7 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import {
   GoodsReceiptRequest,
+  PageResponse,
   PurchaseOrderRequest,
   PurchaseOrderResponse,
   SupplierRequest,
@@ -101,22 +102,31 @@ export class PurchaseService {
 
     if (query.keyword || query.name || query.city || query.country || query.page !== undefined || query.size !== undefined) {
       return this.api
-        .get<SupplierResponse[]>(API_ENDPOINTS.SUPPLIERS.SEARCH, {
+        .get<PageResponse<SupplierResponse>>(API_ENDPOINTS.SUPPLIERS.SEARCH, {
           service: 'supplier',
           params: {
             keyword: query.keyword,
-            name: query.name,
             city: query.city,
             country: query.country,
             page: query.page,
             size: query.size,
           },
         })
+        .pipe(map((response) => response.content ?? []))
         .pipe(handleServiceError(this.serviceName, 'getSuppliers(search)'));
     }
 
     return this.api
-      .get<SupplierResponse[]>(API_ENDPOINTS.SUPPLIERS.ROOT, { service: 'supplier' })
+      .get<PageResponse<SupplierResponse>>(API_ENDPOINTS.SUPPLIERS.ROOT, {
+        service: 'supplier',
+        params: {
+          page: query.page ?? 0,
+          size: query.size ?? 50,
+          sortBy: 'name',
+          sortDir: 'asc',
+        },
+      })
+      .pipe(map((response) => response.content ?? []))
       .pipe(handleServiceError(this.serviceName, 'getSuppliers'));
   }
 
@@ -137,25 +147,21 @@ export class PurchaseService {
 
   updateSupplier(id: number, payload: SupplierRequest): Observable<SupplierResponse> {
     return this.api
-      .put<SupplierResponse>(`${API_ENDPOINTS.SUPPLIERS.ROOT}/${id}`, payload, { service: 'supplier' })
+      .put<SupplierResponse>(API_ENDPOINTS.SUPPLIERS.DETAIL(id), payload, { service: 'supplier' })
       .pipe(handleServiceError(this.serviceName, 'updateSupplier'));
   }
 
   deactivateSupplier(id: number): Observable<string> {
     return this.api
-      .put<string>(API_ENDPOINTS.SUPPLIERS.DEACTIVATE(id), {}, {
+      .patch<string>(API_ENDPOINTS.SUPPLIERS.DEACTIVATE(id), { reason: 'Deactivated from legacy purchase supplier page' }, {
         service: 'supplier',
-        responseType: 'text',
       })
       .pipe(handleServiceError(this.serviceName, 'deactivateSupplier'));
   }
 
   deleteSupplier(id: number): Observable<string> {
     return this.api
-      .delete<string>(`${API_ENDPOINTS.SUPPLIERS.ROOT}/${id}`, {
-        service: 'supplier',
-        responseType: 'text',
-      })
+      .delete<string>(API_ENDPOINTS.SUPPLIERS.DETAIL(id), { service: 'supplier' })
       .pipe(handleServiceError(this.serviceName, 'deleteSupplier'));
   }
 }

@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Routes } from '@angular/router';
 import { finalize } from 'rxjs/operators';
 import { WarehouseRequest, WarehouseResponse } from '../../../core/http/backend.models';
+import { AuthService } from '../../../core/auth/services/auth.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { WarehouseService } from '../../../core/services/warehouse.service';
 import { UserRole } from '../../../shared/config/app-config';
@@ -19,15 +20,18 @@ class WarehousesAdminPageComponent {
   private readonly service = inject(WarehouseService);
   private readonly fb = inject(FormBuilder);
   private readonly notifications = inject(NotificationService);
+  private readonly authService = inject(AuthService);
 
   warehouses: WarehouseResponse[] = [];
   loading = false;
   saving = false;
   editingId: number | null = null;
   actionWarehouseId: number | null = null;
+  readonly canManage = this.authService.hasRole([UserRole.ADMIN]);
 
   form = this.fb.nonNullable.group({
     name: ['', [Validators.required]],
+    code: ['', [Validators.required]],
     location: ['', [Validators.required]],
     address: [''],
     managerId: [0],
@@ -59,6 +63,7 @@ class WarehousesAdminPageComponent {
     const raw = this.form.getRawValue();
     const payload: WarehouseRequest = {
       name: raw.name,
+      code: raw.code,
       location: raw.location,
       address: raw.address || null,
       managerId: raw.managerId || null,
@@ -84,6 +89,7 @@ class WarehousesAdminPageComponent {
     this.editingId = warehouse.warehouseId;
     this.form.patchValue({
       name: warehouse.name,
+      code: warehouse.code,
       location: warehouse.location,
       address: warehouse.address || '',
       managerId: warehouse.managerId || 0,
@@ -94,7 +100,7 @@ class WarehousesAdminPageComponent {
 
   resetForm(): void {
     this.editingId = null;
-    this.form.reset({ name: '', location: '', address: '', managerId: 0, capacity: 1, phone: '' });
+    this.form.reset({ name: '', code: '', location: '', address: '', managerId: 0, capacity: 1, phone: '' });
   }
 
   deactivate(warehouse: WarehouseResponse): void {
@@ -103,8 +109,8 @@ class WarehousesAdminPageComponent {
       .deactivateWarehouse(warehouse.warehouseId)
       .pipe(finalize(() => (this.actionWarehouseId = null)))
       .subscribe({
-        next: (message) => {
-          this.notifications.success(message || 'Warehouse deactivated successfully.');
+        next: () => {
+          this.notifications.success('Warehouse deactivated successfully.');
           this.loadWarehouses();
         },
       });
@@ -116,6 +122,6 @@ export const warehousesRoutes: Routes = [
     path: '',
     component: WarehousesAdminPageComponent,
     canActivate: [roleGuard],
-    data: { roles: [UserRole.ADMIN] },
+    data: { roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.OFFICER, UserRole.STAFF] },
   },
 ];

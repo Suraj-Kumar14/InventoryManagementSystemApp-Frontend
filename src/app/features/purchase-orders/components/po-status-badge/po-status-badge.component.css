@@ -1,0 +1,52 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.badge--draft {
+  background: #eef2ff;
+  color: #3949ab;
+}
+
+.badge--pending {
+  background: #fff3e0;
+  color: #b45309;
+}
+
+.badge--approved {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.badge--partial {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.badge--received {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.badge--rejected,
+.badge--cancelled {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.overdue-pill {
+  display: inline-flex;
+  margin-left: 0.5rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  background: #111827;
+  color: #f9fafb;
+  font-size: 0.72rem;
+  font-weight: 700;
+}

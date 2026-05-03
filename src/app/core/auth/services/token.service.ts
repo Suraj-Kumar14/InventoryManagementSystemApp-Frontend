@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { BehaviorSubject } from 'rxjs';
 import { jwtDecode } from 'jwt-decode';
 import { User, JwtPayload } from '../models/auth.models';
 import { environment } from '../../../../environments/environment';
@@ -9,38 +10,49 @@ import { environment } from '../../../../environments/environment';
 export class TokenService {
   private readonly tokenKey = environment.jwt.tokenKey;
   private readonly refreshTokenKey = environment.jwt.refreshTokenKey;
+  private readonly userKey = `${environment.jwt.tokenKey}_user`;
+  private readonly currentUserSubject = new BehaviorSubject<User | null>(this.readStoredUser());
 
-  /**
-   * Store JWT token in sessionStorage
-   */
+  readonly currentUser$ = this.currentUserSubject.asObservable();
+
   setToken(token: string): void {
     localStorage.setItem(this.tokenKey, token);
   }
 
-  /**
-   * Retrieve JWT token from sessionStorage
-   */
   getToken(): string | null {
     return localStorage.getItem(this.tokenKey);
   }
 
-  /**
-   * Store refresh token in sessionStorage
-   */
+  removeToken(): void {
+    localStorage.removeItem(this.tokenKey);
+  }
+
   setRefreshToken(refreshToken: string): void {
     localStorage.setItem(this.refreshTokenKey, refreshToken);
   }
 
-  /**
-   * Retrieve refresh token from sessionStorage
-   */
   getRefreshToken(): string | null {
     return localStorage.getItem(this.refreshTokenKey);
   }
 
-  /**
-   * Check if token exists and is valid
-   */
+  removeRefreshToken(): void {
+    localStorage.removeItem(this.refreshTokenKey);
+  }
+
+  setUser(user: User): void {
+    localStorage.setItem(this.userKey, JSON.stringify(user));
+    this.currentUserSubject.next(user);
+  }
+
+  getUser(): User | null {
+    return this.currentUserSubject.value;
+  }
+
+  removeUser(): void {
+    localStorage.removeItem(this.userKey);
+    this.currentUserSubject.next(null);
+  }
+
   hasValidToken(): boolean {
     const token = this.getToken();
     if (!token) {
@@ -49,20 +61,16 @@ export class TokenService {
     return !this.isTokenExpired(token);
   }
 
-  /**
-   * Check if token has expired
-   */
   isTokenExpired(token?: string): boolean {
-    const t = token || this.getToken();
-    if (!t) {
+    const value = token || this.getToken();
+    if (!value) {
       return true;
     }
 
     try {
-      const decoded = jwtDecode<JwtPayload>(t);
+      const decoded = jwtDecode<JwtPayload>(value);
       const now = Date.now() / 1000;
       const expirationTime = decoded.exp || 0;
-      // Consider token expired 60 seconds before actual expiration
       return now > expirationTime - 60;
     } catch (error) {
       console.error('Token decode error:', error);
@@ -70,9 +78,6 @@ export class TokenService {
     }
   }
 
-  /**
-   * Decode token and extract user info
-   */
   decodeToken(): User | null {
     const token = this.getToken();
     if (!token) {
@@ -82,6 +87,7 @@ export class TokenService {
     try {
       const decoded = jwtDecode<JwtPayload>(token);
       return {
+        userId: decoded.userId,
         email: decoded.sub,
         name: decoded.sub,
         role: decoded.role,
@@ -91,17 +97,17 @@ export class TokenService {
     }
   }
 
-  /**
-   * Clear all tokens from storage
-   */
   clearTokens(): void {
-    localStorage.removeItem(this.tokenKey);
-    localStorage.removeItem(this.refreshTokenKey);
+    this.removeToken();
+    this.removeRefreshToken();
   }
 
-  /**
-   * Get token expiration time in seconds
-   */
+  clear(): void {
+    this.removeToken();
+    this.removeRefreshToken();
+    this.removeUser();
+  }
+
   getTokenExpirationTime(): number | null {
     const token = this.getToken();
     if (!token) {
@@ -115,6 +121,20 @@ export class TokenService {
       const remainingTime = Math.floor((expirationTime - now) / 1000);
       return Math.max(remainingTime, 0);
     } catch (error) {
+      return null;
+    }
+  }
+
+  private readStoredUser(): User | null {
+    const rawUser = localStorage.getItem(this.userKey);
+    if (!rawUser) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(rawUser) as User;
+    } catch {
+      localStorage.removeItem(this.userKey);
       return null;
     }
   }

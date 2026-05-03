@@ -1,0 +1,20 @@
+<section class="supplier-page">
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Supplier Maintenance</p>
+      <h1>Edit Supplier</h1>
+      <p class="hero__subtitle">Adjust supplier profile, lifecycle state, and purchasing readiness without leaving the workspace.</p>
+    </div>
+    <a routerLink="/suppliers" class="btn btn-secondary">Back to Suppliers</a>
+  </header>
+
+  <div *ngIf="loading" class="panel empty-state">Loading supplier details...</div>
+  <app-supplier-form
+    *ngIf="!loading"
+    mode="edit"
+    [supplier]="supplier"
+    [loading]="saving"
+    (submitted)="save($event)"
+    (cancelled)="router.navigate(['/suppliers', supplier?.supplierId])">
+  </app-supplier-form>
+</section>

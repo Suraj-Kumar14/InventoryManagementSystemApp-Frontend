@@ -1,17 +1,20 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import {
-  AcknowledgeWarehouseStockAlertRequest,
-  BarcodeStockLookupResponse,
-  StockAuditRequest,
-  StockAuditResponse,
+  AdjustStockRequest,
+  PageResponse,
+  ReleaseReservationRequest,
+  ReserveStockRequest,
+  StockIssueRequest,
   StockLevelResponse,
+  StockReceiptRequest,
+  StockSummaryResponse,
   StockTransferRequest,
   StockUpdateRequest,
+  TransferStockResponse,
   WarehouseRequest,
   WarehouseResponse,
-  WarehouseStockAlertResponse,
-  WarehouseStockMovementResponse,
+  WarehouseSummaryResponse,
 } from '../http/backend.models';
 import { ApiService } from '../http/api.service';
 import { handleServiceError } from '../http/http.utils';
@@ -24,17 +27,26 @@ export class WarehouseService {
 
   getWarehouses(activeOnly = false): Observable<WarehouseResponse[]> {
     return this.api
-      .get<WarehouseResponse[]>(
-        activeOnly ? API_ENDPOINTS.WAREHOUSES.ACTIVE : API_ENDPOINTS.WAREHOUSES.ROOT,
-        { service: 'warehouse' }
-      )
-      .pipe(handleServiceError(this.serviceName, 'getWarehouses'));
+      .get<PageResponse<WarehouseResponse>>(API_ENDPOINTS.WAREHOUSES.ROOT, {
+        service: 'warehouse',
+        params: activeOnly ? { isActive: true, page: 0, size: 100 } : { page: 0, size: 100 },
+      })
+      .pipe(
+        map((response) => response.content ?? []),
+        handleServiceError(this.serviceName, 'getWarehouses')
+      );
   }
 
   getWarehouseById(id: number): Observable<WarehouseResponse> {
     return this.api
       .get<WarehouseResponse>(`${API_ENDPOINTS.WAREHOUSES.ROOT}/${id}`, { service: 'warehouse' })
       .pipe(handleServiceError(this.serviceName, 'getWarehouseById'));
+  }
+
+  getWarehouseByCode(code: string): Observable<WarehouseResponse> {
+    return this.api
+      .get<WarehouseResponse>(API_ENDPOINTS.WAREHOUSES.CODE(code), { service: 'warehouse' })
+      .pipe(handleServiceError(this.serviceName, 'getWarehouseByCode'));
   }
 
   createWarehouse(payload: WarehouseRequest): Observable<WarehouseResponse> {
@@ -49,22 +61,22 @@ export class WarehouseService {
       .pipe(handleServiceError(this.serviceName, 'updateWarehouse'));
   }
 
-  deactivateWarehouse(id: number): Observable<string> {
+  deactivateWarehouse(id: number): Observable<WarehouseResponse> {
     return this.api
-      .put<string>(API_ENDPOINTS.WAREHOUSES.DEACTIVATE(id), {}, {
-        service: 'warehouse',
-        responseType: 'text',
-      })
+      .patch<WarehouseResponse>(API_ENDPOINTS.WAREHOUSES.DEACTIVATE(id), {}, { service: 'warehouse' })
       .pipe(handleServiceError(this.serviceName, 'deactivateWarehouse'));
   }
 
-  assignWarehouseManager(warehouseId: number, managerId: number): Observable<string> {
+  activateWarehouse(id: number): Observable<WarehouseResponse> {
     return this.api
-      .put<string>(API_ENDPOINTS.WAREHOUSES.ASSIGN_MANAGER(warehouseId, managerId), {}, {
-        service: 'warehouse',
-        responseType: 'text',
-      })
-      .pipe(handleServiceError(this.serviceName, 'assignWarehouseManager'));
+      .patch<WarehouseResponse>(API_ENDPOINTS.WAREHOUSES.ACTIVATE(id), {}, { service: 'warehouse' })
+      .pipe(handleServiceError(this.serviceName, 'activateWarehouse'));
+  }
+
+  getWarehouseSummary(): Observable<WarehouseSummaryResponse> {
+    return this.api
+      .get<WarehouseSummaryResponse>(API_ENDPOINTS.WAREHOUSES.SUMMARY, { service: 'warehouse' })
+      .pipe(handleServiceError(this.serviceName, 'getWarehouseSummary'));
   }
 
   getStockLevel(warehouseId: number, productId: number): Observable<StockLevelResponse> {
@@ -77,95 +89,109 @@ export class WarehouseService {
 
   getStockByWarehouse(warehouseId: number): Observable<StockLevelResponse[]> {
     return this.api
-      .get<StockLevelResponse[]>(API_ENDPOINTS.STOCK.BY_WAREHOUSE(warehouseId), { service: 'warehouse' })
-      .pipe(handleServiceError(this.serviceName, 'getStockByWarehouse'));
+      .get<PageResponse<StockLevelResponse>>(API_ENDPOINTS.STOCK.BY_WAREHOUSE(warehouseId), {
+        service: 'warehouse',
+        params: { page: 0, size: 100 },
+      })
+      .pipe(
+        map((response) => response.content ?? []),
+        handleServiceError(this.serviceName, 'getStockByWarehouse')
+      );
   }
 
   getStockByProduct(productId: number): Observable<StockLevelResponse[]> {
     return this.api
-      .get<StockLevelResponse[]>(API_ENDPOINTS.STOCK.BY_PRODUCT(productId), { service: 'warehouse' })
-      .pipe(handleServiceError(this.serviceName, 'getStockByProduct'));
+      .get<PageResponse<StockLevelResponse>>(API_ENDPOINTS.STOCK.BY_PRODUCT(productId), {
+        service: 'warehouse',
+        params: { page: 0, size: 100 },
+      })
+      .pipe(
+        map((response) => response.content ?? []),
+        handleServiceError(this.serviceName, 'getStockByProduct')
+      );
   }
 
-  updateStock(warehouseId: number, payload: StockUpdateRequest): Observable<StockLevelResponse> {
+  searchStock(filters: Record<string, unknown>): Observable<StockLevelResponse[]> {
     return this.api
-      .put<StockLevelResponse>(API_ENDPOINTS.STOCK.UPDATE(warehouseId), payload, { service: 'warehouse' })
+      .get<PageResponse<StockLevelResponse>>(API_ENDPOINTS.STOCK.ROOT, {
+        service: 'warehouse',
+        params: { page: 0, size: 100, ...filters },
+      })
+      .pipe(
+        map((response) => response.content ?? []),
+        handleServiceError(this.serviceName, 'searchStock')
+      );
+  }
+
+  createStockLevel(payload: {
+    warehouseId: number;
+    productId: number;
+    quantity: number;
+    reservedQuantity?: number | null;
+    locationCode?: string | null;
+  }): Observable<StockLevelResponse> {
+    return this.api
+      .post<StockLevelResponse>(API_ENDPOINTS.STOCK.ROOT, payload, { service: 'warehouse' })
+      .pipe(handleServiceError(this.serviceName, 'createStockLevel'));
+  }
+
+  updateStock(payload: StockUpdateRequest): Observable<StockLevelResponse> {
+    return this.api
+      .post<StockLevelResponse>(API_ENDPOINTS.STOCK.UPDATE, payload, { service: 'warehouse' })
       .pipe(handleServiceError(this.serviceName, 'updateStock'));
   }
 
-  reserveStock(warehouseId: number, productId: number, quantity: number): Observable<string> {
+  receiveStock(payload: StockReceiptRequest): Observable<StockLevelResponse> {
     return this.api
-      .post<string>(API_ENDPOINTS.STOCK.RESERVE, null, {
-        service: 'warehouse',
-        params: { warehouseId, productId, quantity },
-        responseType: 'text',
-      })
+      .post<StockLevelResponse>(API_ENDPOINTS.STOCK.RECEIVE, payload, { service: 'warehouse' })
+      .pipe(handleServiceError(this.serviceName, 'receiveStock'));
+  }
+
+  issueStock(payload: StockIssueRequest): Observable<StockLevelResponse> {
+    return this.api
+      .post<StockLevelResponse>(API_ENDPOINTS.STOCK.ISSUE, payload, { service: 'warehouse' })
+      .pipe(handleServiceError(this.serviceName, 'issueStock'));
+  }
+
+  reserveStock(payload: ReserveStockRequest): Observable<StockLevelResponse> {
+    return this.api
+      .post<StockLevelResponse>(API_ENDPOINTS.STOCK.RESERVE, payload, { service: 'warehouse' })
       .pipe(handleServiceError(this.serviceName, 'reserveStock'));
   }
 
-  releaseStock(warehouseId: number, productId: number, quantity: number): Observable<string> {
+  releaseStock(payload: ReleaseReservationRequest): Observable<StockLevelResponse> {
     return this.api
-      .post<string>(API_ENDPOINTS.STOCK.RELEASE, null, {
-        service: 'warehouse',
-        params: { warehouseId, productId, quantity },
-        responseType: 'text',
-      })
+      .post<StockLevelResponse>(API_ENDPOINTS.STOCK.RELEASE, payload, { service: 'warehouse' })
       .pipe(handleServiceError(this.serviceName, 'releaseStock'));
   }
 
-  transferStock(payload: StockTransferRequest): Observable<string> {
+  transferStock(payload: StockTransferRequest): Observable<TransferStockResponse> {
     return this.api
-      .post<string>(API_ENDPOINTS.STOCK.TRANSFER, payload, {
-        service: 'warehouse',
-        responseType: 'text',
-      })
+      .post<TransferStockResponse>(API_ENDPOINTS.STOCK.TRANSFER, payload, { service: 'warehouse' })
       .pipe(handleServiceError(this.serviceName, 'transferStock'));
   }
 
-  getLowStock(threshold = 10): Observable<StockLevelResponse[]> {
+  adjustStock(payload: AdjustStockRequest): Observable<StockLevelResponse> {
     return this.api
-      .get<StockLevelResponse[]>(API_ENDPOINTS.STOCK.LOW_STOCK, {
-        service: 'warehouse',
-        params: { threshold },
-      })
+      .post<StockLevelResponse>(API_ENDPOINTS.STOCK.ADJUST, payload, { service: 'warehouse' })
+      .pipe(handleServiceError(this.serviceName, 'adjustStock'));
+  }
+
+  getLowStock(): Observable<StockLevelResponse[]> {
+    return this.api
+      .get<StockLevelResponse[]>(API_ENDPOINTS.STOCK.LOW_STOCK, { service: 'warehouse' })
       .pipe(handleServiceError(this.serviceName, 'getLowStock'));
   }
 
-  getMovementHistory(warehouseId?: number, productId?: number): Observable<WarehouseStockMovementResponse[]> {
+  getOverstock(): Observable<StockLevelResponse[]> {
     return this.api
-      .get<WarehouseStockMovementResponse[]>(API_ENDPOINTS.STOCK.MOVEMENTS, {
-        service: 'warehouse',
-        params: { warehouseId, productId },
-      })
-      .pipe(handleServiceError(this.serviceName, 'getMovementHistory'));
+      .get<StockLevelResponse[]>(API_ENDPOINTS.STOCK.OVERSTOCK, { service: 'warehouse' })
+      .pipe(handleServiceError(this.serviceName, 'getOverstock'));
   }
 
-  performStockAudit(payload: StockAuditRequest): Observable<StockAuditResponse> {
+  getStockSummary(): Observable<StockSummaryResponse> {
     return this.api
-      .post<StockAuditResponse>(API_ENDPOINTS.STOCK.AUDIT, payload, { service: 'warehouse' })
-      .pipe(handleServiceError(this.serviceName, 'performStockAudit'));
-  }
-
-  lookupStockByBarcode(barcode: string): Observable<BarcodeStockLookupResponse> {
-    return this.api
-      .get<BarcodeStockLookupResponse>(API_ENDPOINTS.STOCK.BARCODE(barcode), { service: 'warehouse' })
-      .pipe(handleServiceError(this.serviceName, 'lookupStockByBarcode'));
-  }
-
-  getStockAlerts(): Observable<WarehouseStockAlertResponse[]> {
-    return this.api
-      .get<WarehouseStockAlertResponse[]>(API_ENDPOINTS.STOCK.ALERTS, { service: 'warehouse' })
-      .pipe(handleServiceError(this.serviceName, 'getStockAlerts'));
-  }
-
-  acknowledgeStockAlert(
-    alertId: number,
-    payload: AcknowledgeWarehouseStockAlertRequest
-  ): Observable<WarehouseStockAlertResponse> {
-    return this.api
-      .post<WarehouseStockAlertResponse>(API_ENDPOINTS.STOCK.ACKNOWLEDGE_ALERT(alertId), payload, {
-        service: 'warehouse',
-      })
-      .pipe(handleServiceError(this.serviceName, 'acknowledgeStockAlert'));
+      .get<StockSummaryResponse>(API_ENDPOINTS.STOCK.SUMMARY, { service: 'warehouse' })
+      .pipe(handleServiceError(this.serviceName, 'getStockSummary'));
   }
 }

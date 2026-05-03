@@ -1,0 +1,82 @@
+<section class="detail-page" *ngIf="purchaseOrder as order">
+  <header class="detail-card detail-card--hero">
+    <div>
+      <p class="eyebrow">Purchase Order Detail</p>
+      <h1>{{ order.poNumber || ('PO #' + (order.purchaseOrderId ?? order.poId)) }}</h1>
+      <p>Supplier {{ order.supplierName || ('#' + order.supplierId) }} | Warehouse {{ order.warehouseName || ('#' + order.warehouseId) }}</p>
+    </div>
+    <div class="detail-actions">
+      <app-po-status-badge [status]="order.status" [overdue]="!!order.isOverdue"></app-po-status-badge>
+      <a routerLink="/purchase-orders" class="btn btn-secondary">Back</a>
+      <a *ngIf="['DRAFT', 'PENDING_APPROVAL'].includes(order.status)" [routerLink]="['/purchase-orders', order.purchaseOrderId ?? order.poId, 'edit']" class="btn btn-secondary">Edit</a>
+      <a *ngIf="['APPROVED', 'PARTIALLY_RECEIVED'].includes(order.status)" [routerLink]="['/purchase-orders', order.purchaseOrderId ?? order.poId, 'receive']" class="btn btn-primary">Receive Goods</a>
+    </div>
+  </header>
+
+  <div class="detail-grid">
+    <section class="detail-card">
+      <h2>Order Summary</h2>
+      <dl class="meta-grid">
+        <div><dt>Expected Delivery</dt><dd>{{ order.expectedDeliveryDate || order.expectedDate | date:'mediumDate' }}</dd></div>
+        <div><dt>Actual Delivery</dt><dd>{{ order.actualDeliveryDate || order.receivedDate | date:'mediumDate' }}</dd></div>
+        <div><dt>Payment Terms</dt><dd>{{ order.paymentTerms || 'Not specified' }}</dd></div>
+        <div><dt>Created By</dt><dd>{{ order.createdByName || ('User #' + (order.createdBy || order.createdById)) }}</dd></div>
+        <div><dt>Submitted</dt><dd>{{ order.submittedAt | date:'medium' }}</dd></div>
+        <div><dt>Approved</dt><dd>{{ order.approvedAt | date:'medium' }}</dd></div>
+      </dl>
+      <p class="notes" *ngIf="order.notes">{{ order.notes }}</p>
+      <p class="reason" *ngIf="order.approvalRemarks"><strong>Approval remarks:</strong> {{ order.approvalRemarks }}</p>
+      <p class="reason" *ngIf="order.rejectionReason"><strong>Rejection reason:</strong> {{ order.rejectionReason }}</p>
+      <p class="reason" *ngIf="order.cancellationReason"><strong>Cancellation reason:</strong> {{ order.cancellationReason }}</p>
+    </section>
+
+    <section class="detail-card">
+      <h2>Amount Summary</h2>
+      <dl class="amount-grid">
+        <div><dt>Subtotal</dt><dd>{{ order.subtotalAmount | currency:'INR':'symbol':'1.0-2' }}</dd></div>
+        <div><dt>Tax</dt><dd>{{ order.taxAmount | currency:'INR':'symbol':'1.0-2' }}</dd></div>
+        <div><dt>Discount</dt><dd>{{ order.discountAmount | currency:'INR':'symbol':'1.0-2' }}</dd></div>
+        <div><dt>Shipping</dt><dd>{{ order.shippingAmount | currency:'INR':'symbol':'1.0-2' }}</dd></div>
+        <div class="amount-grid__total"><dt>Total</dt><dd>{{ order.totalAmount | currency:'INR':'symbol':'1.0-2' }}</dd></div>
+      </dl>
+    </section>
+  </div>
+
+  <section class="detail-card">
+    <div class="detail-table__header">
+      <h2>Line Items</h2>
+      <div class="detail-actions">
+        <button *ngIf="order.status === 'DRAFT'" type="button" class="btn btn-secondary" (click)="submitPurchaseOrder()">Submit</button>
+        <button *ngIf="order.status === 'PENDING_APPROVAL'" type="button" class="btn btn-primary" (click)="approvePurchaseOrder()">Approve</button>
+        <button *ngIf="order.status === 'PENDING_APPROVAL'" type="button" class="btn btn-danger" (click)="rejectPurchaseOrder()">Reject</button>
+        <button *ngIf="['DRAFT', 'PENDING_APPROVAL', 'APPROVED'].includes(order.status)" type="button" class="btn btn-danger" (click)="cancelPurchaseOrder()">Cancel</button>
+      </div>
+    </div>
+    <table class="detail-table">
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Ordered</th>
+          <th>Received</th>
+          <th>Pending</th>
+          <th>Unit Cost</th>
+          <th>Line Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of order.lineItems">
+          <td>{{ item.productName || ('Product #' + item.productId) }} <span *ngIf="item.productSku">({{ item.productSku }})</span></td>
+          <td>{{ item.orderedQuantity || item.quantity }}</td>
+          <td>{{ item.receivedQuantity ?? item.receivedQty }}</td>
+          <td>{{ item.pendingQuantity }}</td>
+          <td>{{ item.unitCost | currency:'INR':'symbol':'1.0-2' }}</td>
+          <td>{{ (item.lineTotal ?? item.totalCost) | currency:'INR':'symbol':'1.0-2' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <app-po-timeline [history]="order.history || []"></app-po-timeline>
+</section>
+
+<div *ngIf="loading" class="loading-card">Loading purchase order details...</div>

@@ -1,0 +1,116 @@
+<form class="supplier-form" [formGroup]="form" (ngSubmit)="submit()">
+  <section class="form-card">
+    <div class="form-card__header">
+      <div>
+        <p class="eyebrow">{{ mode === 'create' ? 'Supplier Onboarding' : 'Supplier Profile' }}</p>
+        <h2>{{ mode === 'create' ? 'Create supplier' : 'Update supplier' }}</h2>
+      </div>
+      <div class="status-chip" *ngIf="mode === 'edit'">
+        {{ form.controls.status.value }}
+      </div>
+    </div>
+
+    <div class="grid">
+      <label>
+        <span>Supplier Code</span>
+        <input formControlName="supplierCode" type="text" placeholder="Auto-generated if left blank" />
+      </label>
+      <label>
+        <span>Supplier Name</span>
+        <input formControlName="name" type="text" placeholder="Supplier legal name" />
+        <small *ngIf="form.controls.name.touched && form.controls.name.invalid">Supplier name is required.</small>
+      </label>
+      <label>
+        <span>Contact Person</span>
+        <input formControlName="contactPerson" type="text" placeholder="Primary buyer contact" />
+      </label>
+      <label>
+        <span>Email</span>
+        <input formControlName="email" type="email" placeholder="contact@supplier.com" />
+        <small *ngIf="form.controls.email.touched && form.controls.email.hasError('email')">Invalid email address.</small>
+      </label>
+      <label>
+        <span>Phone</span>
+        <input formControlName="phone" type="text" placeholder="+919999999999" />
+        <small *ngIf="form.controls.phone.touched && form.controls.phone.invalid">Invalid phone number.</small>
+      </label>
+      <label>
+        <span>Alternate Phone</span>
+        <input formControlName="alternatePhone" type="text" placeholder="Backup contact number" />
+      </label>
+      <label class="field field--wide">
+        <span>Address</span>
+        <textarea formControlName="address" rows="3" placeholder="Street, building, landmark"></textarea>
+      </label>
+      <label>
+        <span>City</span>
+        <input formControlName="city" type="text" />
+      </label>
+      <label>
+        <span>State</span>
+        <input formControlName="state" type="text" />
+      </label>
+      <label>
+        <span>Country</span>
+        <input formControlName="country" type="text" />
+      </label>
+      <label>
+        <span>Postal Code</span>
+        <input formControlName="postalCode" type="text" />
+      </label>
+      <label>
+        <span>Tax Number</span>
+        <input formControlName="taxNumber" type="text" />
+      </label>
+      <label>
+        <span>GST Number</span>
+        <input formControlName="gstNumber" type="text" />
+      </label>
+      <label>
+        <span>Payment Terms</span>
+        <select formControlName="paymentTerms">
+          <option value="NET-15">NET-15</option>
+          <option value="NET-30">NET-30</option>
+          <option value="NET-45">NET-45</option>
+          <option value="NET-60">NET-60</option>
+          <option value="COD">COD</option>
+          <option value="IMMEDIATE">IMMEDIATE</option>
+        </select>
+      </label>
+      <label>
+        <span>Lead Time (days)</span>
+        <input formControlName="leadTimeDays" type="number" min="0" />
+        <small *ngIf="form.controls.leadTimeDays.touched && form.controls.leadTimeDays.invalid">Lead time cannot be negative.</small>
+      </label>
+      <label>
+        <span>Rating</span>
+        <input formControlName="rating" type="number" min="0" max="5" step="0.1" />
+        <small *ngIf="form.controls.rating.touched && form.controls.rating.invalid">Rating must be between 0 and 5.</small>
+      </label>
+      <label *ngIf="mode === 'edit'">
+        <span>Status</span>
+        <select formControlName="status">
+          <option value="ACTIVE">ACTIVE</option>
+          <option value="INACTIVE">INACTIVE</option>
+          <option value="BLACKLISTED">BLACKLISTED</option>
+          <option value="PENDING_REVIEW">PENDING REVIEW</option>
+        </select>
+      </label>
+      <label *ngIf="mode === 'edit'" class="toggle">
+        <span>Active for purchasing</span>
+        <input formControlName="isActive" type="checkbox" />
+      </label>
+      <label class="field field--wide">
+        <span>Notes</span>
+        <textarea formControlName="notes" rows="4" placeholder="Performance notes, compliance remarks, escalation context"></textarea>
+      </label>
+    </div>
+  </section>
+
+  <div class="actions" *ngIf="!readOnly">
+    <button type="button" class="btn btn-secondary" (click)="cancelled.emit()">Cancel</button>
+    <button type="submit" class="btn btn-primary" [disabled]="loading || form.invalid">
+      {{ loading ? (mode === 'create' ? 'Saving...' : 'Updating...') : (mode === 'create' ? 'Save Supplier' : 'Update Supplier') }}
+    </button>
+  </div>
+</form>

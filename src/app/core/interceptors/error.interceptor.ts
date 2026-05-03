@@ -9,15 +9,33 @@ import {
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { Router } from '@angular/router';
-import { AuthService } from '../auth/services/auth.service';
 import { NotificationService } from '../services/notification.service';
+import { TokenService } from '../auth/services/token.service';
 
 @Injectable()
 export class ErrorInterceptor implements HttpInterceptor {
   private router = inject(Router);
-  private authService = inject(AuthService);
+  private tokenService = inject(TokenService);
   private notification = inject(NotificationService);
-  private readonly publicAuthEndpoints = ['/auth/login', '/auth/register', '/auth/forgot-password', '/auth/send-otp', '/auth/verify-otp', '/auth/reset-password'];
+
+  private readonly publicAuthEndpoints = [
+    '/auth/login',
+    '/auth/register',
+    '/api/v1/auth/login',
+    '/api/v1/auth/register',
+    '/api/v1/auth/register-request',
+    '/auth/forgot-password',
+    '/auth/send-otp',
+    '/auth/verify-otp',
+    '/api/v1/auth/verify-otp',
+    '/auth/reset-password',
+    '/auth/refresh',
+    '/api/v1/auth/refresh-token',
+    '/oauth2/authorization/google',
+    '/login/oauth2/code/google',
+  ];
+
+  private readonly sessionEndpoints = ['/auth/profile', '/auth/logout', '/auth/refresh', '/api/v1/auth/profile', '/api/v1/auth/refresh-token'];
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     return next.handle(req).pipe(
@@ -33,22 +51,33 @@ export class ErrorInterceptor implements HttpInterceptor {
 
     switch (error.status) {
       case 0:
-        this.notification.error('Unable to reach the backend services. Please check that the API gateway and required services are running.', 'Connection Error');
+        this.notification.error(
+          'Unable to reach the backend services. Please check that the API gateway and required services are running.',
+          'Connection Error'
+        );
         break;
 
       case 401:
         if (!this.isPublicAuthRequest(error.url)) {
-          this.authService.logoutLocal();
-          this.router.navigate(['/login']);
-          this.notification.error('Your session has expired. Please login again.', 'Session Expired');
+          if (this.shouldForceLogout(error.url)) {
+            this.tokenService.clear();
+            this.router.navigate(['/login']);
+            this.notification.error('Your session has expired. Please login again.', 'Session Expired');
+          } else {
+            this.notification.error(message || 'You are not authorized to access this resource.', 'Unauthorized');
+          }
         } else {
           this.notification.error(message || 'Unauthorized request.', 'Unauthorized');
         }
         break;
 
       case 403:
-        this.router.navigate(['/403']);
-        this.notification.error('You are not allowed to access this module', 'Access Denied');
+        if (!this.isPublicAuthRequest(error.url)) {
+          this.router.navigate(['/403']);
+          this.notification.error('You are not allowed to access this module', 'Access Denied');
+        } else {
+          this.notification.error(message || 'You are not allowed to perform this action', 'Access Denied');
+        }
         break;
 
       case 400:
@@ -56,12 +85,10 @@ export class ErrorInterceptor implements HttpInterceptor {
         break;
 
       case 404:
-        // Not Found
         this.notification.error(message || 'Resource not found.', 'Not Found');
         break;
 
       case 409:
-        // Conflict
         this.notification.error(message || 'Conflict error occurred.', 'Conflict');
         break;
 
@@ -108,5 +135,12 @@ export class ErrorInterceptor implements HttpInterceptor {
     }
     return this.publicAuthEndpoints.some((endpoint) => url.includes(endpoint));
   }
-}
 
+  private shouldForceLogout(url: string | null): boolean {
+    if (!url) {
+      return true;
+    }
+
+    return this.sessionEndpoints.some((endpoint) => url.includes(endpoint));
+  }
+}

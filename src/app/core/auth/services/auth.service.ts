@@ -30,18 +30,23 @@ interface MessageResponse {
   message: string;
 }
 
+interface UserListResponse {
+  content?: UserProfile[];
+  users?: UserProfile[];
+}
+
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
   private readonly apiUrl = environment.apiGatewayUrl || environment.apiUrl;
-  private currentUserSubject = new BehaviorSubject<User | null>(null);
+  private readonly currentUserSubject = new BehaviorSubject<User | null>(null);
   readonly currentUser$ = this.currentUserSubject.asObservable();
 
-  private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
+  private readonly isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
   readonly isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
 
-  private isLoadingSubject = new BehaviorSubject<boolean>(false);
+  private readonly isLoadingSubject = new BehaviorSubject<boolean>(false);
   readonly isLoading$ = this.isLoadingSubject.asObservable();
 
   constructor(
@@ -52,32 +57,26 @@ export class AuthService {
   }
 
   private initializeAuthState(): void {
-    const decodedUser = this.tokenService.decodeToken();
-    if (!decodedUser || !this.tokenService.hasValidToken()) {
+    if (!this.tokenService.hasValidToken()) {
       this.logoutLocal();
       return;
     }
 
-    // Token is valid — restore session immediately from decoded token data
-    this.currentUserSubject.next(decodedUser);
-    this.isAuthenticatedSubject.next(true);
+    const restoredUser = this.tokenService.getUser() ?? this.tokenService.decodeToken();
+    if (!restoredUser) {
+      this.logoutLocal();
+      return;
+    }
 
-    // Enrich user data from backend profile in the background.
-    // If the call fails (backend blip / restart), keep the session alive
-    // using the decoded token — do NOT log the user out.
-    this.getProfile().subscribe({
-      next: (profile) => this.currentUserSubject.next(this.mapProfileToUser(profile)),
-      error: (err) => {
-        console.warn('[AuthService] getProfile() failed during init — keeping session from token.', err?.status);
-        // Only force-logout on explicit 401 (token rejected by server), not on
-        // network errors (0), 503 (service unavailable), etc.
-        if (err?.status === 401) {
-          this.logoutLocal();
-        }
-      },
+    this.currentUserSubject.next(restoredUser);
+    this.isAuthenticatedSubject.next(true);
+    this.tokenService.setUser(restoredUser);
+
+    this.tokenService.currentUser$.subscribe((user) => {
+      this.currentUserSubject.next(user);
+      this.isAuthenticatedSubject.next(!!user && this.tokenService.hasValidToken());
     });
   }
-
 
   login(credentials: LoginRequest): Observable<AuthResponse> {
     this.isLoadingSubject.next(true);
@@ -94,7 +93,7 @@ export class AuthService {
         this.getProfile().pipe(
           map((profile) => {
             const user = this.mapProfileToUser(profile);
-            this.currentUserSubject.next(user);
+            this.tokenService.setUser(user);
             return {
               token: response.accessToken,
               refreshToken: response.refreshToken,
@@ -158,7 +157,7 @@ export class AuthService {
     return this.getProfile().pipe(
       map((profile) => {
         const user = this.mapProfileToUser(profile);
-        this.currentUserSubject.next(user);
+        this.tokenService.setUser(user);
         return user;
       }),
       catchError((error) => {
@@ -177,7 +176,7 @@ export class AuthService {
     return this.getProfile().pipe(
       map((profile) => {
         const user = this.mapProfileToUser(profile);
-        this.currentUserSubject.next(user);
+        this.tokenService.setUser(user);
         this.isAuthenticatedSubject.next(true);
         return user;
       }),
@@ -193,7 +192,7 @@ export class AuthService {
       .put<UserProfile>(`${this.apiUrl}${API_ENDPOINTS.AUTH.UPDATE_PROFILE}`, payload)
       .pipe(
         tap((profile) => {
-          this.currentUserSubject.next(this.mapProfileToUser(profile));
+          this.tokenService.setUser(this.mapProfileToUser(profile));
         })
       );
   }
@@ -205,7 +204,9 @@ export class AuthService {
   }
 
   getUsers(): Observable<UserProfile[]> {
-    return this.http.get<UserProfile[]>(`${this.apiUrl}${API_ENDPOINTS.AUTH.USERS}`);
+    return this.http
+      .get<UserProfile[] | UserListResponse>(`${this.apiUrl}${API_ENDPOINTS.AUTH.USERS}`)
+      .pipe(map((response) => this.normalizeUsersResponse(response)));
   }
 
   activateUser(id: number): Observable<string> {
@@ -235,7 +236,7 @@ export class AuthService {
   }
 
   logoutLocal(): void {
-    this.tokenService.clearTokens();
+    this.tokenService.clear();
     this.currentUserSubject.next(null);
     this.isAuthenticatedSubject.next(false);
     this.isLoadingSubject.next(false);
@@ -271,6 +272,13 @@ export class AuthService {
     return this.currentUserSubject.value?.userId ?? null;
   }
 
+  getFirstName(name?: string | null, email?: string | null): string {
+    const source = name?.trim() || email?.trim() || 'User';
+    const base = !name?.trim() && source.includes('@') ? source.split('@')[0] : source;
+    const firstName = base.split(/\s+/)[0]?.trim();
+    return firstName || 'User';
+  }
+
   isTokenValid(): boolean {
     return this.tokenService.hasValidToken();
   }
@@ -286,5 +294,21 @@ export class AuthService {
       isActive: profile.isActive,
       createdAt: profile.createdAt,
     };
+  }
+
+  private normalizeUsersResponse(response: UserProfile[] | UserListResponse): UserProfile[] {
+    if (Array.isArray(response)) {
+      return response;
+    }
+
+    if (Array.isArray(response?.content)) {
+      return response.content;
+    }
+
+    if (Array.isArray(response?.users)) {
+      return response.users;
+    }
+
+    return [];
   }
 }

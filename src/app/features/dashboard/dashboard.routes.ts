@@ -29,7 +29,7 @@ export const dashboardRoutes: Routes = [
     path: 'staff',
     component: WarehouseDashboardComponent,
     canActivate: [roleGuard],
-    data: { roles: [UserRole.STAFF] },
+    data: { roles: [UserRole.STAFF], allowAdminOverride: false, redirectUnauthorizedToRoleHome: true },
   },
   // Fallback: redirect bare /dashboard to login
   {

@@ -1,0 +1,52 @@
+<section class="supplier-page">
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Supplier Performance</p>
+      <h1>{{ supplier?.name || 'Supplier' }}</h1>
+      <p class="hero__subtitle">A procurement-facing view of delivery consistency, spend, and service quality.</p>
+    </div>
+    <div class="hero__actions">
+      <a routerLink="/suppliers" class="btn btn-secondary">Back</a>
+      <button *ngIf="canRate" type="button" class="btn btn-primary" (click)="updateRating()" [disabled]="actionLoading">
+        {{ actionLoading ? 'Updating...' : 'Update Rating' }}
+      </button>
+    </div>
+  </header>
+
+  <div *ngIf="loading" class="panel empty-state">Loading supplier performance...</div>
+
+  <section *ngIf="!loading && performance" class="performance-grid">
+    <article class="panel metric-card">
+      <p>Total Orders</p>
+      <strong>{{ performance.totalOrders }}</strong>
+    </article>
+    <article class="panel metric-card">
+      <p>Completed Orders</p>
+      <strong>{{ performance.completedOrders }}</strong>
+    </article>
+    <article class="panel metric-card">
+      <p>Delayed Orders</p>
+      <strong>{{ performance.delayedOrders }}</strong>
+    </article>
+    <article class="panel metric-card">
+      <p>Total Spend</p>
+      <strong>{{ performance.totalSpend | currency:'INR':'symbol':'1.0-2' }}</strong>
+    </article>
+    <article class="panel metric-card">
+      <p>Avg Delay</p>
+      <strong>{{ performance.averageDeliveryDelayDays | number:'1.0-1' }} days</strong>
+    </article>
+    <article class="panel metric-card">
+      <p>Quality Rating</p>
+      <strong>{{ performance.qualityRating | number:'1.1-1' }}</strong>
+    </article>
+    <article class="panel metric-card">
+      <p>Delivery Rating</p>
+      <strong>{{ performance.deliveryRating | number:'1.1-1' }}</strong>
+    </article>
+    <article class="panel metric-card">
+      <p>Overall Rating</p>
+      <strong>{{ performance.overallRating | number:'1.1-1' }}</strong>
+    </article>
+  </section>
+</section>

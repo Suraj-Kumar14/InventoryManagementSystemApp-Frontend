@@ -1,13 +1,341 @@
-<div class="dashboard">
-  <div class="dashboard-header">
-    <h1 class="dashboard-header__title">Warehouse Dashboard</h1>
-    <p class="dashboard-header__subtitle">Warehouse activity and stock health from backend services.</p>
+<section class="staff-dashboard">
+  <header class="hero-card">
+    <div class="hero-copy">
+      <p class="eyebrow">Warehouse Operations</p>
+      <h1>Welcome back, {{ greetingName }}</h1>
+      <p class="hero-subtitle">
+        {{ assignedWarehouseLabel }}
+      </p>
+      <p class="hero-meta">
+        {{ currentDate | date:'fullDate' }}
+      </p>
+    </div>
+    <div class="hero-actions">
+      <app-button
+        [label]="headerActionLoading === 'refresh' ? 'Refreshing...' : 'Refresh'"
+        [isLoading]="headerActionLoading === 'refresh'"
+        [disabled]="refreshing"
+        (clicked)="load()">
+      </app-button>
+      <app-button
+        variant="secondary"
+        [label]="headerActionLoading === 'barcode' ? 'Opening...' : 'Scan Barcode'"
+        [isLoading]="headerActionLoading === 'barcode'"
+        (clicked)="openBarcodeLookup()">
+      </app-button>
+      <app-button
+        variant="secondary"
+        [label]="headerActionLoading === 'receive' ? 'Loading...' : 'Receive Goods'"
+        [isLoading]="headerActionLoading === 'receive'"
+        (clicked)="openReceiveGoods()">
+      </app-button>
+    </div>
+  </header>
+
+  <div class="state-shell" *ngIf="loading">
+    <app-skeleton-loader [rows]="4" [cols]="2"></app-skeleton-loader>
   </div>
-  <div *ngIf="loading" class="dashboard-loading">Loading dashboard...</div>
-  <div *ngIf="!loading" class="stats-grid">
-    <div class="stat-card"><p class="stat-card__label">Warehouses</p><p class="stat-card__value">{{ warehouses }}</p></div>
-    <div class="stat-card"><p class="stat-card__label">Movements</p><p class="stat-card__value">{{ movements }}</p></div>
-    <div class="stat-card"><p class="stat-card__label">Recent Alerts</p><p class="stat-card__value">{{ alerts }}</p></div>
-    <div class="stat-card"><p class="stat-card__label">Low Stock Records</p><p class="stat-card__value">{{ lowStock }}</p></div>
-  </div>
-</div>
+
+  <ng-container *ngIf="!loading && view as vm">
+    <section class="notice-card notice-card--warning" *ngIf="sectionError('assignedWarehouse')">
+      <strong>Assigned warehouse required</strong>
+      <p>{{ sectionError('assignedWarehouse') }}</p>
+    </section>
+
+    <section class="kpi-grid" *ngIf="kpis.length; else emptyDashboard">
+      <button
+        *ngFor="let card of kpis; trackBy: trackByTitle"
+        type="button"
+        class="kpi-button"
+        [disabled]="!card.route"
+        (click)="openRoute(card.route)">
+        <app-report-kpi-card
+          [label]="card.title"
+          [value]="card.value"
+          [meta]="card.subtitle"
+          [icon]="card.icon"
+          [severity]="card.severity ?? 'default'">
+        </app-report-kpi-card>
+      </button>
+    </section>
+
+    <div class="dashboard-grid">
+      <section class="panel panel--wide">
+        <div class="panel-header">
+          <div>
+            <h2>Assigned Warehouse Stock</h2>
+            <p>Current availability, low-stock exposure, and quick access to stock operations.</p>
+          </div>
+          <div class="panel-actions">
+            <button type="button" class="ghost-btn" (click)="openStockWorkspace('/inventory/stock')">View Stock</button>
+            <button type="button" class="ghost-btn" (click)="openBarcodeLookup()">Barcode Lookup</button>
+            <button type="button" class="ghost-btn" (click)="openRoute('/reports/inventory/low-stock')">Low Stock Items</button>
+          </div>
+        </div>
+        <div class="section-error" *ngIf="sectionError('stock')">{{ sectionError('stock') }}</div>
+        <div class="section-notice" *ngIf="sectionNotice('stock')">{{ sectionNotice('stock') }}</div>
+        <ng-container *ngIf="vm.overview as overview">
+          <div class="summary-chips">
+            <div class="summary-chip">
+              <span>Available</span>
+              <strong>{{ overview.availableQuantity }}</strong>
+            </div>
+            <div class="summary-chip">
+              <span>Reserved</span>
+              <strong>{{ overview.reservedQuantity }}</strong>
+            </div>
+            <div class="summary-chip">
+              <span>Low Stock</span>
+              <strong>{{ overview.lowStockCount }}</strong>
+            </div>
+            <div class="summary-chip">
+              <span>Out of Stock</span>
+              <strong>{{ overview.outOfStockCount }}</strong>
+            </div>
+          </div>
+        </ng-container>
+        <div class="list-shell" *ngIf="vm.assignedStockItems.length; else noStockItems">
+          <article class="list-row" *ngFor="let item of vm.assignedStockItems">
+            <div>
+              <h3>{{ item.productName }}</h3>
+              <p>{{ item.sku }} · Reorder {{ item.reorderLevel }}</p>
+            </div>
+            <div class="row-metrics">
+              <span>Available {{ item.availableQuantity }}</span>
+              <span>Reserved {{ item.reservedQuantity }}</span>
+              <span class="status-pill" [class.status-pill--critical]="item.stockStatus === 'CRITICAL'">{{ item.stockStatus }}</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Goods Receipt</h2>
+            <p>Approved and partially received orders awaiting warehouse action.</p>
+          </div>
+        </div>
+        <div class="section-error" *ngIf="sectionError('receipts')">{{ sectionError('receipts') }}</div>
+        <div class="receipt-summary" *ngIf="vm.overview as overview">
+          <div><span>Pending</span><strong>{{ overview.goodsReceiptsPending }}</strong></div>
+          <div><span>Partial</span><strong>{{ overview.partiallyReceivedOrders }}</strong></div>
+          <div><span>Overdue</span><strong>{{ overview.overdueReceipts }}</strong></div>
+        </div>
+        <div class="list-shell" *ngIf="vm.pendingReceipts.length; else noReceipts">
+          <article class="receipt-card" *ngFor="let receipt of vm.pendingReceipts">
+            <div>
+              <h3>{{ receipt.poNumber }}</h3>
+              <p>{{ receipt.supplierName }}</p>
+            </div>
+            <div class="receipt-meta">
+              <span>{{ receipt.status }}</span>
+              <span>{{ receipt.expectedDeliveryDate ? (receipt.expectedDeliveryDate | date:'mediumDate') : 'Date pending' }}</span>
+              <span>{{ receipt.totalItems }} items</span>
+            </div>
+            <button type="button" class="link-btn" (click)="openRoute(receipt.route)">Receive Goods</button>
+          </article>
+        </div>
+        <div class="panel-links">
+          <button type="button" class="ghost-btn" (click)="openReceiveGoods()">Receive Goods</button>
+          <button type="button" class="ghost-btn" (click)="openRoute('/purchase-orders')">GRN History</button>
+          <button type="button" class="ghost-btn" (click)="openRoute('/purchase-orders')">Approved POs</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Stock Operations</h2>
+            <p>Quick operational shortcuts without embedding heavyweight forms in the dashboard.</p>
+          </div>
+        </div>
+        <div class="operations-grid">
+          <button type="button" class="operation-card" (click)="openIssueStock()">
+            <strong>Stock Issue</strong>
+            <span>Open the stock workspace for issue processing.</span>
+          </button>
+          <button type="button" class="operation-card" (click)="openTransferStock()">
+            <strong>Transfer Stock</strong>
+            <span>Move inventory between warehouse locations.</span>
+          </button>
+          <button type="button" class="operation-card" (click)="openAdjustmentStock()">
+            <strong>Adjustment / Write-off</strong>
+            <span>Open stock controls for controlled adjustments.</span>
+          </button>
+          <button type="button" class="operation-card" (click)="openCycleCount()">
+            <strong>Cycle Count</strong>
+            <span>Open the stock workspace while the dedicated cycle count flow is pending.</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Transfer Tasks</h2>
+            <p>Recent transfer activity for the assigned warehouse.</p>
+          </div>
+        </div>
+        <div class="section-error" *ngIf="sectionError('transfers')">{{ sectionError('transfers') }}</div>
+        <div class="section-notice" *ngIf="sectionNotice('transfers')">{{ sectionNotice('transfers') }}</div>
+        <div class="list-shell" *ngIf="vm.pendingTransfers.length; else noTransfers">
+          <article class="transfer-card" *ngFor="let transfer of vm.pendingTransfers">
+            <div>
+              <h3>{{ transfer.transferNumber }}</h3>
+              <p>{{ transfer.productName }}</p>
+            </div>
+            <div class="transfer-meta">
+              <span>{{ transfer.sourceWarehouseName }}</span>
+              <span>{{ transfer.destinationWarehouseName }}</span>
+              <span>{{ transfer.quantity }}</span>
+              <span class="status-pill">{{ transfer.status }}</span>
+            </div>
+          </article>
+        </div>
+        <div class="panel-links">
+          <button type="button" class="ghost-btn" (click)="openRoute('/movements')">View Transfers</button>
+          <button type="button" class="ghost-btn" (click)="openTransferStock()">Create Transfer</button>
+          <button type="button" class="ghost-btn" (click)="openRoute('/movements')">Acknowledge Transfer</button>
+        </div>
+      </section>
+
+      <section class="panel panel--wide">
+        <div class="panel-header">
+          <div>
+            <h2>Movement History</h2>
+            <p>Latest warehouse activity for stock in, stock out, adjustments, and transfers.</p>
+          </div>
+        </div>
+        <div class="section-error" *ngIf="sectionError('movements')">{{ sectionError('movements') }}</div>
+        <div class="movement-list" *ngIf="vm.recentMovements.length; else noMovements">
+          <article class="movement-row" *ngFor="let movement of vm.recentMovements">
+            <div>
+              <h3>{{ movement.productName }}</h3>
+              <p>{{ movement.movementNumber }} · {{ movement.warehouseName }}</p>
+            </div>
+            <div class="movement-meta">
+              <span class="status-pill">{{ movement.movementType }}</span>
+              <span>{{ movement.quantity }}</span>
+              <span>{{ movement.movementDate ? (movement.movementDate | date:'short') : 'Just now' }}</span>
+              <button type="button" class="link-btn" (click)="openRoute(movement.route)">View</button>
+            </div>
+          </article>
+        </div>
+        <div class="panel-links">
+          <button type="button" class="ghost-btn" (click)="openRoute('/movements')">Movement History</button>
+          <button type="button" class="ghost-btn" (click)="openRoute('/movements')">Movement Detail</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Alerts</h2>
+            <p>Unread warehouse alerts, transfer warnings, and receiving follow-up items.</p>
+          </div>
+        </div>
+        <div class="section-error" *ngIf="sectionError('alerts')">{{ sectionError('alerts') }}</div>
+        <div class="list-shell" *ngIf="vm.recentAlerts.length; else noAlerts">
+          <article class="alert-card" *ngFor="let alert of vm.recentAlerts">
+            <div class="alert-head">
+              <app-alert-severity-badge [severity]="alert.severity"></app-alert-severity-badge>
+              <app-alert-type-badge [type]="alert.type"></app-alert-type-badge>
+            </div>
+            <h3>{{ alert.title }}</h3>
+            <p>{{ alert.createdAt ? (alert.createdAt | date:'medium') : 'Recently created' }}</p>
+            <div class="alert-actions">
+              <button type="button" class="link-btn" (click)="openRoute(alert.route)">Open</button>
+              <button
+                type="button"
+                class="ghost-btn ghost-btn--compact"
+                [disabled]="alert.isAcknowledged || isAlertActionLoading(alert.alertId, 'ack')"
+                (click)="acknowledgeAlert(alert)">
+                {{ isAlertActionLoading(alert.alertId, 'ack') ? 'Acknowledging...' : 'Acknowledge' }}
+              </button>
+              <button
+                type="button"
+                class="ghost-btn ghost-btn--compact"
+                [disabled]="alert.isDismissed || isAlertActionLoading(alert.alertId, 'dismiss')"
+                (click)="dismissAlert(alert)">
+                {{ isAlertActionLoading(alert.alertId, 'dismiss') ? 'Dismissing...' : 'Dismiss' }}
+              </button>
+            </div>
+          </article>
+        </div>
+        <div class="panel-links">
+          <button type="button" class="ghost-btn" (click)="openRoute('/alerts')">Alert Center</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <div>
+            <h2>Reports</h2>
+            <p>Shortcuts to operational warehouse reports through the gateway-backed reports module.</p>
+          </div>
+        </div>
+        <div class="operations-grid">
+          <button type="button" class="operation-card" (click)="openRoute('/reports/inventory/warehouse-stock')">
+            <strong>Warehouse Stock Report</strong>
+            <span>Assigned warehouse stock and quantity summary.</span>
+          </button>
+          <button type="button" class="operation-card" (click)="openRoute('/reports/movements')">
+            <strong>Movement Report</strong>
+            <span>Warehouse movement trail and history.</span>
+          </button>
+          <button type="button" class="operation-card" (click)="openRoute('/reports/inventory/low-stock')">
+            <strong>Low Stock Report</strong>
+            <span>Shortages that need action.</span>
+          </button>
+          <button type="button" class="operation-card" (click)="openCycleCount()">
+            <strong>Cycle Count Report</strong>
+            <span>Dedicated report route is pending, so this opens the stock workspace.</span>
+          </button>
+        </div>
+      </section>
+    </div>
+  </ng-container>
+
+  <ng-template #emptyDashboard>
+    <app-report-empty-state
+      title="Warehouse dashboard unavailable"
+      message="Unable to load dashboard summary. Please try again or contact support if the problem persists.">
+    </app-report-empty-state>
+  </ng-template>
+
+  <ng-template #noStockItems>
+    <app-report-empty-state
+      title="No low-stock items"
+      message="No low-stock products are currently returned for the assigned warehouse.">
+    </app-report-empty-state>
+  </ng-template>
+
+  <ng-template #noReceipts>
+    <app-report-empty-state
+      title="No receipt tasks"
+      message="There are no approved or partially received purchase orders awaiting warehouse action.">
+    </app-report-empty-state>
+  </ng-template>
+
+  <ng-template #noTransfers>
+    <app-report-empty-state
+      title="No transfer activity"
+      message="No recent transfer movements were returned for the assigned warehouse.">
+    </app-report-empty-state>
+  </ng-template>
+
+  <ng-template #noMovements>
+    <app-report-empty-state
+      title="No movement history"
+      message="No recent stock movements were returned for the assigned warehouse.">
+    </app-report-empty-state>
+  </ng-template>
+
+  <ng-template #noAlerts>
+    <app-report-empty-state
+      title="No alerts"
+      message="No recent warehouse alerts were returned for this user.">
+    </app-report-empty-state>
+  </ng-template>
+</section>

@@ -1,0 +1,18 @@
+<div class="summary-grid" *ngIf="summary">
+  <article class="summary-card">
+    <p>Total Purchase Orders</p>
+    <strong>{{ summary.totalPurchaseOrders }}</strong>
+  </article>
+  <article class="summary-card">
+    <p>Pending Approval</p>
+    <strong>{{ summary.pendingApprovalCount }}</strong>
+  </article>
+  <article class="summary-card">
+    <p>Overdue Receipts</p>
+    <strong>{{ summary.overdueCount }}</strong>
+  </article>
+  <article class="summary-card">
+    <p>Total Purchase Value</p>
+    <strong>{{ summary.totalPurchaseValue | currency:'INR':'symbol':'1.0-2' }}</strong>
+  </article>
+</div>

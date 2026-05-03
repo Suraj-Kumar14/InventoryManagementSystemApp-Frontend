@@ -2,12 +2,13 @@ import { Component, EventEmitter, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/auth/services/auth.service';
+import { AlertBellComponent } from '../../../features/alerts/components/alert-bell/alert-bell.component';
 import { ROLE_LABELS, UserRole } from '../../config/app-config';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, AlertBellComponent],
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.css'],
 })
@@ -17,6 +18,10 @@ export class NavbarComponent {
 
   @Output() toggleSidebar = new EventEmitter<void>();
   showUserMenu = false;
+
+  getDisplayName(name?: string | null, email?: string | null): string {
+    return this.authService.getFirstName(name, email);
+  }
 
   getInitials(name: string): string {
     return name.split(' ').map((s) => s[0]).join('').toUpperCase().slice(0, 2);

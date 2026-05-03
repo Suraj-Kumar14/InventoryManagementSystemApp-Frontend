@@ -43,7 +43,13 @@
 }
 .navbar-toggle-btn:hover { background-color: #f3f4f6; }
 
-.navbar-toggle-icon { font-size: 20px; }
+.navbar-toggle-icon {
+  font-size: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
 
 .navbar-brand {
   font-size: 20px;

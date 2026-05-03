@@ -1,13 +1,359 @@
-<div class="dashboard">
-  <div class="dashboard-header">
-    <h1 class="dashboard-header__title">Purchase Dashboard</h1>
-    <p class="dashboard-header__subtitle">Purchase metrics from purchase-service and report-service.</p>
-  </div>
-  <div *ngIf="loading" class="dashboard-loading">Loading dashboard...</div>
-  <div *ngIf="!loading" class="stats-grid">
-    <div class="stat-card"><p class="stat-card__label">Total Orders</p><p class="stat-card__value">{{ totalOrders }}</p></div>
-    <div class="stat-card"><p class="stat-card__label">Overdue Orders</p><p class="stat-card__value">{{ overdueOrders }}</p></div>
-    <div class="stat-card"><p class="stat-card__label">Total Spend</p><p class="stat-card__value">{{ totalSpend }}</p></div>
-    <div class="stat-card"><p class="stat-card__label">Top Suppliers</p><p class="stat-card__value">{{ topSuppliers }}</p></div>
-  </div>
-</div>
+<section class="purchase-dashboard">
+  <header class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">StockPro Procurement Workspace</p>
+      <h1>Welcome back, {{ greetingName }}</h1>
+      <p class="subtitle">
+        Purchase Officer dashboard for supplier oversight, PO progress, procurement attention, payments, and purchase alerts.
+      </p>
+      <p class="timestamp" *ngIf="view?.generatedAt">Last refreshed {{ view?.generatedAt | date:'medium' }}</p>
+    </div>
+
+    <div class="hero-actions">
+      <app-button
+        [label]="refreshing ? 'Refreshing...' : 'Refresh'"
+        [isLoading]="refreshing"
+        [disabled]="loading || refreshing"
+        (clicked)="load()"
+      />
+      <app-button
+        [label]="actionLoading === 'create' ? 'Loading...' : 'Create Purchase Order'"
+        [isLoading]="actionLoading === 'create'"
+        [disabled]="loading || actionLoading !== null"
+        variant="secondary"
+        (clicked)="openCreatePurchaseOrder()"
+      />
+      <app-button
+        [label]="actionLoading === 'suppliers' ? 'Loading...' : 'View Suppliers'"
+        [isLoading]="actionLoading === 'suppliers'"
+        [disabled]="loading || actionLoading !== null"
+        variant="success"
+        (clicked)="openSuppliers()"
+      />
+    </div>
+  </header>
+
+  <section *ngIf="loading" class="loading-shell">
+    <app-skeleton-loader [rows]="2" [cols]="4" />
+  </section>
+
+  <ng-container *ngIf="!loading && view as dashboard; else unavailableState">
+    <section class="kpi-section">
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">Purchase KPIs</p>
+          <h2>Procurement snapshot</h2>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <button
+          type="button"
+          class="kpi-button"
+          *ngFor="let card of kpis; trackBy: trackByTitle"
+          [class.kpi-button--warning]="card.severity === 'warning'"
+          [class.kpi-button--critical]="card.severity === 'critical'"
+          (click)="openRoute(card.route)"
+        >
+          <app-report-kpi-card [label]="card.title" [value]="card.value" [meta]="card.subtitle" />
+        </button>
+      </div>
+
+      <div class="section-error" *ngIf="sectionError('dashboard')">{{ sectionError('dashboard') }}</div>
+    </section>
+
+    <div class="panel-grid">
+      <section class="panel panel--wide">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">PO Work Queue</p>
+            <h2>Purchase orders that need attention</h2>
+          </div>
+        </div>
+
+        <div class="metrics-inline" *ngIf="dashboard.overview as overview">
+          <article>
+            <span>Draft POs</span>
+            <strong>{{ overview.draftPurchaseOrders }}</strong>
+          </article>
+          <article>
+            <span>Pending approval</span>
+            <strong>{{ overview.pendingApprovalPurchaseOrders }}</strong>
+          </article>
+          <article>
+            <span>Approved awaiting receipt</span>
+            <strong>{{ overview.approvedAwaitingReceiptPurchaseOrders }}</strong>
+          </article>
+          <article>
+            <span>Overdue receipts</span>
+            <strong>{{ overview.overduePurchaseOrders }}</strong>
+          </article>
+        </div>
+
+        <div class="list" *ngIf="dashboard.recentPurchaseOrders.length; else purchaseEmpty">
+          <article class="list-item" *ngFor="let order of dashboard.recentPurchaseOrders">
+            <div>
+              <span class="mini-label">{{ order.status }}</span>
+              <strong>{{ order.poNumber }}</strong>
+              <p>{{ order.supplierName }} · {{ order.warehouseName }}</p>
+            </div>
+            <div class="list-meta">
+              <strong>{{ order.totalAmount | currency:'INR':'symbol':'1.0-0' }}</strong>
+              <small>{{ order.expectedDeliveryDate || order.createdAt | date:'short' }}</small>
+            </div>
+          </article>
+        </div>
+
+        <div class="shortcut-list">
+          <a routerLink="/purchase-orders/create">Create PO</a>
+          <a routerLink="/purchase-orders">View All POs</a>
+          <a routerLink="/purchase-orders">Pending Approval</a>
+          <a routerLink="/purchase-orders/overdue">Overdue POs</a>
+        </div>
+
+        <div class="section-error" *ngIf="sectionError('purchase')">{{ sectionError('purchase') }}</div>
+      </section>
+
+      <section class="panel">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Suppliers</p>
+            <h2>Sourcing health</h2>
+          </div>
+        </div>
+
+        <div class="metric-list" *ngIf="dashboard.overview as overview; else suppliersEmpty">
+          <article class="metric-row">
+            <span>Active suppliers</span>
+            <strong>{{ overview.activeSuppliers }}</strong>
+          </article>
+          <article class="metric-row">
+            <span>Inactive suppliers</span>
+            <strong>{{ overview.inactiveSuppliers }}</strong>
+          </article>
+          <article class="metric-row">
+            <span>Average rating</span>
+            <strong>{{ overview.averageSupplierRating | number:'1.1-1' }}</strong>
+          </article>
+          <article class="metric-row">
+            <span>Average lead time</span>
+            <strong>{{ overview.averageSupplierLeadTime | number:'1.0-0' }} days</strong>
+          </article>
+        </div>
+
+        <div class="supplier-grid" *ngIf="dashboard.topRatedSuppliers.length">
+          <article class="supplier-chip" *ngFor="let supplier of dashboard.topRatedSuppliers">
+            <strong>{{ supplier.supplierName }}</strong>
+            <span>Rating {{ supplier.rating | number:'1.1-1' }}</span>
+            <small>{{ supplier.leadTimeDays }} day lead time</small>
+          </article>
+        </div>
+
+        <div class="supplier-grid" *ngIf="dashboard.lowRatedSuppliers.length">
+          <article class="supplier-chip supplier-chip--muted" *ngFor="let supplier of dashboard.lowRatedSuppliers">
+            <strong>{{ supplier.supplierName }}</strong>
+            <span>Needs attention · {{ supplier.rating | number:'1.1-1' }}</span>
+            <small>{{ supplier.leadTimeDays }} day lead time</small>
+          </article>
+        </div>
+
+        <div class="shortcut-list">
+          <a routerLink="/suppliers">Manage Suppliers</a>
+          <a routerLink="/suppliers/create">Add Supplier</a>
+          <a routerLink="/suppliers/analytics">Supplier Performance</a>
+        </div>
+
+        <div class="section-error" *ngIf="sectionError('suppliers')">{{ sectionError('suppliers') }}</div>
+      </section>
+
+      <section class="panel">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Procurement Attention</p>
+            <h2>Low-stock items to plan around</h2>
+          </div>
+        </div>
+
+        <div class="list compact-list" *ngIf="dashboard.procurementAttentionItems.length; else procurementEmpty">
+          <article class="list-item" *ngFor="let item of dashboard.procurementAttentionItems">
+            <div>
+              <span class="mini-label">Shortage {{ item.shortageQuantity }}</span>
+              <strong>{{ item.productName }}</strong>
+              <p>{{ item.warehouseName }} · {{ item.sku }}</p>
+            </div>
+            <div class="list-meta">
+              <strong>{{ item.availableQuantity }}</strong>
+              <small>Reorder {{ item.reorderLevel }}</small>
+            </div>
+          </article>
+        </div>
+
+        <div class="shortcut-list">
+          <a routerLink="/purchase-orders/create">Create PO</a>
+          <a routerLink="/reports/inventory/low-stock">Low Stock Report</a>
+          <a routerLink="/stocks">Stock Availability</a>
+        </div>
+
+        <div class="section-error" *ngIf="sectionError('procurement')">{{ sectionError('procurement') }}</div>
+      </section>
+
+      <section class="panel" *ngIf="paymentSectionVisible">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Payments</p>
+            <h2>Supplier payment visibility</h2>
+          </div>
+        </div>
+
+        <div class="metric-list" *ngIf="dashboard.overview as overview; else paymentEmpty">
+          <article class="metric-row">
+            <span>Pending payments</span>
+            <strong>{{ overview.pendingPayments }}</strong>
+          </article>
+          <article class="metric-row">
+            <span>Approved payments</span>
+            <strong>{{ overview.approvedPayments }}</strong>
+          </article>
+          <article class="metric-row">
+            <span>Paid amount</span>
+            <strong>{{ overview.paidAmount | currency:'INR':'symbol':'1.0-0' }}</strong>
+          </article>
+          <article class="metric-row">
+            <span>Pending amount</span>
+            <strong>{{ overview.pendingPaymentAmount | currency:'INR':'symbol':'1.0-0' }}</strong>
+          </article>
+        </div>
+
+        <div class="list compact-list" *ngIf="dashboard.recentPayments.length">
+          <article class="list-item" *ngFor="let payment of dashboard.recentPayments">
+            <div>
+              <span class="mini-label">{{ payment.status }}</span>
+              <strong>{{ payment.paymentNumber }}</strong>
+              <p>{{ payment.supplierName }} · {{ payment.poNumber }}</p>
+            </div>
+            <div class="list-meta">
+              <strong>{{ payment.amount | currency:'INR':'symbol':'1.0-0' }}</strong>
+              <small>{{ payment.paymentDate | date:'short' }}</small>
+            </div>
+          </article>
+        </div>
+
+        <div class="shortcut-list">
+          <a routerLink="/payments">Payments</a>
+          <a routerLink="/payments/create">Create Payment</a>
+          <a routerLink="/reports/payments/summary">Payment Reports</a>
+        </div>
+
+        <div class="section-error" *ngIf="sectionError('payments')">{{ sectionError('payments') }}</div>
+      </section>
+
+      <section class="panel">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Alerts</p>
+            <h2>Purchase and supplier signals</h2>
+          </div>
+        </div>
+
+        <div class="metric-list" *ngIf="dashboard.alertSummary as alerts; else alertsEmpty">
+          <article class="metric-row">
+            <span>Unread alerts</span>
+            <strong>{{ alerts.unreadCount }}</strong>
+          </article>
+          <article class="metric-row">
+            <span>Overdue PO alerts</span>
+            <strong>{{ alerts.overduePoCount }}</strong>
+          </article>
+          <article class="metric-row">
+            <span>Critical alerts</span>
+            <strong>{{ alerts.criticalCount }}</strong>
+          </article>
+          <article class="metric-row">
+            <span>Supplier-related alerts</span>
+            <strong>{{ alerts.warningCount + alerts.criticalCount }}</strong>
+          </article>
+        </div>
+
+        <div class="list compact-list" *ngIf="recentAlerts.length">
+          <article class="list-item" *ngFor="let alert of recentAlerts">
+            <div>
+              <strong>{{ alert.title }}</strong>
+              <p>{{ alert.type }}</p>
+            </div>
+            <div class="list-meta">
+              <span class="badge" [class.badge--critical]="alert.severity === 'CRITICAL'">{{ alert.severity }}</span>
+              <small>{{ alert.createdAt | date:'short' }}</small>
+            </div>
+          </article>
+        </div>
+
+        <div class="shortcut-list">
+          <a routerLink="/alerts">Alert Center</a>
+          <a routerLink="/purchase-orders/overdue">Overdue POs</a>
+        </div>
+
+        <div class="section-error" *ngIf="sectionError('alerts')">{{ sectionError('alerts') }}</div>
+      </section>
+
+      <section class="panel panel--wide">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Reports</p>
+            <h2>Purchase shortcuts</h2>
+          </div>
+        </div>
+
+        <div class="shortcut-card-grid">
+          <a class="shortcut-card" routerLink="/reports/purchase/summary">
+            <strong>Purchase Summary</strong>
+            <span>Spend, approval backlog, and receipt status</span>
+          </a>
+          <a class="shortcut-card" routerLink="/reports/suppliers/performance">
+            <strong>Supplier Performance</strong>
+            <span>Lead time, rating, and supplier execution</span>
+          </a>
+          <a class="shortcut-card" routerLink="/suppliers/analytics">
+            <strong>Supplier Spend</strong>
+            <span>Compare supplier contribution and sourcing concentration</span>
+          </a>
+          <a class="shortcut-card" routerLink="/purchase-orders/analytics">
+            <strong>PO Aging</strong>
+            <span>Track aging purchase orders and receipt delays</span>
+          </a>
+          <a class="shortcut-card" *ngIf="paymentSectionVisible" routerLink="/reports/payments/summary">
+            <strong>Payment Summary</strong>
+            <span>Paid, pending, and supplier payment exposure</span>
+          </a>
+          <a class="shortcut-card" routerLink="/reports/inventory/low-stock">
+            <strong>Low Stock Report</strong>
+            <span>Products below reorder thresholds that need sourcing</span>
+          </a>
+        </div>
+      </section>
+    </div>
+  </ng-container>
+
+  <ng-template #purchaseEmpty>
+    <app-report-empty-state title="Purchase queue unavailable" message="Unable to load purchase order activity right now." />
+  </ng-template>
+
+  <ng-template #suppliersEmpty>
+    <app-report-empty-state title="Supplier summary unavailable" message="Unable to load supplier summary right now." />
+  </ng-template>
+
+  <ng-template #procurementEmpty>
+    <app-report-empty-state title="No procurement attention items" message="No low-stock procurement items are available right now." />
+  </ng-template>
+
+  <ng-template #paymentEmpty>
+    <app-report-empty-state title="Payment summary unavailable" message="Unable to load payment summary right now." />
+  </ng-template>
+
+  <ng-template #alertsEmpty>
+    <app-report-empty-state title="Alerts unavailable" message="Unable to load purchase alerts right now." />
+  </ng-template>
+
+  <ng-template #unavailableState>
+    <app-report-empty-state title="Dashboard unavailable" message="Unable to load dashboard summary. Please try again." />
+  </ng-template>
+</section>

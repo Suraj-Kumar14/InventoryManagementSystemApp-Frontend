@@ -1,0 +1,39 @@
+<section class="supplier-page">
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Supplier Analytics</p>
+      <h1>Supplier Insights</h1>
+      <p class="hero__subtitle">A compact executive view of supplier coverage, risk, and top-rated partners.</p>
+    </div>
+    <a routerLink="/suppliers" class="btn btn-secondary">Back to Suppliers</a>
+  </header>
+
+  <app-supplier-summary-cards *ngIf="summary" [summary]="summary"></app-supplier-summary-cards>
+
+  <section class="panel">
+    <div class="detail-card__header">
+      <div>
+        <p class="eyebrow">Top Rated</p>
+        <h2>Preferred partners</h2>
+      </div>
+    </div>
+    <div *ngIf="loading" class="empty-state">Loading supplier analytics...</div>
+    <div *ngIf="!loading && topRatedSuppliers.length === 0" class="empty-state">No supplier analytics available yet.</div>
+    <div *ngIf="!loading && topRatedSuppliers.length > 0" class="cards-grid">
+      <article *ngFor="let supplier of topRatedSuppliers" class="supplier-card">
+        <div class="supplier-card__header">
+          <div>
+            <strong>{{ supplier.name }}</strong>
+            <span>{{ supplier.city || 'N/A' }}, {{ supplier.country || 'N/A' }}</span>
+          </div>
+          <app-supplier-status-badge [status]="supplier.status ?? 'ACTIVE'" [isActive]="supplier.isActive"></app-supplier-status-badge>
+        </div>
+        <app-supplier-rating [rating]="supplier.rating"></app-supplier-rating>
+        <div class="supplier-card__footer">
+          <span>{{ supplier.paymentTerms || 'Payment terms pending' }}</span>
+          <a [routerLink]="['/suppliers', supplier.supplierId]" class="inline-link">Open profile</a>
+        </div>
+      </article>
+    </div>
+  </section>
+</section>

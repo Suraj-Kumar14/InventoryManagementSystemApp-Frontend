@@ -1,0 +1,24 @@
+<section class="purchase-shell">
+  <header class="header">
+    <div>
+      <p class="eyebrow">Draft New Order</p>
+      <h1>Create Purchase Order</h1>
+      <p>Build a clean draft, validate supplier and warehouse choices, then submit it into approval when ready.</p>
+    </div>
+    <a routerLink="/purchase-orders" class="back-link">Back to Purchase Orders</a>
+  </header>
+
+  <div *ngIf="lookupsLoading" class="loading-card">Loading suppliers, warehouses, and products...</div>
+
+  <app-po-form
+    *ngIf="!lookupsLoading"
+    [suppliers]="suppliers"
+    [warehouses]="warehouses"
+    [products]="products"
+    [loading]="loading"
+    submitLabel="Save Draft"
+    [showSubmitAndApprove]="true"
+    (save)="saveDraft($event)"
+    (saveAndSubmit)="saveAndSubmit($event)"
+  ></app-po-form>
+</section>

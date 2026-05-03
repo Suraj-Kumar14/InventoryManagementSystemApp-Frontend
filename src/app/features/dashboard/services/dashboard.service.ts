@@ -1,25 +1,32 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, forkJoin, shareReplay } from 'rxjs';
+import { Observable, forkJoin, map, shareReplay } from 'rxjs';
 import {
   AlertResponse,
+  AlertSummaryResponse,
   DeadStockItem,
   InventorySnapshot,
   POSummary,
+  ProductSummary,
   PurchaseOrderResponse,
-  StockMovementResponse,
+  MovementResponse,
   StockValuation,
   SupplierResponse,
+  SupplierSummaryResponse,
   TopMovingProduct,
   UserProfile,
   WarehouseResponse,
 } from '../../../core/http/backend.models';
 import { AuthService } from '../../../core/auth/services/auth.service';
-import { AlertService } from '../../../core/services/alert.service';
-import { MovementService } from '../../../core/services/movement.service';
 import { PurchaseService } from '../../../core/services/purchase.service';
 import { ReportService } from '../../../core/services/report.service';
 import { WarehouseService } from '../../../core/services/warehouse.service';
-import { API_ENDPOINTS, UI_CONSTANTS } from '../../../shared/config/app-config';
+import { PaymentService } from '../../../core/services/payment.service';
+import { UI_CONSTANTS } from '../../../shared/config/app-config';
+import { AlertApiService } from '../../alerts/services/alert-api.service';
+import { MovementApiService } from '../../movements/services/movement-api.service';
+import { PaymentSummaryResponse } from '../../payments/models/payment.model';
+import { ProductApiService } from '../../products/services/product-api.service';
+import { SupplierApiService } from '../../suppliers/services/supplier-api.service';
 
 interface CacheEntry<T> {
   expiresAt: number;
@@ -31,9 +38,12 @@ export class DashboardService {
   private readonly authService = inject(AuthService);
   private readonly warehouseService = inject(WarehouseService);
   private readonly purchaseService = inject(PurchaseService);
+  private readonly paymentService = inject(PaymentService);
   private readonly reportService = inject(ReportService);
-  private readonly alertService = inject(AlertService);
-  private readonly movementService = inject(MovementService);
+  private readonly alertApiService = inject(AlertApiService);
+  private readonly movementApiService = inject(MovementApiService);
+  private readonly productApiService = inject(ProductApiService);
+  private readonly supplierApiService = inject(SupplierApiService);
   private readonly cache = new Map<string, CacheEntry<unknown>>();
   private readonly cacheTtlMs = 30_000;
 
@@ -42,13 +52,21 @@ export class DashboardService {
     warehouses: WarehouseResponse[];
     valuation: StockValuation;
     alerts: AlertResponse[];
+    alertSummary: AlertSummaryResponse;
+    productSummary: ProductSummary;
+    supplierSummary: SupplierSummaryResponse;
+    paymentSummary: PaymentSummaryResponse;
   }> {
     return this.getCached('adminSummary', () =>
       forkJoin({
         users: this.authService.getUsers(),
         warehouses: this.warehouseService.getWarehouses(),
         valuation: this.reportService.getTotalValuation(),
-        alerts: this.alertService.getRecentAlerts(7),
+        alerts: this.alertApiService.getMyAlerts({ page: 0, size: 7, sortBy: 'createdAt', sortDir: 'desc' }).pipe(map((page) => page.content)),
+        alertSummary: this.alertApiService.getMyAlertSummary(),
+        productSummary: this.productApiService.getProductSummary(),
+        supplierSummary: this.supplierApiService.getSupplierSummary(),
+        paymentSummary: this.paymentService.getPaymentSummary(),
       }),
       forceRefresh
     );
@@ -59,7 +77,11 @@ export class DashboardService {
     lowStock: InventorySnapshot[];
     topMoving: TopMovingProduct[];
     deadStock: DeadStockItem[];
-    movements: StockMovementResponse[];
+    movements: MovementResponse[];
+    alertSummary: AlertSummaryResponse;
+    productSummary: ProductSummary;
+    supplierSummary: SupplierSummaryResponse;
+    paymentSummary: PaymentSummaryResponse;
   }> {
     return this.getCached('inventorySummary', () =>
       forkJoin({
@@ -67,7 +89,11 @@ export class DashboardService {
         lowStock: this.reportService.getLowStockReport(),
         topMoving: this.reportService.getTopMovingProducts(),
         deadStock: this.reportService.getDeadStock(),
-        movements: this.movementService.getMovements(),
+        movements: this.movementApiService.getMovements({ page: 0, size: 8, sortBy: 'movementDate', sortDir: 'desc' }).pipe(map((page) => page.content)),
+        alertSummary: this.alertApiService.getMyAlertSummary(),
+        productSummary: this.productApiService.getProductSummary(),
+        supplierSummary: this.supplierApiService.getSupplierSummary(),
+        paymentSummary: this.paymentService.getPaymentSummary(),
       }),
       forceRefresh
     );
@@ -78,6 +104,9 @@ export class DashboardService {
     overdue: PurchaseOrderResponse[];
     summary: POSummary;
     suppliers: SupplierResponse[];
+    alertSummary: AlertSummaryResponse;
+    supplierSummary: SupplierSummaryResponse;
+    paymentSummary: PaymentSummaryResponse;
   }> {
     const range = this.buildDateRangeQuery();
     return this.getCached('purchaseSummary', () =>
@@ -86,23 +115,9 @@ export class DashboardService {
         overdue: this.purchaseService.getOverduePurchaseOrders(),
         summary: this.reportService.getPurchaseOrderSummary(range),
         suppliers: this.purchaseService.getTopRatedSuppliers(0),
-      }),
-      forceRefresh
-    );
-  }
-
-  getWarehouseSummary(forceRefresh = false): Observable<{
-    warehouses: WarehouseResponse[];
-    movements: StockMovementResponse[];
-    alerts: AlertResponse[];
-    lowStock: InventorySnapshot[];
-  }> {
-    return this.getCached('warehouseSummary', () =>
-      forkJoin({
-        warehouses: this.warehouseService.getWarehouses(),
-        movements: this.movementService.getMovements(),
-        alerts: this.alertService.getRecentAlerts(7),
-        lowStock: this.reportService.getLowStockReport(),
+        alertSummary: this.alertApiService.getMyAlertSummary(),
+        supplierSummary: this.supplierApiService.getSupplierSummary(),
+        paymentSummary: this.paymentService.getPaymentSummary(),
       }),
       forceRefresh
     );

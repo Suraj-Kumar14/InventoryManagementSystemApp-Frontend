@@ -1,0 +1,29 @@
+<form [formGroup]="form" (ngSubmit)="submit()" class="filter-card filter-card--4col">
+  <input formControlName="keyword" class="page-input filter-card__full" placeholder="Search name, SKU, barcode, category, or brand" />
+
+  <select formControlName="category" class="page-select">
+    <option value="">All categories</option>
+    <option *ngFor="let category of categories" [value]="category">{{ category }}</option>
+  </select>
+
+  <select formControlName="brand" class="page-select">
+    <option value="">All brands</option>
+    <option *ngFor="let brand of brands" [value]="brand">{{ brand }}</option>
+  </select>
+
+  <select formControlName="isActive" class="page-select">
+    <option value="">All statuses</option>
+    <option value="true">Active</option>
+    <option value="false">Inactive</option>
+  </select>
+
+  <div class="page-actions">
+    <select formControlName="size" class="page-select filter-size">
+      <option [ngValue]="10">10 / page</option>
+      <option [ngValue]="20">20 / page</option>
+      <option [ngValue]="50">50 / page</option>
+    </select>
+    <button type="submit" class="btn-primary" [disabled]="loading">{{ loading ? 'Searching...' : 'Search' }}</button>
+    <button type="button" class="btn-secondary" [disabled]="loading" (click)="clear()">Reset</button>
+  </div>
+</form>

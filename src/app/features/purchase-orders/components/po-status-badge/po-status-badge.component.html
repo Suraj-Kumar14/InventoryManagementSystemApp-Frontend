@@ -1,0 +1,4 @@
+<span [class]="badgeClass">
+  {{ status.replace('_', ' ') }}
+</span>
+<span *ngIf="overdue" class="overdue-pill">Overdue</span>

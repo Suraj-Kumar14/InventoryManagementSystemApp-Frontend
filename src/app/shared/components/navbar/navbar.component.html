@@ -2,15 +2,19 @@
   <div class="navbar-inner">
     <div class="navbar-left">
       <button class="navbar-toggle-btn" (click)="toggleSidebar.emit()" title="Toggle sidebar">
-        <span class="navbar-toggle-icon">☰</span>
+        <span class="navbar-toggle-icon" aria-hidden="true">
+          <i class="bi bi-list"></i>
+        </span>
       </button>
       <h1 class="navbar-brand">StockPro</h1>
     </div>
 
     <div class="navbar-right">
+      <app-alert-bell></app-alert-bell>
+
       <div class="navbar-user-info">
         <p class="navbar-user-name">
-          {{ (authService.currentUser$ | async)?.name || (authService.currentUser$ | async)?.email }}
+          {{ getDisplayName((authService.currentUser$ | async)?.name, (authService.currentUser$ | async)?.email) }}
         </p>
         <p class="navbar-user-role">
           {{ (authService.currentUser$ | async)?.role ? getRoleLabel((authService.currentUser$ | async)?.role!) : '' }}
@@ -19,7 +23,7 @@
 
       <div class="navbar-avatar-wrapper">
         <button class="navbar-avatar-btn" (click)="showUserMenu = !showUserMenu">
-          {{ getInitials((authService.currentUser$ | async)?.name || (authService.currentUser$ | async)?.email || 'User') }}
+          {{ getInitials(getDisplayName((authService.currentUser$ | async)?.name, (authService.currentUser$ | async)?.email)) }}
         </button>
 
         <div *ngIf="showUserMenu" class="navbar-dropdown">
