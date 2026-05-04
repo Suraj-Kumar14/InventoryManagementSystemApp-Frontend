@@ -104,8 +104,8 @@ interface ReportColumn {
 
       <ng-template #emptyState>
         <app-report-empty-state
-          [title]="loading ? 'Loading report…' : 'No report data found'"
-          [message]="loading ? 'Fetching the latest report data.' : 'No report data found for the selected filters.'"
+          [title]="loading ? 'Loading report…' : permissionMessage ? 'Access restricted' : 'No report data found'"
+          [message]="loading ? 'Fetching the latest report data.' : permissionMessage || 'No report data found for the selected filters.'"
         />
       </ng-template>
     </section>
@@ -237,6 +237,7 @@ export class ReportDataPageComponent implements OnInit {
   columns: ReportColumn[] = [];
   rows: Record<string, unknown>[] = [];
   pageMeta: PageResponse<unknown> | null = null;
+  permissionMessage: string | null = null;
 
   ngOnInit(): void {
     this.load();
@@ -301,11 +302,19 @@ export class ReportDataPageComponent implements OnInit {
     this.columns = [];
     this.rows = [];
     this.pageMeta = null;
+    this.permissionMessage = null;
     this.resolveStream()
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: (data) => this.hydrate(data),
-        error: () => this.notifications.error('Unable to load report. Please try again.'),
+        error: (error) => {
+          if (error?.status === 403) {
+            this.permissionMessage = 'You do not have permission to view this report.';
+            return;
+          }
+
+          this.notifications.error('Unable to load report. Please try again.');
+        },
       });
   }
 

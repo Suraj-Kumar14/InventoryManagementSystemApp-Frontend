@@ -16,7 +16,7 @@ import {
   UserProfile,
   WarehouseResponse,
 } from '../../../core/http/backend.models';
-import { AuthService } from '../../../core/auth/services/auth.service';
+import { AdminUserService } from '../../../core/services/admin-user.service';
 import { PurchaseService } from '../../../core/services/purchase.service';
 import { ReportService } from '../../../core/services/report.service';
 import { WarehouseService } from '../../../core/services/warehouse.service';
@@ -35,7 +35,7 @@ interface CacheEntry<T> {
 
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
-  private readonly authService = inject(AuthService);
+  private readonly adminUserService = inject(AdminUserService);
   private readonly warehouseService = inject(WarehouseService);
   private readonly purchaseService = inject(PurchaseService);
   private readonly paymentService = inject(PaymentService);
@@ -59,7 +59,7 @@ export class DashboardService {
   }> {
     return this.getCached('adminSummary', () =>
       forkJoin({
-        users: this.authService.getUsers(),
+        users: this.adminUserService.getUsers({ page: 0, size: 200 }).pipe(map((page) => page.content)),
         warehouses: this.warehouseService.getWarehouses(),
         valuation: this.reportService.getTotalValuation(),
         alerts: this.alertApiService.getMyAlerts({ page: 0, size: 7, sortBy: 'createdAt', sortDir: 'desc' }).pipe(map((page) => page.content)),

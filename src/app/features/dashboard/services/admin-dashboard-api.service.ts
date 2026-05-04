@@ -1,9 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { AuthService } from '../../../core/auth/services/auth.service';
 import { AlertResponse } from '../../../core/http/backend.models';
+import { PaymentSummaryReportResponse } from '../../../core/http/backend.models';
+import { AdminUserService } from '../../../core/services/admin-user.service';
 import { PurchaseService } from '../../../core/services/purchase.service';
+import { PaymentService } from '../../../core/services/payment.service';
 import { ReportService } from '../../../core/services/report.service';
 import { UI_CONSTANTS, UserRole } from '../../../shared/config/app-config';
 import { AlertApiService } from '../../alerts/services/alert-api.service';
@@ -13,8 +15,9 @@ import { AdminDashboardUserSummary, AdminDashboardView, RecentActivity, ServiceH
 @Injectable({ providedIn: 'root' })
 export class AdminDashboardApiService {
   private readonly reportService = inject(ReportService);
+  private readonly paymentService = inject(PaymentService);
   private readonly alertApiService = inject(AlertApiService);
-  private readonly authService = inject(AuthService);
+  private readonly adminUserService = inject(AdminUserService);
   private readonly movementApiService = inject(MovementApiService);
   private readonly purchaseService = inject(PurchaseService);
 
@@ -31,18 +34,15 @@ export class AdminDashboardApiService {
   }
 
   getUserSummary(): Observable<AdminDashboardUserSummary> {
-    return this.authService.getUsers().pipe(
-      map((users) => {
+    return this.adminUserService.getUsers({ page: 0, size: 200 }).pipe(
+      map((page) => {
+        const users = page.content ?? [];
         const usersByRole: Record<UserRole, number> = {
-          [UserRole.ADMIN]: 0,
-          [UserRole.INVENTORY_MANAGER]: 0,
-          [UserRole.PURCHASE_OFFICER]: 0,
-          [UserRole.WAREHOUSE_STAFF]: 0,
+          [UserRole.ADMIN]: users.filter((user) => user.role === UserRole.ADMIN).length,
+          [UserRole.MANAGER]: users.filter((user) => user.role === UserRole.MANAGER).length,
+          [UserRole.OFFICER]: users.filter((user) => user.role === UserRole.OFFICER).length,
+          [UserRole.STAFF]: users.filter((user) => user.role === UserRole.STAFF).length,
         };
-
-        for (const user of users) {
-          usersByRole[user.role] = (usersByRole[user.role] ?? 0) + 1;
-        }
 
         const activeUsers = users.filter((user) => user.isActive !== false).length;
         return {
@@ -56,7 +56,19 @@ export class AdminDashboardApiService {
   }
 
   getPaymentSummary() {
-    return this.reportService.getPaymentSummaryReport();
+    return this.paymentService.getPaymentSummary().pipe(
+      map(
+        (summary): PaymentSummaryReportResponse => ({
+          totalPayments: summary.totalPayments,
+          pendingCount: summary.pendingApprovalCount,
+          paidCount: summary.paidCount,
+          cancelledCount: summary.cancelledCount,
+          pendingAmount: summary.pendingPaymentAmount,
+          totalPaidAmount: summary.totalPaidAmount,
+          supplierPayments: [],
+        })
+      )
+    );
   }
 
   getMovementSummary() {

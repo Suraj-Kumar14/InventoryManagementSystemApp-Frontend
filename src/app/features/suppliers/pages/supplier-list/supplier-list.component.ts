@@ -28,17 +28,27 @@ import { SupplierApiService } from '../../services/supplier-api.service';
   styleUrls: ['./supplier-list.component.css'],
 })
 export class SupplierListComponent implements OnInit {
+  private static readonly DEFAULT_SUMMARY: SupplierSummaryResponse = {
+    totalSuppliers: 0,
+    activeSuppliers: 0,
+    inactiveSuppliers: 0,
+    blacklistedSuppliers: 0,
+    pendingReviewSuppliers: 0,
+    averageRating: 0,
+    averageLeadTimeDays: 0,
+  };
+
   private readonly supplierApi = inject(SupplierApiService);
   private readonly authService = inject(AuthService);
   private readonly notifications = inject(NotificationService);
   private readonly fb = inject(FormBuilder);
 
-  readonly canCreate = this.authService.hasRole([UserRole.ADMIN, UserRole.PURCHASE_OFFICER]);
-  readonly canEdit = this.authService.hasRole([UserRole.ADMIN, UserRole.PURCHASE_OFFICER, UserRole.INVENTORY_MANAGER]);
-  readonly canDeactivate = this.authService.hasRole([UserRole.ADMIN, UserRole.INVENTORY_MANAGER]);
+  readonly canCreate = this.authService.hasRole([UserRole.ADMIN, UserRole.OFFICER]);
+  readonly canEdit = this.authService.hasRole([UserRole.ADMIN, UserRole.OFFICER, UserRole.MANAGER]);
+  readonly canDeactivate = this.authService.hasRole([UserRole.ADMIN, UserRole.MANAGER]);
   readonly canBlacklist = this.authService.hasRole(UserRole.ADMIN);
-  readonly canRate = this.authService.hasRole([UserRole.ADMIN, UserRole.PURCHASE_OFFICER, UserRole.INVENTORY_MANAGER]);
-  readonly canViewAnalytics = this.authService.hasRole([UserRole.ADMIN, UserRole.PURCHASE_OFFICER, UserRole.INVENTORY_MANAGER]);
+  readonly canRate = this.authService.hasRole([UserRole.ADMIN, UserRole.OFFICER, UserRole.MANAGER]);
+  readonly canViewAnalytics = this.authService.hasRole([UserRole.ADMIN, UserRole.OFFICER, UserRole.MANAGER]);
 
   readonly filtersForm = this.fb.group({
     keyword: this.fb.control(''),
@@ -52,8 +62,9 @@ export class SupplierListComponent implements OnInit {
 
   suppliers: SupplierResponse[] = [];
   pageData: PageResponse<SupplierResponse> | null = null;
-  summary: SupplierSummaryResponse | null = null;
+  summary: SupplierSummaryResponse = SupplierListComponent.DEFAULT_SUMMARY;
   loading = false;
+  summaryError: string | null = null;
   actionLoadingId: number | null = null;
   actionLabel = '';
   query: SupplierListQuery = { page: 0, size: 10, sortBy: 'name', sortDir: 'asc' };
@@ -198,11 +209,19 @@ export class SupplierListComponent implements OnInit {
 
   private loadSummary(): void {
     if (!this.canViewAnalytics) {
+      this.summary = SupplierListComponent.DEFAULT_SUMMARY;
+      this.summaryError = null;
       return;
     }
     this.supplierApi.getSupplierSummary().subscribe({
-      next: (summary) => (this.summary = summary),
-      error: () => (this.summary = null),
+      next: (summary) => {
+        this.summary = summary;
+        this.summaryError = null;
+      },
+      error: () => {
+        this.summary = SupplierListComponent.DEFAULT_SUMMARY;
+        this.summaryError = 'Supplier summary is currently unavailable.';
+      },
     });
   }
 

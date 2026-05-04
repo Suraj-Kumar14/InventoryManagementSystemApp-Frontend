@@ -7,40 +7,40 @@
   display: flex;
   justify-content: space-between;
   gap: 1.25rem;
-  padding: 1.6rem;
-  border-radius: 30px;
-  border: 1px solid #d8e4f3;
+  padding: 1.55rem;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border);
   background:
-    radial-gradient(circle at top left, rgba(14, 165, 233, 0.18), transparent 28%),
-    radial-gradient(circle at bottom right, rgba(245, 158, 11, 0.14), transparent 22%),
-    linear-gradient(135deg, #f8fbff 0%, #ffffff 52%, #fefce8 100%);
-  box-shadow: 0 22px 48px rgba(15, 23, 42, 0.08);
+    radial-gradient(circle at top left, rgba(13, 116, 184, 0.14), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(185, 115, 22, 0.08), transparent 20%),
+    linear-gradient(135deg, #f7fbff 0%, #ffffff 52%, #fffaf0 100%);
+  box-shadow: var(--shadow-md);
 }
 
 .hero-copy h1 {
   margin: 0.25rem 0 0.55rem;
-  font-size: 2rem;
-  color: #0f172a;
+  font-size: clamp(1.7rem, 2vw, 2.2rem);
+  color: var(--color-text);
 }
 
 .eyebrow {
   margin: 0;
   text-transform: uppercase;
   letter-spacing: 0.16em;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #9a3412;
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: var(--color-warning);
 }
 
 .hero-subtitle,
 .hero-meta {
   margin: 0;
-  color: #475569;
+  color: var(--color-text-muted);
 }
 
 .hero-meta {
-  margin-top: 0.5rem;
-  font-size: 0.92rem;
+  margin-top: 0.45rem;
+  font-size: 0.9rem;
 }
 
 .hero-actions {
@@ -53,13 +53,14 @@
 .state-shell,
 .notice-card,
 .panel {
-  border-radius: 24px;
-  border: 1px solid #dde6f3;
-  background: #ffffff;
-  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.05);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+  box-shadow: var(--shadow-sm);
 }
 
-.state-shell {
+.state-shell,
+.panel {
   padding: 1.2rem;
 }
 
@@ -70,43 +71,35 @@
 .notice-card p,
 .section-error,
 .section-notice {
-  margin: 0.35rem 0 0;
-  color: #475569;
+  margin-top: 0.35rem;
+  color: var(--color-text-muted);
 }
 
 .notice-card--warning {
-  border-color: #fcd34d;
+  border-color: #f0d39b;
   background: linear-gradient(135deg, #fffdf3 0%, #ffffff 100%);
 }
 
-.kpi-grid {
+.kpi-grid,
+.dashboard-grid,
+.summary-chips,
+.receipt-summary,
+.operations-grid {
   display: grid;
+  gap: 0.95rem;
+}
+
+.kpi-grid {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1rem;
-}
-
-.kpi-button {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  text-align: left;
-  cursor: pointer;
-}
-
-.kpi-button:disabled {
-  cursor: default;
 }
 
 .dashboard-grid {
-  display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
 }
 
 .panel {
   display: grid;
   gap: 1rem;
-  padding: 1.2rem;
 }
 
 .panel--wide {
@@ -122,12 +115,12 @@
 
 .panel-header h2 {
   margin: 0;
-  color: #0f172a;
+  color: var(--color-text);
 }
 
 .panel-header p {
-  margin: 0.35rem 0 0;
-  color: #64748b;
+  margin-top: 0.35rem;
+  color: var(--color-text-muted);
 }
 
 .panel-actions,
@@ -139,29 +132,28 @@
 }
 
 .summary-chips,
-.receipt-summary,
-.operations-grid {
-  display: grid;
-  gap: 0.85rem;
-}
-
-.summary-chips,
 .receipt-summary {
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
 }
 
 .summary-chip,
-.receipt-summary > div {
+.receipt-summary > div,
+.list-row,
+.receipt-card,
+.transfer-card,
+.movement-row,
+.alert-card,
+.operation-card {
   padding: 0.95rem 1rem;
   border-radius: 18px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+  border: 1px solid #e1eaf5;
 }
 
 .summary-chip span,
 .receipt-summary span {
   display: block;
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 0.86rem;
 }
 
@@ -169,8 +161,8 @@
 .receipt-summary strong {
   display: block;
   margin-top: 0.35rem;
-  color: #0f172a;
-  font-size: 1.25rem;
+  color: var(--color-text);
+  font-size: 1.2rem;
 }
 
 .list-shell,
@@ -187,10 +179,6 @@
   display: flex;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1rem;
-  border-radius: 20px;
-  background: #fbfdff;
-  border: 1px solid #e6edf7;
 }
 
 .list-row h3,
@@ -199,7 +187,7 @@
 .movement-row h3,
 .alert-card h3 {
   margin: 0;
-  color: #0f172a;
+  color: var(--color-text);
 }
 
 .list-row p,
@@ -207,8 +195,8 @@
 .transfer-card p,
 .movement-row p,
 .alert-card p {
-  margin: 0.35rem 0 0;
-  color: #64748b;
+  margin-top: 0.35rem;
+  color: var(--color-text-muted);
 }
 
 .row-metrics,
@@ -220,48 +208,44 @@
   gap: 0.6rem;
   align-items: center;
   justify-content: flex-end;
-  color: #334155;
+  color: var(--color-text);
 }
 
 .status-pill {
   display: inline-flex;
   align-items: center;
-  padding: 0.35rem 0.65rem;
+  padding: 0.35rem 0.7rem;
   border-radius: 999px;
-  background: #eff6ff;
-  color: #1d4ed8;
-  font-size: 0.8rem;
-  font-weight: 700;
+  background: #edf3ff;
+  color: var(--color-primary);
+  font-size: 0.78rem;
+  font-weight: 800;
 }
 
 .status-pill--critical {
-  background: #fef2f2;
-  color: #dc2626;
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
 }
 
 .operation-card {
   display: grid;
   gap: 0.35rem;
-  padding: 1rem;
-  border-radius: 20px;
-  border: 1px solid #dbe6f4;
-  background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
   text-align: left;
   cursor: pointer;
 }
 
 .operation-card strong {
-  color: #0f172a;
+  color: var(--color-text);
 }
 
 .operation-card span {
-  color: #64748b;
+  color: var(--color-text-muted);
 }
 
 .ghost-btn,
 .link-btn {
   border: none;
-  border-radius: 14px;
+  border-radius: 12px;
   padding: 0.7rem 0.95rem;
   font-weight: 700;
   cursor: pointer;
@@ -269,7 +253,7 @@
 
 .ghost-btn {
   background: #eef4ff;
-  color: #1d4ed8;
+  color: var(--color-primary);
 }
 
 .ghost-btn--compact {
@@ -278,7 +262,7 @@
 
 .link-btn {
   background: transparent;
-  color: #2563eb;
+  color: var(--color-primary);
   padding: 0;
 }
 
@@ -318,7 +302,7 @@
 
 @media (max-width: 720px) {
   .hero-copy h1 {
-    font-size: 1.6rem;
+    font-size: 1.55rem;
   }
 
   .hero-actions,

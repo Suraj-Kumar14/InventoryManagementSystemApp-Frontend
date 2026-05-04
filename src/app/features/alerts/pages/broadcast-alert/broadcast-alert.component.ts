@@ -66,7 +66,7 @@ import { AlertApiService } from '../../services/alert-api.service';
   `],
 })
 export class BroadcastAlertComponent {
-  readonly roles = [UserRole.ADMIN, UserRole.INVENTORY_MANAGER, UserRole.PURCHASE_OFFICER, UserRole.WAREHOUSE_STAFF];
+  readonly roles = [UserRole.ADMIN, UserRole.MANAGER, UserRole.OFFICER, UserRole.STAFF];
   private readonly fb = inject(FormBuilder);
   private readonly alertApi = inject(AlertApiService);
   private readonly notification = inject(NotificationService);

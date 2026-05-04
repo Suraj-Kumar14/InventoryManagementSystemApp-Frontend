@@ -21,10 +21,35 @@ export interface UserProfile {
   department?: string | null;
   isActive?: boolean;
   createdAt?: string;
-  updatedAt?: string;
-  lastLoginAt?: string;
-  roleLabel?: string;
-  provider?: string;
+  lastLoginAt?: string | null;
+}
+
+export interface AdminUserSummary {
+  totalUsers: number;
+  activeUsers: number;
+  inactiveUsers: number;
+  adminCount: number;
+  inventoryManagerCount: number;
+  purchaseOfficerCount: number;
+  warehouseStaffCount: number;
+  recentLoginCount?: number;
+}
+
+export interface CreateAdminUserRequest {
+  name: string;
+  email: string;
+  phone?: string | null;
+  role: UserRole;
+  department?: string | null;
+  password: string;
+  isActive?: boolean;
+}
+
+export interface UpdateAdminUserRequest {
+  name: string;
+  phone?: string | null;
+  department?: string | null;
+  isActive?: boolean;
 }
 
 export interface UpdateProfileRequest {
@@ -36,7 +61,6 @@ export interface UpdateProfileRequest {
 export interface ChangePasswordRequest {
   oldPassword: string;
   newPassword: string;
-  confirmPassword?: string;
 }
 
 export interface Product {

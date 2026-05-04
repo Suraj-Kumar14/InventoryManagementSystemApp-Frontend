@@ -44,7 +44,7 @@ describe('MovementDetailComponent', () => {
           useValue: {
             hasRole: vi.fn().mockImplementation((role: UserRole | UserRole[]) => {
               const roles = Array.isArray(role) ? role : [role];
-              return roles.includes(UserRole.INVENTORY_MANAGER);
+              return roles.includes(UserRole.MANAGER);
             }),
           },
         },
@@ -87,7 +87,7 @@ describe('MovementDetailComponent', () => {
     const authService = TestBed.inject(AuthService) as unknown as { hasRole: ReturnType<typeof vi.fn> };
     authService.hasRole.mockImplementation((role: UserRole | UserRole[]) => {
       const roles = Array.isArray(role) ? role : [role];
-      return roles.includes(UserRole.WAREHOUSE_STAFF) && !roles.includes(UserRole.INVENTORY_MANAGER);
+      return roles.includes(UserRole.STAFF) && !roles.includes(UserRole.MANAGER);
     });
 
     fixture = TestBed.createComponent(MovementDetailComponent);

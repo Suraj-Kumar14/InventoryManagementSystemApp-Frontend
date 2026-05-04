@@ -23,15 +23,15 @@ export class OauthSuccessComponent implements OnInit {
   ngOnInit(): void {
     const token = this.route.snapshot.queryParamMap.get('token');
     const refreshToken = this.route.snapshot.queryParamMap.get('refreshToken');
-    if (!token || !refreshToken) {
+    if (!token) {
       this.message = 'Google login failed.';
       this.notification.error('Google login failed');
-      this.router.navigate(['/login'], { replaceUrl: true });
+      this.router.navigate(['/login']);
       return;
     }
-
-    this.authService.completeOAuthLogin(token, refreshToken).subscribe({
+    this.authService.completeOAuthLogin(token, refreshToken || '').subscribe({
       next: (user) => {
+        window.history.replaceState({}, document.title, '/oauth-success');
         this.notification.success('Login successful!');
         const rolePage = ROLE_PAGES[user.role] || '/dashboard/admin';
         this.router.navigateByUrl(rolePage, { replaceUrl: true });
@@ -39,7 +39,7 @@ export class OauthSuccessComponent implements OnInit {
       error: () => {
         this.message = 'Google login failed.';
         this.notification.error('Google login failed');
-        this.router.navigate(['/login'], { replaceUrl: true });
+        this.router.navigate(['/login']);
       },
     });
   }

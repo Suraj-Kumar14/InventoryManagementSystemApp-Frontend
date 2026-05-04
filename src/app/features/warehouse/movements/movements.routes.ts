@@ -8,6 +8,6 @@ export const movementsRoutes: Routes = [
     redirectTo: '/movements',
     pathMatch: 'full',
     canActivate: [roleGuard],
-    data: { roles: [UserRole.ADMIN, UserRole.WAREHOUSE_STAFF, UserRole.INVENTORY_MANAGER, UserRole.PURCHASE_OFFICER] },
+    data: { roles: [UserRole.ADMIN, UserRole.STAFF, UserRole.MANAGER, UserRole.OFFICER] },
   },
 ];

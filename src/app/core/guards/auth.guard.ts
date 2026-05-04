@@ -17,9 +17,9 @@ export class AuthGuardService {
   private router = inject(Router);
 
   canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean | UrlTree> {
-    return this.authService.waitUntilInitialized().pipe(
-      map(() => {
-        if (this.authService.isAuthenticated() && this.authService.isTokenValid()) {
+    return this.authService.restoreSession().pipe(
+      map((user) => {
+        if (user && this.authService.isTokenValid()) {
           return true;
         }
 

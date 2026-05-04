@@ -149,14 +149,17 @@ export class PurchaseOrderApiService {
 
   getSuppliers(): Observable<SupplierResponse[]> {
     return this.api
-      .get<SupplierResponse[]>(API_ENDPOINTS.SUPPLIERS.ACTIVE)
+      .get<SupplierResponse[]>(API_ENDPOINTS.SUPPLIERS.ACTIVE, {
+        headers: { 'X-Skip-Global-Error': 'true' },
+      })
       .pipe(handleServiceError(this.serviceName, 'getSuppliers'));
   }
 
   getWarehouses(): Observable<PageResponse<WarehouseResponse>> {
     return this.api
       .get<PageResponse<WarehouseResponse>>(API_ENDPOINTS.WAREHOUSES.ROOT, {
-        params: { isActive: true, page: 0, size: 100, sortBy: 'name', sortDir: 'asc' },
+        headers: { 'X-Skip-Global-Error': 'true' },
+        params: { isActive: true, page: 0, size: 100, sortBy: 'warehouseName', sortDir: 'asc' },
       })
       .pipe(handleServiceError(this.serviceName, 'getWarehouses'));
   }

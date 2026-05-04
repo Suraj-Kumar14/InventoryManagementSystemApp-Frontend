@@ -110,14 +110,14 @@ describe('PoListComponent', () => {
   });
 
   it('should load POs', () => {
-    createComponent(UserRole.PURCHASE_OFFICER);
+    createComponent(UserRole.OFFICER);
 
     expect(purchaseApiStub.getPurchaseOrders).toHaveBeenCalled();
     expect(component.purchaseOrders.length).toBe(1);
   });
 
   it('should filter by status', () => {
-    createComponent(UserRole.PURCHASE_OFFICER);
+    createComponent(UserRole.OFFICER);
 
     component.filtersForm.patchValue({ status: 'DRAFT' });
     component.onSearch();
@@ -126,7 +126,7 @@ describe('PoListComponent', () => {
   });
 
   it('should show status badges and hide manager actions for staff', () => {
-    createComponent(UserRole.WAREHOUSE_STAFF);
+    createComponent(UserRole.STAFF);
 
     expect(component.canCreate).toBe(false);
     expect(component.canApprove).toBe(false);
@@ -136,7 +136,7 @@ describe('PoListComponent', () => {
   it('should handle empty state', () => {
     purchaseApiStub.getPurchaseOrders.mockReturnValue(of({ ...purchaseOrderPage, content: [], totalElements: 0, empty: true }));
 
-    createComponent(UserRole.PURCHASE_OFFICER);
+    createComponent(UserRole.OFFICER);
 
     expect(component.purchaseOrders).toEqual([]);
     expect(fixture.nativeElement.textContent).toContain('No purchase orders matched the current filters.');
@@ -145,7 +145,7 @@ describe('PoListComponent', () => {
   it('should handle API error', () => {
     purchaseApiStub.getPurchaseOrders.mockReturnValue(throwError(() => new Error('boom')));
 
-    createComponent(UserRole.PURCHASE_OFFICER);
+    createComponent(UserRole.OFFICER);
 
     expect(component.purchaseOrders).toEqual([]);
     expect(component.pageData).toBeNull();

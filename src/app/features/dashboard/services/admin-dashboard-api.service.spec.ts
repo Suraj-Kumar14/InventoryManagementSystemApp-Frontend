@@ -86,7 +86,7 @@ describe('AdminDashboardApiService', () => {
     alertApiServiceStub.searchAlerts.mockReturnValue(of({ content: [], totalElements: 0, totalPages: 0, number: 0, size: 5, numberOfElements: 0, first: true, last: true, empty: true }));
     authServiceStub.getUsers.mockReturnValue(of([
       { userId: 1, name: 'Admin', email: 'admin@test.com', role: UserRole.ADMIN, isActive: true },
-      { userId: 2, name: 'Manager', email: 'manager@test.com', role: UserRole.INVENTORY_MANAGER, isActive: false },
+      { userId: 2, name: 'Manager', email: 'manager@test.com', role: UserRole.MANAGER, isActive: false },
     ]));
     reportServiceStub.getPaymentSummaryReport.mockReturnValue(of({
       totalPayments: 5,

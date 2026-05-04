@@ -29,7 +29,9 @@ export class WarehouseService {
     return this.api
       .get<PageResponse<WarehouseResponse>>(API_ENDPOINTS.WAREHOUSES.ROOT, {
         service: 'warehouse',
-        params: activeOnly ? { isActive: true, page: 0, size: 100 } : { page: 0, size: 100 },
+        params: activeOnly
+          ? { isActive: true, page: 0, size: 100, sortBy: 'warehouseName', sortDir: 'asc' }
+          : { page: 0, size: 100, sortBy: 'warehouseName', sortDir: 'asc' },
       })
       .pipe(
         map((response) => response.content ?? []),

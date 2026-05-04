@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Routes } from '@angular/router';
 import { finalize } from 'rxjs/operators';
@@ -16,7 +16,7 @@ import { roleGuard } from '../../../core/guards/role.guard';
   templateUrl: './warehouses-page.component.html',
   styleUrls: ['./warehouses-page.component.css'],
 })
-class WarehousesAdminPageComponent {
+class WarehousesAdminPageComponent implements OnInit {
   private readonly service = inject(WarehouseService);
   private readonly fb = inject(FormBuilder);
   private readonly notifications = inject(NotificationService);
@@ -39,7 +39,7 @@ class WarehousesAdminPageComponent {
     phone: [''],
   });
 
-  constructor() {
+  ngOnInit(): void {
     this.loadWarehouses();
   }
 
@@ -122,6 +122,6 @@ export const warehousesRoutes: Routes = [
     path: '',
     component: WarehousesAdminPageComponent,
     canActivate: [roleGuard],
-    data: { roles: [UserRole.ADMIN, UserRole.INVENTORY_MANAGER, UserRole.PURCHASE_OFFICER, UserRole.WAREHOUSE_STAFF] },
+    data: { roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.OFFICER, UserRole.STAFF] },
   },
 ];

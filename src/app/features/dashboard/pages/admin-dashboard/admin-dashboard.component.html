@@ -154,7 +154,7 @@
         <div class="section-head">
           <div>
             <p class="section-kicker">User & Access</p>
-            <h2>Account oversight</h2>
+            <h2>User management</h2>
           </div>
         </div>
 
@@ -180,10 +180,12 @@
           </div>
         </div>
 
-        <div class="shortcut-list">
-          <a routerLink="/admin/users">Manage Users</a>
-          <a routerLink="/admin/users">Manage Roles</a>
-          <a routerLink="/admin/users">Deactivated Users</a>
+        <div class="user-management-card">
+          <div>
+            <strong>User Management</strong>
+            <p>Manage users, roles, activation, and account status from one place.</p>
+          </div>
+          <a routerLink="/admin/users" class="user-management-card__action">Open Users</a>
         </div>
 
         <div class="section-error" *ngIf="sectionError('users')">{{ sectionError('users') }}</div>

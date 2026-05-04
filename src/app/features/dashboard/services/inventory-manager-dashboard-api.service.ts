@@ -1,10 +1,12 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { AlertResponse, Product, ProductSummary } from '../../../core/http/backend.models';
+import { ApiService } from '../../../core/http/api.service';
+import { AlertResponse, InventoryValuationReportResponse, Product, ProductSummary } from '../../../core/http/backend.models';
 import { PurchaseService } from '../../../core/services/purchase.service';
 import { ReportService } from '../../../core/services/report.service';
 import { WarehouseService } from '../../../core/services/warehouse.service';
+import { API_ENDPOINTS } from '../../../shared/config/app-config';
 import { AlertApiService } from '../../alerts/services/alert-api.service';
 import { MovementApiService } from '../../movements/services/movement-api.service';
 import { ProductApiService } from '../../products/services/product-api.service';
@@ -20,6 +22,7 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class InventoryManagerDashboardApiService {
+  private readonly api = inject(ApiService);
   private readonly reportService = inject(ReportService);
   private readonly productApiService = inject(ProductApiService);
   private readonly warehouseService = inject(WarehouseService);
@@ -46,7 +49,9 @@ export class InventoryManagerDashboardApiService {
     productCategorySummary: ProductCategorySummary[];
   }> {
     return forkJoin({
-      valuation: this.reportService.getInventoryValuation(),
+      valuation: this.api.get<InventoryValuationReportResponse>(API_ENDPOINTS.REPORTS.INVENTORY_VALUATION, {
+        headers: { 'X-Skip-Global-Error': 'true' },
+      }),
       stockSummary: this.reportService.getStockSummary(),
       products: this.productApiService.getProducts({ page: 0, size: 200, sortBy: 'updatedAt', sortDir: 'desc' }),
     }).pipe(

@@ -2,9 +2,11 @@
   <app-navbar (toggleSidebar)="sidebarCollapsed.set(!sidebarCollapsed())"></app-navbar>
   <div class="app-body">
     <app-sidebar [isCollapsed]="sidebarCollapsed()"></app-sidebar>
-    <main class="main-content">
-      <div class="main-content-inner">
-        <router-outlet></router-outlet>
+    <main class="main-shell">
+      <div class="page-content">
+        <div class="main-content-inner">
+          <router-outlet></router-outlet>
+        </div>
       </div>
     </main>
   </div>

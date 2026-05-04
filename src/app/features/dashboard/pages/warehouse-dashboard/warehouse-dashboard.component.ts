@@ -56,6 +56,7 @@ export class WarehouseDashboardComponent implements OnInit {
   headerActionLoading: HeaderActionKey | null = null;
   alertActionLoading: { id: number; action: 'ack' | 'dismiss' } | null = null;
   view: WarehouseStaffDashboardView | null = null;
+  readonly currentDate = new Date();
 
   ngOnInit(): void {
     this.load(true);
@@ -64,10 +65,6 @@ export class WarehouseDashboardComponent implements OnInit {
   get greetingName(): string {
     const user = this.authService.getCurrentUser();
     return this.authService.getFirstName(user?.name, user?.email);
-  }
-
-  get currentDate(): Date {
-    return new Date();
   }
 
   get assignedWarehouseLabel(): string {

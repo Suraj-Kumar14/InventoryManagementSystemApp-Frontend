@@ -18,6 +18,7 @@ export class JwtInterceptor implements HttpInterceptor {
     API_ENDPOINTS.AUTH.FORGOT_PASSWORD,
     API_ENDPOINTS.AUTH.VERIFY_OTP,
     API_ENDPOINTS.AUTH.RESET_PASSWORD,
+    '/auth/send-otp',
     API_ENDPOINTS.AUTH.GOOGLE_LOGIN,
     '/login/oauth2/code/google',
   ];

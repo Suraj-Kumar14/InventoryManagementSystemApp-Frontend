@@ -13,7 +13,9 @@
     </div>
   </header>
 
-  <app-po-summary-cards *ngIf="summary" [summary]="summary"></app-po-summary-cards>
+  <app-po-summary-cards *ngIf="canViewAnalytics" [summary]="summary"></app-po-summary-cards>
+  <div *ngIf="summaryError" class="inline-error">{{ summaryError }}</div>
+  <div *ngIf="lookupError" class="inline-info">{{ lookupError }}</div>
 
   <section class="panel panel--filters" [formGroup]="filtersForm">
     <div class="filters-grid">
@@ -45,9 +47,13 @@
 
   <section class="panel">
     <div *ngIf="loading" class="empty-state">Loading purchase orders...</div>
-    <div *ngIf="!loading && purchaseOrders.length === 0" class="empty-state">No purchase orders matched the current filters.</div>
+    <div *ngIf="!loading && loadError" class="empty-state">
+      <p>{{ loadError }}</p>
+      <button type="button" class="btn btn-secondary" (click)="retryLoad()">Retry</button>
+    </div>
+    <div *ngIf="!loading && !loadError && purchaseOrders.length === 0" class="empty-state">No purchase orders matched the current filters.</div>
 
-    <div *ngIf="!loading && purchaseOrders.length > 0" class="table-shell">
+    <div *ngIf="!loading && !loadError && purchaseOrders.length > 0" class="table-shell">
       <table class="data-table">
         <thead>
           <tr>

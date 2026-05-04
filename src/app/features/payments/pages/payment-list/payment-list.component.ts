@@ -1,5 +1,5 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
@@ -118,7 +118,7 @@ import { PaymentResponse, PaymentStatus, PaymentSummaryResponse } from '../../mo
     .state { padding:2rem; color:#64748b; text-align:center; }
   `],
 })
-export class PaymentListComponent {
+export class PaymentListComponent implements OnInit {
   private readonly paymentService = inject(PaymentService);
   private readonly notifications = inject(NotificationService);
   private readonly authService = inject(AuthService);
@@ -139,17 +139,17 @@ export class PaymentListComponent {
   payments: PaymentResponse[] = [];
   loading = false;
 
-  constructor() {
+  ngOnInit(): void {
     this.loadSummary();
     this.loadPayments();
   }
 
   get canCreate(): boolean {
-    return this.authService.hasRole([UserRole.ADMIN, UserRole.PURCHASE_OFFICER]);
+    return this.authService.hasRole([UserRole.ADMIN, UserRole.OFFICER]);
   }
 
   get canApprove(): boolean {
-    return this.authService.hasRole([UserRole.ADMIN, UserRole.INVENTORY_MANAGER]);
+    return this.authService.hasRole([UserRole.ADMIN, UserRole.MANAGER]);
   }
 
   loadSummary(): void {

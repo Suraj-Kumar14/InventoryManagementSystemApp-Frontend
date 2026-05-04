@@ -31,7 +31,7 @@ export class AdminDashboardComponent implements OnInit {
   view: AdminDashboardView | null = null;
 
   readonly quickActions: DashboardQuickAction[] = [
-    { label: 'Manage Users', route: '/admin/users', icon: 'bi bi-people', allowedRoles: [UserRole.ADMIN] },
+    { label: 'User Management', route: '/admin/users', icon: 'bi bi-people', allowedRoles: [UserRole.ADMIN] },
     { label: 'Manage Warehouses', route: '/admin/warehouses', icon: 'bi bi-building', allowedRoles: [UserRole.ADMIN] },
     { label: 'Broadcast Alert', route: '/alerts/broadcast', icon: 'bi bi-megaphone', allowedRoles: [UserRole.ADMIN] },
     { label: 'Executive Reports', route: '/reports/executive', icon: 'bi bi-graph-up-arrow', allowedRoles: [UserRole.ADMIN] },

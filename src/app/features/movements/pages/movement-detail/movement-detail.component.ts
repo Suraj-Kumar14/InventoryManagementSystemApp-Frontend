@@ -101,7 +101,7 @@ export class MovementDetailComponent implements OnInit {
   private readonly notification = inject(NotificationService);
   private readonly authService = inject(AuthService);
 
-  readonly canReverse = this.authService.hasRole([UserRole.ADMIN, UserRole.INVENTORY_MANAGER]);
+  readonly canReverse = this.authService.hasRole([UserRole.ADMIN, UserRole.MANAGER]);
   movement: MovementResponse | null = null;
   loading = false;
   saving = false;

@@ -1,81 +1,88 @@
-import { Injectable, NgZone, inject } from '@angular/core';
-import { IndividualConfig, ToastrService } from 'ngx-toastr';
+import { Injectable } from '@angular/core';
+import { BehaviorSubject } from 'rxjs';
+
+export type ToastType = 'success' | 'error' | 'warning' | 'info';
+
+export interface AppToast {
+  id: number;
+  type: ToastType;
+  title: string;
+  message: string;
+  createdAt: number;
+}
 
 @Injectable({
   providedIn: 'root',
 })
 export class NotificationService {
-  private toastr = inject(ToastrService);
-  private zone = inject(NgZone);
-  private lastToastKey = '';
-  private lastToastAt = 0;
+  private readonly toastsSubject = new BehaviorSubject<AppToast[]>([]);
+  readonly toasts$ = this.toastsSubject.asObservable();
 
-  /**
-   * Show success notification
-   */
+  private nextId = 1;
+  private lastMessage = '';
+  private lastShownAt = 0;
+
+  private readonly duplicateWindowMs = 1500;
+  private readonly maxOpened = 3;
+  private readonly timeoutMs = 3000;
+
   success(message: string, title = 'Success'): void {
-    this.show('success', message, title, {
-      timeOut: 3000,
-      positionClass: 'toast-top-right',
-      progressBar: true,
-      progressAnimation: 'increasing',
-    });
+    this.show('success', message, title);
   }
 
-  /**
-   * Show error notification
-   */
   error(message: string, title = 'Error'): void {
-    this.show('error', message, title, {
-      timeOut: 5000,
-      positionClass: 'toast-top-right',
-      progressBar: true,
-      progressAnimation: 'increasing',
-    });
+    this.show('error', message, title);
   }
 
-  /**
-   * Show warning notification
-   */
   warning(message: string, title = 'Warning'): void {
-    this.show('warning', message, title, {
-      timeOut: 4000,
-      positionClass: 'toast-top-right',
-      progressBar: true,
-      progressAnimation: 'increasing',
-    });
+    this.show('warning', message, title);
   }
 
-  /**
-   * Show info notification
-   */
   info(message: string, title = 'Info'): void {
-    this.show('info', message, title, {
-      timeOut: 3000,
-      positionClass: 'toast-top-right',
-      progressBar: true,
-      progressAnimation: 'increasing',
-    });
+    this.show('info', message, title);
   }
 
-  private show(
-    type: 'success' | 'error' | 'warning' | 'info',
-    message: string,
-    title: string,
-    options: Partial<IndividualConfig>
-  ): void {
-    const key = `${type}:${title}:${message}`;
-    const now = Date.now();
-    if (key === this.lastToastKey && now - this.lastToastAt < 1000) {
+  remove(id: number): void {
+    this.toastsSubject.next(
+      this.toastsSubject.value.filter((toast) => toast.id !== id)
+    );
+  }
+
+  clear(): void {
+    this.toastsSubject.next([]);
+  }
+
+  private show(type: ToastType, message: string, title: string): void {
+    if (!message?.trim()) {
       return;
     }
 
-    this.lastToastKey = key;
-    this.lastToastAt = now;
+    const now = Date.now();
+    const duplicateKey = `${type}:${title}:${message}`;
 
-    this.zone.run(() => {
-      setTimeout(() => this.toastr[type](message, title, options));
-    });
+    if (
+      this.lastMessage === duplicateKey &&
+      now - this.lastShownAt < this.duplicateWindowMs
+    ) {
+      return;
+    }
+
+    this.lastMessage = duplicateKey;
+    this.lastShownAt = now;
+
+    const toast: AppToast = {
+      id: this.nextId++,
+      type,
+      title,
+      message,
+      createdAt: now,
+    };
+
+    const updated = [toast, ...this.toastsSubject.value].slice(0, this.maxOpened);
+    this.toastsSubject.next(updated);
+
+    window.setTimeout(() => {
+      this.remove(toast.id);
+    }, this.timeoutMs);
   }
 }
-

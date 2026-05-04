@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -14,7 +14,7 @@ import { ROLE_LABELS, UserRole } from '../../../../shared/config/app-config';
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.css'],
 })
-export class SettingsComponent {
+export class SettingsComponent implements OnInit {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private notification = inject(NotificationService);
@@ -39,7 +39,9 @@ export class SettingsComponent {
     confirmNewPassword: ['', Validators.required],
   });
 
-  constructor() { this.loadProfile(); }
+  ngOnInit(): void {
+    setTimeout(() => this.loadProfile(), 0);
+  }
 
   loadProfile(): void {
     this.loadingProfile = true;
@@ -71,11 +73,7 @@ export class SettingsComponent {
     if (raw.newPassword !== raw.confirmNewPassword) { this.passwordError = 'Passwords do not match'; return; }
     this.passwordError = '';
     this.passwordSaving = true;
-    this.authService.changePassword({
-      oldPassword: raw.currentPassword,
-      newPassword: raw.newPassword,
-      confirmPassword: raw.confirmNewPassword,
-    })
+    this.authService.changePassword({ oldPassword: raw.currentPassword, newPassword: raw.newPassword })
       .pipe(finalize(() => (this.passwordSaving = false)))
       .subscribe({
         next: () => {

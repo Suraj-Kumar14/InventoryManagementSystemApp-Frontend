@@ -73,9 +73,7 @@ export class RegisterComponent implements OnInit {
 
   private mapError(error: unknown): string {
     const message = this.extractMessage(error);
-    if (message.toLowerCase().includes('email already exists') || message.toLowerCase().includes('already registered')) {
-      return 'Email already registered';
-    }
+    if (message.toLowerCase().includes('email already exists')) return 'Email already exists';
     return message || 'Unable to continue signup right now.';
   }
 

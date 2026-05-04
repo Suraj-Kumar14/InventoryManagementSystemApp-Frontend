@@ -1,27 +1,11 @@
 export enum UserRole {
   ADMIN = 'ADMIN',
-  INVENTORY_MANAGER = 'INVENTORY_MANAGER',
-  PURCHASE_OFFICER = 'PURCHASE_OFFICER',
-  WAREHOUSE_STAFF = 'WAREHOUSE_STAFF',
-}
-
-export function normalizeRole(role?: string | null): UserRole | null {
-  if (!role) {
-    return null;
-  }
-
-  const value = role.replace(/^ROLE_/, '').toUpperCase();
-  const aliases: Record<string, UserRole> = {
-    ADMIN: UserRole.ADMIN,
-    INVENTORY_MANAGER: UserRole.INVENTORY_MANAGER,
-    MANAGER: UserRole.INVENTORY_MANAGER,
-    PURCHASE_OFFICER: UserRole.PURCHASE_OFFICER,
-    OFFICER: UserRole.PURCHASE_OFFICER,
-    WAREHOUSE_STAFF: UserRole.WAREHOUSE_STAFF,
-    STAFF: UserRole.WAREHOUSE_STAFF,
-  };
-
-  return aliases[value] ?? null;
+  INVENTORY_MANAGER = 'MANAGER',
+  MANAGER = 'MANAGER',
+  PURCHASE_OFFICER = 'OFFICER',
+  OFFICER = 'OFFICER',
+  WAREHOUSE_STAFF = 'STAFF',
+  STAFF = 'STAFF',
 }
 
 export const ROLE_LABELS: Record<UserRole, string> = {
@@ -44,6 +28,42 @@ export const ROLE_REGISTRATION_ALLOWED: UserRole[] = [
   UserRole.WAREHOUSE_STAFF,
 ];
 
+export function normalizeUserRole(role: string | null | undefined): UserRole | null {
+  const normalizedRole = role?.replace(/^ROLE_/, '').trim().toUpperCase();
+
+  switch (normalizedRole) {
+    case UserRole.ADMIN:
+      return UserRole.ADMIN;
+    case 'INVENTORY_MANAGER':
+    case UserRole.MANAGER:
+      return UserRole.INVENTORY_MANAGER;
+    case 'PURCHASE_OFFICER':
+    case UserRole.OFFICER:
+      return UserRole.PURCHASE_OFFICER;
+    case 'WAREHOUSE_STAFF':
+    case UserRole.STAFF:
+      return UserRole.WAREHOUSE_STAFF;
+    default:
+      return null;
+  }
+}
+
+export function toBackendUserRole(role: UserRole): 'ADMIN' | 'MANAGER' | 'OFFICER' | 'STAFF' {
+  if (role === UserRole.ADMIN) {
+    return 'ADMIN';
+  }
+
+  if (role === UserRole.INVENTORY_MANAGER) {
+    return 'MANAGER';
+  }
+
+  if (role === UserRole.PURCHASE_OFFICER) {
+    return 'OFFICER';
+  }
+
+  return 'STAFF';
+}
+
 export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: '/auth/login',
@@ -57,9 +77,17 @@ export const API_ENDPOINTS = {
     UPDATE_PROFILE: '/auth/profile',
     CHANGE_PASSWORD: '/auth/password',
     USERS: '/auth/users',
+    USER_SUMMARY: '/auth/users/summary',
     USER_DETAIL: (id: number) => `/auth/users/${id}`,
     DEACTIVATE_USER: (id: number) => `/auth/users/${id}/deactivate`,
     ACTIVATE_USER: (id: number) => `/auth/users/${id}/activate`,
+    ADMIN_USERS: '/auth/users',
+    ADMIN_USER_SUMMARY: '/auth/users/summary',
+    ADMIN_USER_DETAIL: (id: number) => `/auth/users/${id}`,
+    ADMIN_USER_UPDATE: (id: number) => `/auth/users/${id}`,
+    ADMIN_USER_ROLE: (id: number) => `/auth/users/${id}/role`,
+    ADMIN_USER_DEACTIVATE: (id: number) => `/auth/users/${id}/deactivate`,
+    ADMIN_USER_ACTIVATE: (id: number) => `/auth/users/${id}/activate`,
     GOOGLE_LOGIN: '/oauth2/authorization/google',
   },
   PRODUCTS: {
@@ -132,11 +160,11 @@ export const API_ENDPOINTS = {
     PENDING_APPROVAL: '/api/v1/purchase-orders/pending-approval',
     DETAIL: (id: number) => `/api/v1/purchase-orders/${id}`,
     NUMBER: (poNumber: string) => `/api/v1/purchase-orders/number/${poNumber}`,
-    BY_SUPPLIER: (supplierId: number) => `/purchase-orders/supplier/${supplierId}`,
-    BY_WAREHOUSE: (warehouseId: number) => `/purchase-orders/warehouse/${warehouseId}`,
-    BY_STATUS: (status: string) => `/purchase-orders/status/${status}`,
-    BY_CREATED_BY: (userId: number) => `/purchase-orders/created-by/${userId}`,
-    DATE_RANGE: '/purchase-orders/date-range',
+    BY_SUPPLIER: (supplierId: number) => `/api/v1/purchase-orders/supplier/${supplierId}`,
+    BY_WAREHOUSE: (warehouseId: number) => `/api/v1/purchase-orders/warehouse/${warehouseId}`,
+    BY_STATUS: (status: string) => `/api/v1/purchase-orders/status/${status}`,
+    BY_CREATED_BY: (userId: number) => `/api/v1/purchase-orders/created-by/${userId}`,
+    DATE_RANGE: '/api/v1/purchase-orders/date-range',
     SUBMIT: (id: number) => `/api/v1/purchase-orders/${id}/submit`,
     APPROVE: (id: number) => `/api/v1/purchase-orders/${id}/approve`,
     REJECT: (id: number) => `/api/v1/purchase-orders/${id}/reject`,

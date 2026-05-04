@@ -11,7 +11,8 @@
     </div>
   </header>
 
-  <app-supplier-summary-cards *ngIf="summary" [summary]="summary"></app-supplier-summary-cards>
+  <app-supplier-summary-cards *ngIf="canViewAnalytics" [summary]="summary"></app-supplier-summary-cards>
+  <div *ngIf="summaryError" class="inline-error">{{ summaryError }}</div>
 
   <section class="panel panel--filters" [formGroup]="filtersForm">
     <div class="filters-grid">

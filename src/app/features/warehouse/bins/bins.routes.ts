@@ -52,6 +52,6 @@ export const binsRoutes: Routes = [
     path: '',
     component: BinsPageComponent,
     canActivate: [roleGuard],
-    data: { roles: [UserRole.ADMIN, UserRole.WAREHOUSE_STAFF] },
+    data: { roles: [UserRole.ADMIN, UserRole.STAFF] },
   },
 ];

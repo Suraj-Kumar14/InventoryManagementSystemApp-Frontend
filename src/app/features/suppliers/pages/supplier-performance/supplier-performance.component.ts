@@ -21,7 +21,7 @@ export class SupplierPerformanceComponent implements OnInit {
   private readonly notifications = inject(NotificationService);
   private readonly authService = inject(AuthService);
 
-  readonly canRate = this.authService.hasRole([UserRole.ADMIN, UserRole.PURCHASE_OFFICER, UserRole.INVENTORY_MANAGER]);
+  readonly canRate = this.authService.hasRole([UserRole.ADMIN, UserRole.OFFICER, UserRole.MANAGER]);
 
   supplier: SupplierResponse | null = null;
   performance: SupplierPerformanceResponse | null = null;

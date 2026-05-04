@@ -1,10 +1,12 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { PurchaseOrderResponse, SupplierResponse } from '../../../core/http/backend.models';
+import { ApiService } from '../../../core/http/api.service';
+import { PageResponse, PaymentSummaryReportResponse, PurchaseOrderResponse, SupplierResponse } from '../../../core/http/backend.models';
 import { PaymentService } from '../../../core/services/payment.service';
 import { PurchaseService } from '../../../core/services/purchase.service';
 import { ReportService } from '../../../core/services/report.service';
+import { API_ENDPOINTS } from '../../../shared/config/app-config';
 import { AlertApiService } from '../../alerts/services/alert-api.service';
 import { SupplierApiService } from '../../suppliers/services/supplier-api.service';
 import {
@@ -19,6 +21,7 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class PurchaseOfficerDashboardApiService {
+  private readonly api = inject(ApiService);
   private readonly reportService = inject(ReportService);
   private readonly purchaseService = inject(PurchaseService);
   private readonly supplierApiService = inject(SupplierApiService);
@@ -82,7 +85,12 @@ export class PurchaseOfficerDashboardApiService {
   }
 
   getProcurementAttentionItems() {
-    return this.reportService.getLowStockItems({ page: 0, size: 6 }).pipe(
+    return this.api
+      .get<PageResponse<any>>(API_ENDPOINTS.REPORTS.LOW_STOCK, {
+        params: { page: 0, size: 6 },
+        headers: { 'X-Skip-Global-Error': 'true' },
+      })
+      .pipe(
       map((page) =>
         (page.content ?? []).map(
           (item): ProcurementAttentionItem => ({
@@ -106,7 +114,9 @@ export class PurchaseOfficerDashboardApiService {
   getPaymentSummary() {
     return forkJoin({
       paymentSummary: this.paymentService.getPaymentSummary(),
-      paymentReportSummary: this.reportService.getPaymentSummaryReport(),
+      paymentReportSummary: this.api.get<PaymentSummaryReportResponse>(API_ENDPOINTS.REPORTS.PAYMENT_SUMMARY, {
+        headers: { 'X-Skip-Global-Error': 'true' },
+      }),
       recentPaymentsPage: this.paymentService.getPayments({ page: 0, size: 5, sortBy: 'createdAt', sortDir: 'desc' }),
     }).pipe(
       map(({ paymentSummary, paymentReportSummary, recentPaymentsPage }) => ({

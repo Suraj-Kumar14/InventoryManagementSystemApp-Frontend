@@ -3,7 +3,7 @@ import { BehaviorSubject } from 'rxjs';
 import { jwtDecode } from 'jwt-decode';
 import { User, JwtPayload } from '../models/auth.models';
 import { environment } from '../../../../environments/environment';
-import { normalizeRole } from '../../../shared/config/app-config';
+import { normalizeUserRole } from '../../../shared/config/app-config';
 
 @Injectable({
   providedIn: 'root',
@@ -87,16 +87,15 @@ export class TokenService {
 
     try {
       const decoded = jwtDecode<JwtPayload>(token);
-      const role = normalizeRole(decoded.role);
-      if (!role) {
+      const normalizedRole = normalizeUserRole(decoded.role);
+      if (!normalizedRole) {
         return null;
       }
-
       return {
         userId: decoded.userId,
         email: decoded.sub,
         name: decoded.sub,
-        role,
+        role: normalizedRole,
       };
     } catch (error) {
       return null;
@@ -138,9 +137,7 @@ export class TokenService {
     }
 
     try {
-      const user = JSON.parse(rawUser) as User;
-      const role = normalizeRole(user.role);
-      return role ? { ...user, role } : null;
+      return JSON.parse(rawUser) as User;
     } catch {
       localStorage.removeItem(this.userKey);
       return null;

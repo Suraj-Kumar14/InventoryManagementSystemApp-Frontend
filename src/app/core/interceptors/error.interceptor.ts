@@ -17,6 +17,8 @@ export class ErrorInterceptor implements HttpInterceptor {
   private router = inject(Router);
   private tokenService = inject(TokenService);
   private notification = inject(NotificationService);
+  private readonly recentErrors = new Map<string, number>();
+  private readonly duplicateWindowMs = 1500;
 
   private readonly publicAuthEndpoints = [
     '/auth/login',
@@ -35,13 +37,21 @@ export class ErrorInterceptor implements HttpInterceptor {
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     return next.handle(req).pipe(
       catchError((error: HttpErrorResponse) => {
-        this.handleError(error);
+        this.handleError(req, error);
         return throwError(() => error);
       })
     );
   }
 
-  private handleError(error: HttpErrorResponse): void {
+  private handleError(request: HttpRequest<any>, error: HttpErrorResponse): void {
+    if (this.shouldSkipGlobalHandling(request, error)) {
+      return;
+    }
+
+    if (this.isDuplicateError(request, error)) {
+      return;
+    }
+
     const message = this.extractMessage(error);
 
     switch (error.status) {
@@ -67,7 +77,9 @@ export class ErrorInterceptor implements HttpInterceptor {
         break;
 
       case 403:
-        this.notification.error(message || 'You are not allowed to perform this action', 'Access Denied');
+        if (this.isPublicAuthRequest(error.url)) {
+          this.notification.error(message || 'You are not allowed to perform this action', 'Access Denied');
+        }
         break;
 
       case 400:
@@ -79,7 +91,7 @@ export class ErrorInterceptor implements HttpInterceptor {
         break;
 
       case 409:
-        this.notification.error(message || 'Email already registered', 'Conflict');
+        this.notification.error(message || 'Conflict error occurred.', 'Conflict');
         break;
 
       case 500:
@@ -132,5 +144,22 @@ export class ErrorInterceptor implements HttpInterceptor {
     }
 
     return this.sessionEndpoints.some((endpoint) => url.includes(endpoint));
+  }
+
+  private isReportRequest(url: string | null): boolean {
+    return !!url && url.includes('/api/v1/reports/');
+  }
+
+  private shouldSkipGlobalHandling(request: HttpRequest<any>, error: HttpErrorResponse): boolean {
+    return request.headers.has('X-Skip-Global-Error') && error.status !== 401;
+  }
+
+  private isDuplicateError(request: HttpRequest<any>, error: HttpErrorResponse): boolean {
+    const key = `${request.method}:${request.urlWithParams}:${error.status}`;
+    const now = Date.now();
+    const lastSeenAt = this.recentErrors.get(key);
+
+    this.recentErrors.set(key, now);
+    return !!lastSeenAt && now - lastSeenAt < this.duplicateWindowMs;
   }
 }

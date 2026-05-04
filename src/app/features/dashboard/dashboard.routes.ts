@@ -17,19 +17,19 @@ export const dashboardRoutes: Routes = [
     path: 'manager',
     component: InventoryDashboardComponent,
     canActivate: [roleGuard],
-    data: { roles: [UserRole.INVENTORY_MANAGER] },
+    data: { roles: [UserRole.MANAGER] },
   },
   {
     path: 'officer',
     component: PurchaseDashboardComponent,
     canActivate: [roleGuard],
-    data: { roles: [UserRole.PURCHASE_OFFICER] },
+    data: { roles: [UserRole.OFFICER] },
   },
   {
     path: 'staff',
     component: WarehouseDashboardComponent,
     canActivate: [roleGuard],
-    data: { roles: [UserRole.WAREHOUSE_STAFF], allowAdminOverride: false, redirectUnauthorizedToRoleHome: true },
+    data: { roles: [UserRole.STAFF], allowAdminOverride: false, redirectUnauthorizedToRoleHome: true },
   },
   // Fallback: redirect bare /dashboard to login
   {

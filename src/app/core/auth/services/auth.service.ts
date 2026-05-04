@@ -1,13 +1,10 @@
-import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Router } from '@angular/router';
+import { Injectable } from '@angular/core';
+import { HttpBackend, HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
-import { catchError, filter, finalize, map, switchMap, take, tap } from 'rxjs/operators';
+import { catchError, finalize, map, switchMap, tap } from 'rxjs/operators';
 import { TokenService } from './token.service';
 import {
   AuthResponse,
-  AdminUpdateUserRequest,
-  CreateUserRequest,
   ForgotPasswordRequest,
   LoginRequest,
   OtpVerificationRequest,
@@ -16,7 +13,7 @@ import {
   User,
 } from '../models/auth.models';
 import { environment } from '../../../../environments/environment';
-import { UserRole, API_ENDPOINTS, normalizeRole } from '../../../shared/config/app-config';
+import { UserRole, API_ENDPOINTS, normalizeUserRole, toBackendUserRole } from '../../../shared/config/app-config';
 import { ChangePasswordRequest, UpdateProfileRequest, UserProfile } from '../../http/backend.models';
 
 interface BackendLoginResponse {
@@ -34,16 +31,28 @@ interface MessageResponse {
 }
 
 interface UserListResponse {
+  data?: UserProfile[] | UserListResponse;
   content?: UserProfile[];
   users?: UserProfile[];
+}
+
+interface UserSummaryResponse {
+  totalUsers?: number;
+  activeUsers?: number;
+  inactiveUsers?: number;
+  adminCount?: number;
+  inventoryManagerCount?: number;
+  purchaseOfficerCount?: number;
+  warehouseStaffCount?: number;
+  recentLoginCount?: number;
 }
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
-  private readonly router = inject(Router);
   private readonly apiUrl = environment.apiGatewayUrl || environment.apiUrl;
+  private readonly rawHttp: HttpClient;
   private readonly currentUserSubject = new BehaviorSubject<User | null>(null);
   readonly currentUser$ = this.currentUserSubject.asObservable();
 
@@ -53,56 +62,41 @@ export class AuthService {
   private readonly isLoadingSubject = new BehaviorSubject<boolean>(false);
   readonly isLoading$ = this.isLoadingSubject.asObservable();
 
-  private readonly isInitializedSubject = new BehaviorSubject<boolean>(false);
-  readonly isInitialized$ = this.isInitializedSubject.asObservable();
-
   constructor(
     private http: HttpClient,
-    private tokenService: TokenService
+    private tokenService: TokenService,
+    httpBackend: HttpBackend
   ) {
+    this.rawHttp = new HttpClient(httpBackend);
     this.initializeAuthState();
   }
 
   private initializeAuthState(): void {
-    this.isLoadingSubject.next(true);
+    this.tokenService.currentUser$.subscribe((user) => {
+      this.currentUserSubject.next(user);
+      this.isAuthenticatedSubject.next(!!user && this.tokenService.hasValidToken());
+    });
 
     if (!this.tokenService.hasValidToken()) {
       this.logoutLocal();
-      this.isInitializedSubject.next(true);
       return;
     }
 
     const restoredUser = this.tokenService.getUser() ?? this.tokenService.decodeToken();
     if (!restoredUser) {
       this.logoutLocal();
-      this.isInitializedSubject.next(true);
       return;
     }
 
     this.currentUserSubject.next(restoredUser);
     this.isAuthenticatedSubject.next(true);
     this.tokenService.setUser(restoredUser);
-
-    this.tokenService.currentUser$.subscribe((user) => {
-      this.currentUserSubject.next(user);
-      this.isAuthenticatedSubject.next(!!user && this.tokenService.hasValidToken());
-    });
-
-    this.isLoadingSubject.next(false);
-    this.isInitializedSubject.next(true);
-  }
-
-  waitUntilInitialized(): Observable<boolean> {
-    return this.isInitialized$.pipe(
-      filter(Boolean),
-      take(1)
-    );
   }
 
   login(credentials: LoginRequest): Observable<AuthResponse> {
     this.isLoadingSubject.next(true);
 
-    return this.http.post<BackendLoginResponse>(`${this.apiUrl}${API_ENDPOINTS.AUTH.LOGIN}`, credentials).pipe(
+    return this.rawHttp.post<BackendLoginResponse>(`${this.apiUrl}${API_ENDPOINTS.AUTH.LOGIN}`, credentials).pipe(
       tap((response) => {
         this.tokenService.setToken(response.accessToken);
         if (response.refreshToken) {
@@ -135,27 +129,30 @@ export class AuthService {
     this.isLoadingSubject.next(true);
 
     return this.http
-      .post<RegisterResponse>(`${this.apiUrl}${API_ENDPOINTS.AUTH.REGISTER}`, userData)
+      .post<RegisterResponse>(`${this.apiUrl}${API_ENDPOINTS.AUTH.REGISTER}`, {
+        ...userData,
+        role: toBackendUserRole(userData.role),
+      })
       .pipe(finalize(() => this.isLoadingSubject.next(false)));
   }
 
   verifyOtp(payload: OtpVerificationRequest): Observable<RegisterResponse> {
     this.isLoadingSubject.next(true);
-    return this.http
+    return this.rawHttp
       .post<RegisterResponse>(`${this.apiUrl}${API_ENDPOINTS.AUTH.VERIFY_OTP}`, payload)
       .pipe(finalize(() => this.isLoadingSubject.next(false)));
   }
 
   forgotPassword(payload: ForgotPasswordRequest): Observable<MessageResponse> {
     this.isLoadingSubject.next(true);
-    return this.http
+    return this.rawHttp
       .post<MessageResponse>(`${this.apiUrl}${API_ENDPOINTS.AUTH.FORGOT_PASSWORD}`, payload)
       .pipe(finalize(() => this.isLoadingSubject.next(false)));
   }
 
   resetPassword(payload: ResetPasswordRequest): Observable<MessageResponse> {
     this.isLoadingSubject.next(true);
-    return this.http
+    return this.rawHttp
       .post<MessageResponse>(`${this.apiUrl}${API_ENDPOINTS.AUTH.RESET_PASSWORD}`, payload)
       .pipe(finalize(() => this.isLoadingSubject.next(false)));
   }
@@ -169,23 +166,22 @@ export class AuthService {
   }
 
   completeOAuthLogin(accessToken: string, refreshToken: string): Observable<User> {
-    this.isLoadingSubject.next(true);
     this.tokenService.setToken(accessToken);
-    this.tokenService.setRefreshToken(refreshToken);
+    if (refreshToken) {
+      this.tokenService.setRefreshToken(refreshToken);
+    }
     this.isAuthenticatedSubject.next(true);
 
     return this.getProfile().pipe(
       map((profile) => {
         const user = this.mapProfileToUser(profile);
         this.tokenService.setUser(user);
-        this.isAuthenticatedSubject.next(true);
         return user;
       }),
       catchError((error) => {
         this.logoutLocal();
         return throwError(() => error);
       }),
-      finalize(() => this.isLoadingSubject.next(false)),
     );
   }
 
@@ -209,6 +205,51 @@ export class AuthService {
     );
   }
 
+  restoreSession(): Observable<User | null> {
+    const currentUser = this.currentUserSubject.value;
+    if (currentUser && this.tokenService.hasValidToken()) {
+      return of(currentUser);
+    }
+
+    if (this.tokenService.hasValidToken()) {
+      return this.refreshCurrentUser().pipe(
+        catchError(() => of(null))
+      );
+    }
+
+    if (this.tokenService.getRefreshToken()) {
+      return this.refreshSession().pipe(
+        catchError(() => of(null))
+      );
+    }
+
+    return of(null);
+  }
+
+  refreshSession(): Observable<User | null> {
+    const refreshToken = this.tokenService.getRefreshToken();
+    if (!refreshToken) {
+      this.logoutLocal();
+      return of(null);
+    }
+
+    return this.rawHttp.post<BackendLoginResponse>(`${this.apiUrl}${API_ENDPOINTS.AUTH.REFRESH_TOKEN}`, refreshToken, {
+      responseType: 'json',
+    }).pipe(
+      tap((response) => {
+        this.tokenService.setToken(response.accessToken);
+        if (response.refreshToken) {
+          this.tokenService.setRefreshToken(response.refreshToken);
+        }
+      }),
+      switchMap(() => this.refreshCurrentUser()),
+      catchError((error) => {
+        this.logoutLocal();
+        return throwError(() => error);
+      })
+    );
+  }
+
   updateProfile(payload: UpdateProfileRequest): Observable<UserProfile> {
     return this.http
       .put<UserProfile>(`${this.apiUrl}${API_ENDPOINTS.AUTH.UPDATE_PROFILE}`, payload)
@@ -226,42 +267,31 @@ export class AuthService {
   }
 
   getUsers(): Observable<UserProfile[]> {
-    return this.searchUsers();
-  }
-
-  searchUsers(filters: { keyword?: string; role?: UserRole | ''; isActive?: boolean | '' } = {}): Observable<UserProfile[]> {
-    let params = new HttpParams();
-    if (filters.keyword?.trim()) {
-      params = params.set('keyword', filters.keyword.trim());
-    }
-    if (filters.role) {
-      params = params.set('role', filters.role);
-    }
-    if (filters.isActive !== '' && filters.isActive !== undefined) {
-      params = params.set('isActive', String(filters.isActive));
-    }
-
     return this.http
-      .get<UserProfile[] | UserListResponse>(`${this.apiUrl}${API_ENDPOINTS.AUTH.USERS}`, { params })
+      .get<UserProfile[] | UserListResponse>(`${this.apiUrl}${API_ENDPOINTS.AUTH.USERS}`)
       .pipe(map((response) => this.normalizeUsersResponse(response)));
   }
 
-  createUser(payload: CreateUserRequest): Observable<UserProfile> {
-    return this.http.post<UserProfile>(`${this.apiUrl}${API_ENDPOINTS.AUTH.USERS}`, payload);
+  getUserById(id: number): Observable<UserProfile> {
+    return this.http
+      .get<UserProfile | { data?: UserProfile }>(`${this.apiUrl}${API_ENDPOINTS.AUTH.USER_DETAIL(id)}`)
+      .pipe(map((response) => this.normalizeUserResponse(response)));
   }
 
-  updateUser(id: number, payload: AdminUpdateUserRequest): Observable<UserProfile> {
-    return this.http.put<UserProfile>(`${this.apiUrl}${API_ENDPOINTS.AUTH.USER_DETAIL(id)}`, payload);
+  getUserSummary(): Observable<UserSummaryResponse> {
+    return this.http
+      .get<UserSummaryResponse | { data?: UserSummaryResponse }>(`${this.apiUrl}${API_ENDPOINTS.AUTH.USER_SUMMARY}`)
+      .pipe(map((response) => this.normalizeUserSummaryResponse(response)));
   }
 
   activateUser(id: number): Observable<string> {
-    return this.http.patch(`${this.apiUrl}${API_ENDPOINTS.AUTH.ACTIVATE_USER(id)}`, {}, {
+    return this.http.put(`${this.apiUrl}${API_ENDPOINTS.AUTH.ACTIVATE_USER(id)}`, {}, {
       responseType: 'text',
     });
   }
 
   deactivateUser(id: number): Observable<string> {
-    return this.http.patch(`${this.apiUrl}${API_ENDPOINTS.AUTH.DEACTIVATE_USER(id)}`, {}, {
+    return this.http.put(`${this.apiUrl}${API_ENDPOINTS.AUTH.DEACTIVATE_USER(id)}`, {}, {
       responseType: 'text',
     });
   }
@@ -270,17 +300,13 @@ export class AuthService {
     const token = this.tokenService.getToken();
     if (!token) {
       this.logoutLocal();
-      this.router.navigate(['/login']);
       return of(void 0);
     }
 
     return this.http.post(`${this.apiUrl}${API_ENDPOINTS.AUTH.LOGOUT}`, {}, { responseType: 'text' }).pipe(
       map(() => void 0),
       catchError(() => of(void 0)),
-      tap(() => {
-        this.logoutLocal();
-        this.router.navigate(['/login']);
-      }),
+      tap(() => this.logoutLocal()),
     );
   }
 
@@ -310,7 +336,7 @@ export class AuthService {
     }
 
     const requiredRoles = Array.isArray(role) ? role : [role];
-    return requiredRoles.some((requiredRole) => this.rolesMatch(user.role, requiredRole));
+    return requiredRoles.includes(user.role);
   }
 
   getUserRole(): UserRole | null {
@@ -333,8 +359,8 @@ export class AuthService {
   }
 
   private mapProfileToUser(profile: UserProfile): User {
-    const role = normalizeRole(profile.role);
-    if (!role) {
+    const normalizedRole = normalizeUserRole(profile.role);
+    if (!normalizedRole) {
       throw new Error(`Unsupported user role: ${profile.role}`);
     }
 
@@ -342,19 +368,25 @@ export class AuthService {
       userId: profile.userId,
       name: profile.name,
       email: profile.email,
-      role,
+      role: normalizedRole,
       phone: profile.phone,
       department: profile.department,
       isActive: profile.isActive,
       createdAt: profile.createdAt,
-      updatedAt: profile.updatedAt,
-      lastLoginAt: profile.lastLoginAt,
     };
   }
 
   private normalizeUsersResponse(response: UserProfile[] | UserListResponse): UserProfile[] {
     if (Array.isArray(response)) {
       return response;
+    }
+
+    if (Array.isArray(response?.data)) {
+      return response.data;
+    }
+
+    if (response?.data && !Array.isArray(response.data)) {
+      return this.normalizeUsersResponse(response.data);
     }
 
     if (Array.isArray(response?.content)) {
@@ -368,7 +400,23 @@ export class AuthService {
     return [];
   }
 
-  private rolesMatch(actual: UserRole, expected: UserRole): boolean {
-    return normalizeRole(actual) === normalizeRole(expected);
+  private normalizeUserResponse(response: UserProfile | { data?: UserProfile }): UserProfile {
+    if ('userId' in response) {
+      return response;
+    }
+
+    if (response?.data) {
+      return response.data;
+    }
+
+    throw new Error('User detail response is empty.');
+  }
+
+  private normalizeUserSummaryResponse(response: UserSummaryResponse | { data?: UserSummaryResponse }): UserSummaryResponse {
+    if ('totalUsers' in response || 'activeUsers' in response || 'inactiveUsers' in response) {
+      return response;
+    }
+
+    return ('data' in response ? response.data : undefined) ?? {};
   }
 }

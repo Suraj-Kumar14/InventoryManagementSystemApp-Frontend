@@ -32,7 +32,7 @@ class StockPageComponent {
   loading = false;
   saving = false;
   transferring = false;
-  readonly canMutate = this.authService.hasRole([UserRole.ADMIN, UserRole.INVENTORY_MANAGER, UserRole.WAREHOUSE_STAFF]);
+  readonly canMutate = this.authService.hasRole([UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF]);
   warehouseIdControl = this.fb.nonNullable.control(0);
   thresholdControl = this.fb.nonNullable.control(10);
 
@@ -133,6 +133,6 @@ export const stockRoutes: Routes = [
     path: '',
     component: StockPageComponent,
     canActivate: [roleGuard],
-    data: { roles: [UserRole.ADMIN, UserRole.INVENTORY_MANAGER, UserRole.WAREHOUSE_STAFF, UserRole.PURCHASE_OFFICER] },
+    data: { roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.OFFICER] },
   },
 ];

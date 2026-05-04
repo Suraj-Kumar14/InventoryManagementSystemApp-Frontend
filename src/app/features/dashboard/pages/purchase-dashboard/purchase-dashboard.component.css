@@ -1,31 +1,32 @@
 .purchase-dashboard {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  padding: 1.5rem;
+  gap: 1.4rem;
+  padding: 1rem;
   min-height: 100%;
   background:
-    radial-gradient(circle at top left, rgba(249, 115, 22, 0.14), transparent 26%),
-    radial-gradient(circle at top right, rgba(14, 165, 233, 0.14), transparent 24%),
-    linear-gradient(180deg, #fffaf5 0%, #f8fbff 100%);
+    radial-gradient(circle at top left, rgba(185, 115, 22, 0.1), transparent 24%),
+    radial-gradient(circle at top right, rgba(30, 79, 174, 0.08), transparent 22%),
+    linear-gradient(180deg, #fffaf4 0%, #f3f7fc 100%);
+  border-radius: var(--radius-xl);
 }
 
 .hero,
 .panel,
 .kpi-section,
 .loading-shell {
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  border-radius: 24px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
   background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--shadow-md);
 }
 
 .hero {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 1.5rem;
-  padding: 1.75rem;
+  gap: 1.25rem;
+  padding: 1.55rem;
 }
 
 .hero-copy {
@@ -38,19 +39,19 @@
   margin: 0;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  font-size: 0.76rem;
-  font-weight: 700;
-  color: #b45309;
+  font-size: 0.74rem;
+  font-weight: 800;
+  color: var(--color-warning);
 }
 
 .hero h1,
 .section-head h2 {
   margin: 0.35rem 0 0;
-  color: #0f172a;
+  color: var(--color-text);
 }
 
 .hero h1 {
-  font-size: clamp(1.8rem, 2vw, 2.5rem);
+  font-size: clamp(1.8rem, 2vw, 2.4rem);
 }
 
 .subtitle,
@@ -59,18 +60,18 @@
 .list-item p,
 .supplier-chip small,
 .shortcut-card span {
-  color: #475569;
+  color: var(--color-text-muted);
 }
 
 .subtitle {
-  margin: 0.8rem 0 0;
+  margin-top: 0.8rem;
   max-width: 62ch;
   line-height: 1.6;
 }
 
 .timestamp {
-  margin: 0.9rem 0 0;
-  font-size: 0.92rem;
+  margin-top: 0.85rem;
+  font-size: 0.9rem;
 }
 
 .hero-actions {
@@ -81,8 +82,9 @@
 }
 
 .loading-shell,
-.kpi-section {
-  padding: 1.5rem;
+.kpi-section,
+.panel {
+  padding: 1.25rem;
 }
 
 .section-head {
@@ -90,13 +92,31 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.kpi-grid,
+.supplier-grid,
+.shortcut-card-grid,
+.panel-grid {
+  display: grid;
+  gap: 1rem;
 }
 
 .kpi-grid {
-  display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
+}
+
+.panel-grid {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.panel {
+  grid-column: span 6;
+}
+
+.panel--wide {
+  grid-column: span 12;
 }
 
 .kpi-button {
@@ -110,30 +130,15 @@
 
 .kpi-button:hover {
   transform: translateY(-2px);
-  transition: transform 0.18s ease;
+  transition: transform var(--transition-fast);
 }
 
 .kpi-button--warning {
-  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.16);
+  box-shadow: 0 0 0 2px rgba(185, 115, 22, 0.16);
 }
 
 .kpi-button--critical {
-  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.18);
-}
-
-.panel-grid {
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 1.25rem;
-}
-
-.panel {
-  grid-column: span 6;
-  padding: 1.5rem;
-}
-
-.panel--wide {
-  grid-column: span 12;
+  box-shadow: 0 0 0 2px rgba(193, 62, 79, 0.16);
 }
 
 .metric-list,
@@ -148,11 +153,12 @@
 .metric-row,
 .list-item,
 .supplier-chip,
-.shortcut-card {
+.shortcut-card,
+.metrics-inline article {
   border-radius: 18px;
   padding: 0.95rem 1rem;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  border: 1px solid #e1eaf5;
 }
 
 .metric-row,
@@ -165,41 +171,36 @@
 
 .metric-row span,
 .metrics-inline span {
-  color: #475569;
+  color: var(--color-text-muted);
 }
 
 .metric-row strong,
 .list-item strong,
 .supplier-chip strong,
 .metrics-inline strong {
-  color: #0f172a;
+  color: var(--color-text);
 }
 
 .metrics-inline {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 0.85rem;
+  gap: 0.8rem;
   margin-bottom: 1rem;
 }
 
 .metrics-inline article {
-  padding: 1rem;
-  border-radius: 18px;
-  background: linear-gradient(180deg, #fff7ed 0%, #ffffff 100%);
-  border: 1px solid rgba(251, 191, 36, 0.22);
+  background: linear-gradient(180deg, #fff8ec 0%, #ffffff 100%);
 }
 
 .metrics-inline strong {
   display: block;
   margin-top: 0.25rem;
-  font-size: 1.2rem;
+  font-size: 1.18rem;
 }
 
 .supplier-grid,
 .shortcut-card-grid {
-  display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: 0.9rem;
 }
 
 .supplier-chip {
@@ -209,11 +210,11 @@
 }
 
 .supplier-chip--muted {
-  background: linear-gradient(180deg, #fff7f7 0%, #ffffff 100%);
+  background: linear-gradient(180deg, #fff8f8 0%, #ffffff 100%);
 }
 
 .list-item p {
-  margin: 0.2rem 0 0;
+  margin-top: 0.2rem;
 }
 
 .list-meta {
@@ -232,46 +233,33 @@
   padding: 0.25rem 0.65rem;
   border-radius: 999px;
   font-size: 0.72rem;
-  font-weight: 700;
-  background: #e0f2fe;
-  color: #075985;
+  font-weight: 800;
+  background: #e8f5ff;
+  color: var(--color-info);
 }
 
 .badge--critical {
-  background: #fee2e2;
-  color: #b91c1c;
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
 }
 
 .shortcut-list a,
 .shortcut-card {
-  color: #b45309;
+  color: var(--color-warning);
   text-decoration: none;
-  font-weight: 600;
-}
-
-.shortcut-list a:hover,
-.shortcut-card:hover {
-  color: #0f172a;
+  font-weight: 700;
 }
 
 .shortcut-card {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  transition: transform 0.18s ease, border-color 0.18s ease;
+  transition: transform var(--transition-fast), border-color var(--transition-fast);
 }
 
 .shortcut-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(249, 115, 22, 0.35);
-}
-
-.section-error {
-  margin-top: 1rem;
-  padding: 0.9rem 1rem;
-  border-radius: 16px;
-  border: 1px solid rgba(248, 113, 113, 0.2);
-  background: #fff7f7;
+  border-color: rgba(185, 115, 22, 0.32);
 }
 
 @media (max-width: 1100px) {
@@ -282,7 +270,7 @@
 
 @media (max-width: 768px) {
   .purchase-dashboard {
-    padding: 1rem;
+    padding: 0.75rem;
   }
 
   .hero {
@@ -297,11 +285,6 @@
 
   .hero-actions app-button {
     flex: 1 1 100%;
-  }
-
-  .kpi-section,
-  .panel {
-    padding: 1.1rem;
   }
 
   .list-item,

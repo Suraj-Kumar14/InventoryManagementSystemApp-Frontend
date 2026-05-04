@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { finalize } from 'rxjs/operators';
 import { AuthService } from '../../../../core/auth/services/auth.service';
 import { PageResponse, PurchaseOrderResponse, PurchaseOrderSummaryResponse, SupplierResponse, WarehouseResponse } from '../../../../core/http/backend.models';
@@ -21,10 +22,26 @@ import { PurchaseOrderApiService } from '../../services/purchase-order-api.servi
   styleUrls: ['./po-list.component.css'],
 })
 export class PoListComponent implements OnInit {
+  private static readonly DEFAULT_SUMMARY: PurchaseOrderSummaryResponse = {
+    totalPurchaseOrders: 0,
+    draftCount: 0,
+    pendingApprovalCount: 0,
+    approvedCount: 0,
+    partiallyReceivedCount: 0,
+    receivedCount: 0,
+    cancelledCount: 0,
+    rejectedCount: 0,
+    overdueCount: 0,
+    totalPurchaseValue: 0,
+    pendingPurchaseValue: 0,
+    receivedPurchaseValue: 0,
+  };
+
   private readonly purchaseApi = inject(PurchaseOrderApiService);
   private readonly authService = inject(AuthService);
   private readonly notifications = inject(NotificationService);
   private readonly fb = inject(FormBuilder);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   readonly roles = UserRole;
   readonly statuses: PurchaseOrderStatus[] = [
@@ -37,10 +54,11 @@ export class PoListComponent implements OnInit {
     'REJECTED',
   ];
 
-  readonly canCreate = this.authService.hasRole([UserRole.ADMIN, UserRole.PURCHASE_OFFICER]);
-  readonly canApprove = this.authService.hasRole([UserRole.ADMIN, UserRole.INVENTORY_MANAGER]);
-  readonly canReceive = this.authService.hasRole([UserRole.ADMIN, UserRole.INVENTORY_MANAGER, UserRole.WAREHOUSE_STAFF]);
-  readonly canViewAnalytics = this.authService.hasRole([UserRole.ADMIN, UserRole.INVENTORY_MANAGER, UserRole.PURCHASE_OFFICER]);
+  readonly canCreate = this.authService.hasRole([UserRole.ADMIN, UserRole.OFFICER]);
+  readonly canApprove = this.authService.hasRole([UserRole.ADMIN, UserRole.MANAGER]);
+  readonly canReceive = this.authService.hasRole([UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF]);
+  readonly canViewAnalytics = this.authService.hasRole([UserRole.ADMIN, UserRole.MANAGER, UserRole.OFFICER]);
+  readonly canLoadSupplierLookups = this.authService.hasRole([UserRole.ADMIN, UserRole.MANAGER, UserRole.OFFICER]);
 
   filtersForm = this.fb.group({
     keyword: this.fb.control<string>(''),
@@ -54,18 +72,23 @@ export class PoListComponent implements OnInit {
 
   purchaseOrders: PurchaseOrderResponse[] = [];
   pageData: PageResponse<PurchaseOrderResponse> | null = null;
-  summary: PurchaseOrderSummaryResponse | null = null;
+  summary: PurchaseOrderSummaryResponse = PoListComponent.DEFAULT_SUMMARY;
   suppliers: SupplierResponse[] = [];
   warehouses: WarehouseResponse[] = [];
   loading = false;
+  loadError: string | null = null;
+  summaryError: string | null = null;
+  lookupError: string | null = null;
   actionLoadingId: number | null = null;
   actionLabel = '';
   query: PurchaseOrderListQuery = { page: 0, size: 10, sortBy: 'createdAt', sortDir: 'desc' };
 
   ngOnInit(): void {
-    this.loadLookups();
-    this.loadSummary();
-    this.loadPurchaseOrders();
+    setTimeout(() => {
+      this.loadLookups();
+      this.loadSummary();
+      this.loadPurchaseOrders();
+    }, 0);
   }
 
   onSearch(): void {
@@ -146,12 +169,12 @@ export class PoListComponent implements OnInit {
       status !== 'RECEIVED' &&
       status !== 'CANCELLED' &&
       status !== 'REJECTED' &&
-      (this.authService.hasRole(UserRole.ADMIN) || (this.authService.hasRole(UserRole.PURCHASE_OFFICER) && isOwner))
+      (this.authService.hasRole(UserRole.ADMIN) || (this.authService.hasRole(UserRole.OFFICER) && isOwner))
     );
   }
 
   canSubmit(order: PurchaseOrderResponse): boolean {
-    return order.status === 'DRAFT' && (this.authService.hasRole(UserRole.ADMIN) || this.authService.hasRole(UserRole.PURCHASE_OFFICER));
+    return order.status === 'DRAFT' && (this.authService.hasRole(UserRole.ADMIN) || this.authService.hasRole(UserRole.OFFICER));
   }
 
   canCancel(order: PurchaseOrderResponse): boolean {
@@ -173,46 +196,106 @@ export class PoListComponent implements OnInit {
     return this.query.sortDir === 'asc' ? '^' : 'v';
   }
 
+  retryLoad(): void {
+    this.loadPurchaseOrders();
+    this.loadSummary();
+  }
+
   private loadLookups(): void {
     forkJoin({
-      suppliers: this.purchaseApi.getSuppliers(),
-      warehouses: this.purchaseApi.getWarehouses(),
+      suppliers: this.canLoadSupplierLookups
+        ? this.purchaseApi.getSuppliers().pipe(
+            catchError((error) => {
+              if (error?.status === 403) {
+                this.lookupError = 'Supplier lookup is not available for your role.';
+              } else {
+                this.lookupError = 'Some purchase order filters are currently unavailable.';
+              }
+              return of([] as SupplierResponse[]);
+            })
+          )
+        : of([] as SupplierResponse[]),
+      warehouses: this.purchaseApi.getWarehouses().pipe(
+        catchError(() => {
+          this.lookupError = this.lookupError || 'Some purchase order filters are currently unavailable.';
+          return of({
+            content: [],
+            totalElements: 0,
+            totalPages: 0,
+            number: 0,
+            size: 0,
+            numberOfElements: 0,
+            first: true,
+            last: true,
+            empty: true,
+          } as PageResponse<WarehouseResponse>);
+        })
+      ),
     }).subscribe({
       next: ({ suppliers, warehouses }) => {
+        if (!this.canLoadSupplierLookups) {
+          this.lookupError = 'Supplier lookup is only available to purchasing and management roles.';
+        }
         this.suppliers = suppliers;
         this.warehouses = warehouses.content ?? [];
+        this.cdr.markForCheck();
       },
       error: () => {
         this.suppliers = [];
         this.warehouses = [];
+        this.lookupError = 'Some purchase order filters are currently unavailable.';
+        this.cdr.markForCheck();
       },
     });
   }
 
   private loadSummary(): void {
     if (!this.canViewAnalytics) {
+      this.summary = PoListComponent.DEFAULT_SUMMARY;
+      this.summaryError = null;
+      this.cdr.markForCheck();
       return;
     }
     this.purchaseApi.getPurchaseOrderSummary().subscribe({
-      next: (summary) => (this.summary = summary),
-      error: () => (this.summary = null),
+      next: (summary) => {
+        this.summary = summary;
+        this.summaryError = null;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.summary = PoListComponent.DEFAULT_SUMMARY;
+        this.summaryError = 'Purchase order summary is currently unavailable.';
+        this.cdr.markForCheck();
+      },
     });
   }
 
   private loadPurchaseOrders(): void {
+    if (this.loading) {
+      return;
+    }
+
     this.loading = true;
+    this.loadError = null;
+    this.cdr.markForCheck();
     const request = this.hasFilters(this.query)
       ? this.purchaseApi.searchPurchaseOrders(this.query)
       : this.purchaseApi.getPurchaseOrders(this.query);
 
-    request.pipe(finalize(() => (this.loading = false))).subscribe({
+    request.pipe(finalize(() => {
+      this.loading = false;
+      this.cdr.markForCheck();
+    })).subscribe({
       next: (pageData) => {
         this.pageData = pageData;
         this.purchaseOrders = pageData.content ?? [];
+        this.cdr.markForCheck();
       },
       error: () => {
         this.pageData = null;
         this.purchaseOrders = [];
+        this.loadError = 'Unable to load purchase orders right now. Please try again.';
+        this.cdr.markForCheck();
       },
     });
   }

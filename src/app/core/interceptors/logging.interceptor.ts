@@ -1,10 +1,4 @@
-import {
-  HttpEvent,
-  HttpHandler,
-  HttpInterceptor,
-  HttpRequest,
-  HttpResponse,
-} from '@angular/common/http';
+import { HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest, HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 
@@ -15,8 +9,8 @@ export class LoggingInterceptor implements HttpInterceptor {
 
     console.debug('[HTTP] Request', {
       method: req.method,
-      urlWithParams: req.urlWithParams,
-      hasAuthHeader: req.headers.has('Authorization'),
+      url: req.urlWithParams,
+      hasAuthorizationHeader: req.headers.has('Authorization'),
     });
 
     return next.handle(req).pipe(
@@ -25,20 +19,22 @@ export class LoggingInterceptor implements HttpInterceptor {
           if (event instanceof HttpResponse) {
             console.debug('[HTTP] Response', {
               method: req.method,
-              urlWithParams: req.urlWithParams,
+              url: req.urlWithParams,
               status: event.status,
-              hasAuthHeader: req.headers.has('Authorization'),
+              body: event.body,
+              hasAuthorizationHeader: req.headers.has('Authorization'),
               durationMs: Math.round(performance.now() - startedAt),
             });
           }
         },
         error: (error) => {
+          const httpError = error as HttpErrorResponse;
           console.error('[HTTP] Error', {
             method: req.method,
-            urlWithParams: req.urlWithParams,
-            status: error?.status ?? 'UNKNOWN',
-            errorBody: error?.error ?? null,
-            hasAuthHeader: req.headers.has('Authorization'),
+            url: req.urlWithParams,
+            status: httpError?.status ?? 'UNKNOWN',
+            errorBody: httpError?.error ?? null,
+            hasAuthorizationHeader: req.headers.has('Authorization'),
             durationMs: Math.round(performance.now() - startedAt),
           });
         },

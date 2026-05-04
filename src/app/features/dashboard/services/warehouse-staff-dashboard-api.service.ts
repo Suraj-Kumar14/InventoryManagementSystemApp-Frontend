@@ -156,9 +156,11 @@ export class WarehouseStaffDashboardApiService {
     return forkJoin({
       summary: this.api.get<InventoryReportSummaryResponse>(API_ENDPOINTS.REPORTS.STOCK_SUMMARY, {
         params: { warehouseId },
+        headers: { 'X-Skip-Global-Error': 'true' },
       }),
       lowStock: this.api.get<PageResponse<LowStockReportItem>>(API_ENDPOINTS.REPORTS.LOW_STOCK, {
         params: { warehouseId, page: 0, size: 5, sortBy: 'shortageQuantity', sortDir: 'desc' },
+        headers: { 'X-Skip-Global-Error': 'true' },
       }),
       stockPage: this.api.get<PageResponse<StockLevelResponse>>(API_ENDPOINTS.STOCK.BY_WAREHOUSE(warehouseId), {
         params: { page: 0, size: 12 },
