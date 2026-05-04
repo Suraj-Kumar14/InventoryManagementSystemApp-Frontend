@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -19,6 +19,7 @@ export class SettingsComponent implements OnInit {
   private authService = inject(AuthService);
   private notification = inject(NotificationService);
   private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
 
   loadingProfile = false;
   profileSaving = false;
@@ -40,12 +41,17 @@ export class SettingsComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    setTimeout(() => this.loadProfile(), 0);
+    this.loadProfile();
   }
 
   loadProfile(): void {
     this.loadingProfile = true;
-    this.authService.getProfile().pipe(finalize(() => (this.loadingProfile = false))).subscribe({
+    this.authService.getProfile().pipe(
+      finalize(() => {
+        this.loadingProfile = false;
+        this.cdr.markForCheck();
+      })
+    ).subscribe({
       next: (profile) => {
         this.profileForm.patchValue({
           name: profile.name,
@@ -63,7 +69,10 @@ export class SettingsComponent implements OnInit {
     this.profileSaving = true;
     const raw = this.profileForm.getRawValue();
     this.authService.updateProfile({ name: raw.name, phone: raw.phone || null, department: raw.department || null })
-      .pipe(finalize(() => (this.profileSaving = false)))
+      .pipe(finalize(() => {
+        this.profileSaving = false;
+        this.cdr.markForCheck();
+      }))
       .subscribe({ next: () => this.notification.success('Profile updated successfully!') });
   }
 
@@ -74,7 +83,10 @@ export class SettingsComponent implements OnInit {
     this.passwordError = '';
     this.passwordSaving = true;
     this.authService.changePassword({ oldPassword: raw.currentPassword, newPassword: raw.newPassword })
-      .pipe(finalize(() => (this.passwordSaving = false)))
+      .pipe(finalize(() => {
+        this.passwordSaving = false;
+        this.cdr.markForCheck();
+      }))
       .subscribe({
         next: () => {
           this.notification.success('Password changed successfully. Please login again.');

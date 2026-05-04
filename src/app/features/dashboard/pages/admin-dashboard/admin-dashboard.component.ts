@@ -132,14 +132,7 @@ export class AdminDashboardComponent implements OnInit {
     if (!route) {
       return;
     }
-    if (route === '/admin/users') {
-      this.logUsersNavigation();
-    }
     void this.router.navigate([route]);
-  }
-
-  logUsersNavigation(): void {
-    console.log('Navigate to users clicked');
   }
 
   sectionError(key: keyof NonNullable<AdminDashboardView['sectionErrors']>): string | null {

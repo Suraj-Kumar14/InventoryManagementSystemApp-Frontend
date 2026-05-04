@@ -84,11 +84,9 @@ export class PoListComponent implements OnInit {
   query: PurchaseOrderListQuery = { page: 0, size: 10, sortBy: 'createdAt', sortDir: 'desc' };
 
   ngOnInit(): void {
-    setTimeout(() => {
-      this.loadLookups();
-      this.loadSummary();
-      this.loadPurchaseOrders();
-    }, 0);
+    this.loadLookups();
+    this.loadSummary();
+    this.loadPurchaseOrders();
   }
 
   onSearch(): void {

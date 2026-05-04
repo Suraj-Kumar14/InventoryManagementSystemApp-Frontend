@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { finalize } from 'rxjs/operators';
@@ -23,6 +23,7 @@ export class ProductListComponent implements OnInit {
   private readonly productApi = inject(ProductApiService);
   private readonly authService = inject(AuthService);
   private readonly notifications = inject(NotificationService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   readonly canManage = this.authService.hasRole([UserRole.ADMIN, UserRole.MANAGER]);
   readonly canDelete = this.authService.hasRole(UserRole.ADMIN);
@@ -97,6 +98,7 @@ export class ProductListComponent implements OnInit {
 
     this.actionLoadingId = product.productId;
     this.actionType = product.isActive ? 'deactivate' : 'activate';
+    this.cdr.markForCheck();
     const request = product.isActive
       ? this.productApi.deactivateProduct(product.productId)
       : this.productApi.activateProduct(product.productId);
@@ -119,6 +121,7 @@ export class ProductListComponent implements OnInit {
 
     this.actionLoadingId = product.productId;
     this.actionType = 'delete';
+    this.cdr.markForCheck();
     this.productApi
       .deleteProduct(product.productId)
       .pipe(finalize(() => this.clearActionState()))
@@ -150,19 +153,25 @@ export class ProductListComponent implements OnInit {
 
   private loadLookups(): void {
     this.lookupsLoading = true;
+    this.cdr.markForCheck();
     forkJoin({
       categories: this.productApi.getCategories(),
       brands: this.productApi.getBrands(),
     })
-      .pipe(finalize(() => (this.lookupsLoading = false)))
+      .pipe(finalize(() => {
+        this.lookupsLoading = false;
+        this.refreshView();
+      }))
       .subscribe({
         next: ({ categories, brands }) => {
-          this.categories = categories;
-          this.brands = brands;
+          this.categories = [...categories];
+          this.brands = [...brands];
+          this.refreshView();
         },
         error: () => {
           this.categories = [];
           this.brands = [];
+          this.refreshView();
         },
       });
   }
@@ -174,28 +183,37 @@ export class ProductListComponent implements OnInit {
 
     this.productApi.getProductSummary().subscribe({
       next: (summary) => {
-        this.summary = summary;
+        this.summary = { ...summary };
+        this.refreshView();
       },
       error: () => {
         this.summary = null;
+        this.refreshView();
       },
     });
   }
 
   private loadProducts(): void {
     this.loading = true;
+    this.cdr.markForCheck();
     const request = this.hasSearchCriteria(this.filters)
       ? this.productApi.searchProducts(this.filters)
       : this.productApi.getProducts(this.filters);
 
-    request.pipe(finalize(() => (this.loading = false))).subscribe({
+    request.pipe(finalize(() => {
+      this.loading = false;
+      this.refreshView();
+    })).subscribe({
       next: (pageData) => {
-        this.pageData = pageData;
-        this.products = pageData.content;
+        const products = pageData.content ?? [];
+        this.pageData = { ...pageData, content: [...products] };
+        this.products = [...products];
+        this.refreshView();
       },
       error: () => {
         this.products = [];
         this.pageData = null;
+        this.refreshView();
       },
     });
   }
@@ -207,5 +225,11 @@ export class ProductListComponent implements OnInit {
   private clearActionState(): void {
     this.actionLoadingId = null;
     this.actionType = null;
+    this.refreshView();
+  }
+
+  private refreshView(): void {
+    this.cdr.markForCheck();
+    this.cdr.detectChanges();
   }
 }

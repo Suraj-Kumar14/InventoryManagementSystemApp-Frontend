@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Routes } from '@angular/router';
 import { finalize } from 'rxjs/operators';
@@ -23,6 +23,7 @@ class WarehousesAdminPageComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly notifications = inject(NotificationService);
   private readonly authService = inject(AuthService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   warehouses: WarehouseResponse[] = [];
   loading = false;
@@ -50,14 +51,22 @@ class WarehousesAdminPageComponent implements OnInit {
 
   loadWarehouses(): void {
     this.loading = true;
+    this.cdr.markForCheck();
     this.service
       .getWarehouses()
-      .pipe(finalize(() => (this.loading = false)))
+      .pipe(finalize(() => {
+        this.loading = false;
+        this.refreshView();
+      }))
       .subscribe({
-        next: (warehouses) => (this.warehouses = warehouses),
+        next: (warehouses) => {
+          this.warehouses = [...warehouses];
+          this.refreshView();
+        },
         error: (error) => {
           this.warehouses = [];
           this.notifications.error(this.errorMessage(error, 'Failed to load warehouses'), 'Error');
+          this.refreshView();
         },
       });
   }
@@ -84,12 +93,16 @@ class WarehousesAdminPageComponent implements OnInit {
     };
 
     this.saving = true;
+    this.cdr.markForCheck();
     const currentEditingId = this.editingId;
     const request = currentEditingId
       ? this.service.updateWarehouse(currentEditingId, payload)
       : this.service.createWarehouse(payload);
 
-    request.pipe(finalize(() => (this.saving = false))).subscribe({
+    request.pipe(finalize(() => {
+      this.saving = false;
+      this.refreshView();
+    })).subscribe({
       next: (savedWarehouse) => {
         this.notifications.success(currentEditingId ? 'Warehouse updated successfully' : 'Warehouse created successfully');
         this.warehouses = currentEditingId
@@ -97,6 +110,7 @@ class WarehousesAdminPageComponent implements OnInit {
               this.warehouseId(warehouse) === savedWarehouse.warehouseId ? savedWarehouse : warehouse)
           : [savedWarehouse, ...this.warehouses];
         this.resetForm();
+        this.refreshView();
         this.loadWarehouses();
       },
       error: (error) => {
@@ -104,6 +118,7 @@ class WarehousesAdminPageComponent implements OnInit {
           this.errorMessage(error, currentEditingId ? 'Failed to update warehouse' : 'Failed to create warehouse'),
           'Error'
         );
+        this.refreshView();
       },
     });
   }
@@ -122,6 +137,7 @@ class WarehousesAdminPageComponent implements OnInit {
       capacity: warehouse.capacity,
       phone: warehouse.phone || '',
     });
+    this.cdr.markForCheck();
   }
 
   resetForm(): void {
@@ -138,6 +154,7 @@ class WarehousesAdminPageComponent implements OnInit {
       capacity: 1,
       phone: '',
     });
+    this.cdr.markForCheck();
   }
 
   toggleWarehouse(warehouse: WarehouseResponse): void {
@@ -150,15 +167,20 @@ class WarehousesAdminPageComponent implements OnInit {
     }
 
     this.actionWarehouseId = warehouseId;
+    this.cdr.markForCheck();
     const request = active
       ? this.service.deactivateWarehouse(warehouseId)
       : this.service.activateWarehouse(warehouseId);
 
-    request.pipe(finalize(() => (this.actionWarehouseId = null))).subscribe({
+    request.pipe(finalize(() => {
+      this.actionWarehouseId = null;
+      this.refreshView();
+    })).subscribe({
       next: (updatedWarehouse) => {
         this.notifications.success(active ? 'Warehouse deactivated successfully' : 'Warehouse activated successfully');
         this.warehouses = this.warehouses.map((item) =>
           this.warehouseId(item) === updatedWarehouse.warehouseId ? updatedWarehouse : item);
+        this.refreshView();
         this.loadWarehouses();
       },
       error: (error) => {
@@ -166,6 +188,7 @@ class WarehousesAdminPageComponent implements OnInit {
           this.errorMessage(error, active ? 'Failed to deactivate warehouse' : 'Failed to activate warehouse'),
           'Error'
         );
+        this.refreshView();
       },
     });
   }
@@ -192,6 +215,11 @@ class WarehousesAdminPageComponent implements OnInit {
       return err.error;
     }
     return err?.error?.message || err?.error?.error || err?.message || fallback;
+  }
+
+  private refreshView(): void {
+    this.cdr.markForCheck();
+    this.cdr.detectChanges();
   }
 }
 
