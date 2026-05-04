@@ -229,6 +229,8 @@ class UsersPageComponent implements OnInit {
 
     this.userForm.markAllAsTouched();
     if (this.userForm.invalid) {
+      this.notifications.warning('Please fix the highlighted user details before saving.', 'Invalid User Details');
+      this.cdr.markForCheck();
       return;
     }
 
@@ -239,6 +241,14 @@ class UsersPageComponent implements OnInit {
     const normalizedRole = raw.role ?? UserRole.STAFF;
     const normalizedPhone = raw.phone?.trim() || null;
     const normalizedDepartment = raw.department?.trim() || null;
+    const editingUserId = this.createEditModal.user?.userId;
+
+    if (!this.isCreateMode && (!editingUserId || Number.isNaN(editingUserId))) {
+      this.createEditSubmitting = false;
+      this.notifications.error('Unable to identify the selected user for update.', 'Error');
+      this.cdr.markForCheck();
+      return;
+    }
 
     const request$ = this.isCreateMode
       ? this.adminUserService.createUser({
@@ -250,8 +260,9 @@ class UsersPageComponent implements OnInit {
           password: raw.password || '',
           isActive: !!raw.isActive,
         } satisfies CreateAdminUserRequest)
-      : this.adminUserService.updateUser(this.createEditModal.user!.userId, {
+      : this.adminUserService.updateUser(editingUserId!, {
           name: normalizedName,
+          email: normalizedEmail,
           phone: normalizedPhone,
           department: normalizedDepartment,
           isActive: !!raw.isActive,
@@ -265,15 +276,20 @@ class UsersPageComponent implements OnInit {
         })
       )
       .subscribe({
-        next: () => {
+        next: (savedUser) => {
           this.notifications.success(
             this.isCreateMode ? 'User created successfully.' : 'User updated successfully.',
             this.isCreateMode ? 'User Created' : 'User Updated'
           );
+          this.users = this.isCreateMode
+            ? [savedUser, ...this.users]
+            : this.users.map((user) => (user.userId === savedUser.userId ? savedUser : user));
           this.closeCreateEditModal();
           this.loadData('refresh');
+          this.cdr.detectChanges();
         },
         error: (err) => {
+          console.error('Admin user save failed', err);
           this.notifications.error(err?.error?.message || 'Unable to save user changes.', 'Error');
         },
       });
@@ -448,7 +464,7 @@ class UsersPageComponent implements OnInit {
     } else {
       passwordControl?.clearValidators();
       confirmPasswordControl?.clearValidators();
-      emailControl?.disable({ emitEvent: false });
+      emailControl?.enable({ emitEvent: false });
       roleControl?.disable({ emitEvent: false });
     }
 

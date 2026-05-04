@@ -47,6 +47,7 @@ export interface CreateAdminUserRequest {
 
 export interface UpdateAdminUserRequest {
   name: string;
+  email: string;
   phone?: string | null;
   department?: string | null;
   isActive?: boolean;
