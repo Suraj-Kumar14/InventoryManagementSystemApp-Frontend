@@ -27,14 +27,14 @@ export class WarehouseService {
 
   getWarehouses(activeOnly = false): Observable<WarehouseResponse[]> {
     return this.api
-      .get<PageResponse<WarehouseResponse>>(API_ENDPOINTS.WAREHOUSES.ROOT, {
+      .get<PageResponse<WarehouseResponse> | WarehouseResponse[]>(API_ENDPOINTS.WAREHOUSES.ROOT, {
         service: 'warehouse',
         params: activeOnly
           ? { isActive: true, page: 0, size: 100, sortBy: 'warehouseName', sortDir: 'asc' }
           : { page: 0, size: 100, sortBy: 'warehouseName', sortDir: 'asc' },
       })
       .pipe(
-        map((response) => response.content ?? []),
+        map((response) => this.normalizeWarehouseList(response)),
         handleServiceError(this.serviceName, 'getWarehouses')
       );
   }
@@ -42,37 +42,55 @@ export class WarehouseService {
   getWarehouseById(id: number): Observable<WarehouseResponse> {
     return this.api
       .get<WarehouseResponse>(`${API_ENDPOINTS.WAREHOUSES.ROOT}/${id}`, { service: 'warehouse' })
-      .pipe(handleServiceError(this.serviceName, 'getWarehouseById'));
+      .pipe(
+        map((response) => this.normalizeWarehouse(response)),
+        handleServiceError(this.serviceName, 'getWarehouseById')
+      );
   }
 
   getWarehouseByCode(code: string): Observable<WarehouseResponse> {
     return this.api
       .get<WarehouseResponse>(API_ENDPOINTS.WAREHOUSES.CODE(code), { service: 'warehouse' })
-      .pipe(handleServiceError(this.serviceName, 'getWarehouseByCode'));
+      .pipe(
+        map((response) => this.normalizeWarehouse(response)),
+        handleServiceError(this.serviceName, 'getWarehouseByCode')
+      );
   }
 
   createWarehouse(payload: WarehouseRequest): Observable<WarehouseResponse> {
     return this.api
       .post<WarehouseResponse>(API_ENDPOINTS.WAREHOUSES.ROOT, payload, { service: 'warehouse' })
-      .pipe(handleServiceError(this.serviceName, 'createWarehouse'));
+      .pipe(
+        map((response) => this.normalizeWarehouse(response)),
+        handleServiceError(this.serviceName, 'createWarehouse')
+      );
   }
 
   updateWarehouse(id: number, payload: WarehouseRequest): Observable<WarehouseResponse> {
     return this.api
       .put<WarehouseResponse>(`${API_ENDPOINTS.WAREHOUSES.ROOT}/${id}`, payload, { service: 'warehouse' })
-      .pipe(handleServiceError(this.serviceName, 'updateWarehouse'));
+      .pipe(
+        map((response) => this.normalizeWarehouse(response)),
+        handleServiceError(this.serviceName, 'updateWarehouse')
+      );
   }
 
   deactivateWarehouse(id: number): Observable<WarehouseResponse> {
     return this.api
       .patch<WarehouseResponse>(API_ENDPOINTS.WAREHOUSES.DEACTIVATE(id), {}, { service: 'warehouse' })
-      .pipe(handleServiceError(this.serviceName, 'deactivateWarehouse'));
+      .pipe(
+        map((response) => this.normalizeWarehouse(response)),
+        handleServiceError(this.serviceName, 'deactivateWarehouse')
+      );
   }
 
   activateWarehouse(id: number): Observable<WarehouseResponse> {
     return this.api
       .patch<WarehouseResponse>(API_ENDPOINTS.WAREHOUSES.ACTIVATE(id), {}, { service: 'warehouse' })
-      .pipe(handleServiceError(this.serviceName, 'activateWarehouse'));
+      .pipe(
+        map((response) => this.normalizeWarehouse(response)),
+        handleServiceError(this.serviceName, 'activateWarehouse')
+      );
   }
 
   getWarehouseSummary(): Observable<WarehouseSummaryResponse> {
@@ -195,5 +213,25 @@ export class WarehouseService {
     return this.api
       .get<StockSummaryResponse>(API_ENDPOINTS.STOCK.SUMMARY, { service: 'warehouse' })
       .pipe(handleServiceError(this.serviceName, 'getStockSummary'));
+  }
+
+  private normalizeWarehouseList(response: PageResponse<WarehouseResponse> | WarehouseResponse[]): WarehouseResponse[] {
+    const warehouses = Array.isArray(response) ? response : response.content ?? [];
+    return warehouses.map((warehouse) => this.normalizeWarehouse(warehouse));
+  }
+
+  private normalizeWarehouse(warehouse: WarehouseResponse): WarehouseResponse {
+    const id = warehouse.warehouseId ?? warehouse.id;
+    const isActive = warehouse.isActive ?? warehouse.active ?? true;
+
+    return {
+      ...warehouse,
+      warehouseId: Number(id),
+      isActive,
+      active: isActive,
+      city: warehouse.city ?? null,
+      state: warehouse.state ?? null,
+      country: warehouse.country ?? null,
+    };
   }
 }

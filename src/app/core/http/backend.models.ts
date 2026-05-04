@@ -253,6 +253,9 @@ export interface WarehouseRequest {
   code: string;
   location: string;
   address?: string | null;
+  city: string;
+  state: string;
+  country: string;
   managerId?: number | null;
   capacity: number;
   phone?: string | null;
@@ -260,17 +263,22 @@ export interface WarehouseRequest {
 }
 
 export interface WarehouseResponse {
+  id?: number;
   warehouseId: number;
   name: string;
   code: string;
   location: string;
   address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
   managerId?: number | null;
   capacity: number;
   usedCapacity?: number | null;
   availableCapacity?: number | null;
   utilizationPercentage?: number | null;
   phone?: string | null;
+  active?: boolean;
   isActive: boolean;
   createdAt?: string;
   updatedAt?: string;

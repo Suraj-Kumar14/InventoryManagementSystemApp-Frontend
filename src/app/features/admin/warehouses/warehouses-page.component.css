@@ -1,1 +1,57 @@
 @import '../../../shared/styles/page-common.css';
+
+.warehouse-form {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.38rem;
+}
+
+.field span {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.field small {
+  color: var(--color-danger);
+  font-size: 0.76rem;
+}
+
+.uppercase-input {
+  text-transform: uppercase;
+}
+
+.warehouse-table {
+  min-width: 1320px;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 76px;
+  padding: 0.32rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.status-badge--active {
+  color: #08633b;
+  background: #dcfce7;
+}
+
+.status-badge--inactive {
+  color: #9f1239;
+  background: #ffe4e6;
+}
+
+.row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}

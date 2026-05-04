@@ -1,20 +1,74 @@
-<section class="page">
+<section class="page warehouses-page">
   <div class="page-header">
     <h1 class="page-header__title">Warehouses</h1>
-    <p class="page-header__subtitle">Create, update, and deactivate warehouses using the backend service.</p>
+    <p class="page-header__subtitle">Create, update, activate, and deactivate warehouse locations through the API Gateway.</p>
   </div>
 
-  <form *ngIf="canManage" [formGroup]="form" (ngSubmit)="save()" class="form-card">
-    <input formControlName="name" placeholder="Warehouse name" class="page-input" />
-    <input formControlName="code" placeholder="Warehouse code" class="page-input" />
-    <input formControlName="location" placeholder="Location" class="page-input" />
-    <input formControlName="address" placeholder="Address" class="page-input" />
-    <input formControlName="managerId" type="number" placeholder="Manager ID" class="page-input" />
-    <input formControlName="capacity" type="number" placeholder="Capacity" class="page-input" />
-    <input formControlName="phone" placeholder="Phone" class="page-input" />
+  <form *ngIf="canManage" [formGroup]="form" (ngSubmit)="save()" class="form-card warehouse-form">
+    <label class="field">
+      <span>Warehouse Name</span>
+      <input formControlName="name" placeholder="Main Warehouse" class="page-input" />
+      <small *ngIf="form.controls.name.touched && form.controls.name.invalid">Warehouse name must be at least 2 characters.</small>
+    </label>
+
+    <label class="field">
+      <span>Warehouse Code</span>
+      <input formControlName="code" placeholder="WH-MAIN-001" class="page-input uppercase-input" />
+      <small *ngIf="form.controls.code.touched && form.controls.code.invalid">Warehouse code is required.</small>
+    </label>
+
+    <label class="field">
+      <span>Location</span>
+      <input formControlName="location" placeholder="Bhopal, Madhya Pradesh" class="page-input" />
+      <small *ngIf="form.controls.location.touched && form.controls.location.invalid">Location is required.</small>
+    </label>
+
+    <label class="field">
+      <span>Address</span>
+      <input formControlName="address" placeholder="Industrial Area, Govindpura" class="page-input" />
+      <small *ngIf="form.controls.address.touched && form.controls.address.invalid">Address is required.</small>
+    </label>
+
+    <label class="field">
+      <span>City</span>
+      <input formControlName="city" placeholder="Bhopal" class="page-input" />
+      <small *ngIf="form.controls.city.touched && form.controls.city.invalid">City is required.</small>
+    </label>
+
+    <label class="field">
+      <span>State</span>
+      <input formControlName="state" placeholder="Madhya Pradesh" class="page-input" />
+      <small *ngIf="form.controls.state.touched && form.controls.state.invalid">State is required.</small>
+    </label>
+
+    <label class="field">
+      <span>Country</span>
+      <input formControlName="country" placeholder="India" class="page-input" />
+      <small *ngIf="form.controls.country.touched && form.controls.country.invalid">Country is required.</small>
+    </label>
+
+    <label class="field">
+      <span>Capacity</span>
+      <input formControlName="capacity" type="number" min="1" placeholder="10000" class="page-input" />
+      <small *ngIf="form.controls.capacity.touched && form.controls.capacity.invalid">Capacity must be greater than 0.</small>
+    </label>
+
+    <label class="field">
+      <span>Manager ID</span>
+      <input formControlName="managerId" type="number" placeholder="2" class="page-input" />
+    </label>
+
+    <label class="field">
+      <span>Phone</span>
+      <input formControlName="phone" placeholder="9876543211" class="page-input" />
+      <small *ngIf="form.controls.phone.touched && form.controls.phone.invalid">Enter a valid 10-digit Indian mobile number.</small>
+    </label>
+
     <div class="page-actions form-card__full">
-      <button type="submit" [disabled]="form.invalid || saving" class="btn-primary">{{ saving ? 'Saving...' : editingId ? 'Update Warehouse' : 'Create Warehouse' }}</button>
-      <button type="button" (click)="resetForm()" class="btn-secondary">Clear</button>
+      <button type="submit" [disabled]="form.invalid || saving" class="btn-primary">
+        {{ saving ? (editingId ? 'Updating...' : 'Creating...') : (editingId ? 'Update Warehouse' : 'Create Warehouse') }}
+      </button>
+      <button type="button" (click)="resetForm()" [disabled]="saving" class="btn-secondary">Clear</button>
     </div>
   </form>
 
@@ -23,22 +77,60 @@
 
   <div *ngIf="!loading && warehouses.length > 0" class="table-card">
     <div class="table-wrapper">
-      <table class="page-table">
-        <thead><tr><th>Code</th><th>Name</th><th>Location</th><th>Capacity</th><th>Used</th><th>Utilization</th><th>Status</th><th>Actions</th></tr></thead>
+      <table class="page-table warehouse-table">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Name</th>
+            <th>Location</th>
+            <th>City</th>
+            <th>State</th>
+            <th>Country</th>
+            <th>Capacity</th>
+            <th>Used</th>
+            <th>Utilization</th>
+            <th>Manager ID</th>
+            <th>Phone</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
         <tbody>
           <tr *ngFor="let warehouse of warehouses">
             <td>{{ warehouse.code }}</td>
             <td><strong>{{ warehouse.name }}</strong></td>
             <td>{{ warehouse.location }}</td>
+            <td>{{ warehouse.city || '-' }}</td>
+            <td>{{ warehouse.state || '-' }}</td>
+            <td>{{ warehouse.country || '-' }}</td>
             <td>{{ warehouse.capacity }}</td>
             <td>{{ warehouse.usedCapacity ?? 0 }}</td>
             <td>{{ warehouse.utilizationPercentage ?? 0 }}%</td>
-            <td>{{ warehouse.isActive ? 'Active' : 'Inactive' }}</td>
+            <td>{{ warehouse.managerId ?? '-' }}</td>
+            <td>{{ warehouse.phone || '-' }}</td>
             <td>
-              <button *ngIf="canManage" type="button" (click)="edit(warehouse)" class="btn-neutral">Edit</button>
-              <button *ngIf="canManage" type="button" (click)="deactivate(warehouse)" [disabled]="!warehouse.isActive || actionWarehouseId === warehouse.warehouseId" class="btn-danger">
-                {{ actionWarehouseId === warehouse.warehouseId ? 'Working...' : 'Deactivate' }}
-              </button>
+              <span class="status-badge" [class.status-badge--active]="isWarehouseActive(warehouse)" [class.status-badge--inactive]="!isWarehouseActive(warehouse)">
+                {{ isWarehouseActive(warehouse) ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+            <td>
+              <div class="row-actions">
+                <button *ngIf="canManage" type="button" (click)="edit(warehouse)" [disabled]="saving || isToggling(warehouse)" class="btn-neutral">Edit</button>
+                <button
+                  *ngIf="canManage"
+                  type="button"
+                  (click)="toggleWarehouse(warehouse)"
+                  [disabled]="isToggling(warehouse)"
+                  [class.btn-danger]="isWarehouseActive(warehouse)"
+                  [class.btn-primary]="!isWarehouseActive(warehouse)"
+                >
+                  {{
+                    isToggling(warehouse)
+                      ? (isWarehouseActive(warehouse) ? 'Deactivating...' : 'Activating...')
+                      : (isWarehouseActive(warehouse) ? 'Deactivate' : 'Activate')
+                  }}
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>
