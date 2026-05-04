@@ -14,16 +14,10 @@ export class JwtInterceptor implements HttpInterceptor {
   private readonly publicEndpoints = [
     API_ENDPOINTS.AUTH.LOGIN,
     API_ENDPOINTS.AUTH.REGISTER,
-    '/api/v1/auth/register',
-    '/api/v1/auth/register-request',
     API_ENDPOINTS.AUTH.REFRESH_TOKEN,
-    '/api/v1/auth/refresh-token',
     API_ENDPOINTS.AUTH.FORGOT_PASSWORD,
     API_ENDPOINTS.AUTH.VERIFY_OTP,
     API_ENDPOINTS.AUTH.RESET_PASSWORD,
-    '/auth/send-otp',
-    '/api/v1/auth/login',
-    '/api/v1/auth/verify-otp',
     API_ENDPOINTS.AUTH.GOOGLE_LOGIN,
     '/login/oauth2/code/google',
   ];

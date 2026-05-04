@@ -35,9 +35,9 @@ export class AdminDashboardApiService {
       map((users) => {
         const usersByRole: Record<UserRole, number> = {
           [UserRole.ADMIN]: 0,
-          [UserRole.MANAGER]: 0,
-          [UserRole.OFFICER]: 0,
-          [UserRole.STAFF]: 0,
+          [UserRole.INVENTORY_MANAGER]: 0,
+          [UserRole.PURCHASE_OFFICER]: 0,
+          [UserRole.WAREHOUSE_STAFF]: 0,
         };
 
         for (const user of users) {

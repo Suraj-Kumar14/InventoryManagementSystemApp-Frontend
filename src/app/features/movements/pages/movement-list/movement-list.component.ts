@@ -166,8 +166,8 @@ export class MovementListComponent implements OnInit {
   private readonly notification = inject(NotificationService);
   private readonly fb = inject(FormBuilder);
 
-  readonly canReverse = this.authService.hasRole([UserRole.ADMIN, UserRole.MANAGER]);
-  readonly canExport = this.authService.hasRole([UserRole.ADMIN, UserRole.MANAGER]);
+  readonly canReverse = this.authService.hasRole([UserRole.ADMIN, UserRole.INVENTORY_MANAGER]);
+  readonly canExport = this.authService.hasRole([UserRole.ADMIN, UserRole.INVENTORY_MANAGER]);
   readonly movementTypes = MOVEMENT_TYPE_OPTIONS;
   readonly movementDirections = MOVEMENT_DIRECTION_OPTIONS;
   readonly referenceTypes = REFERENCE_TYPE_OPTIONS;

@@ -97,14 +97,14 @@ describe('SupplierListComponent', () => {
   });
 
   it('should load suppliers', () => {
-    createComponent(UserRole.OFFICER);
+    createComponent(UserRole.PURCHASE_OFFICER);
 
     expect(supplierApiStub.getSuppliers).toHaveBeenCalled();
     expect(component.suppliers.length).toBe(1);
   });
 
   it('should filter suppliers', () => {
-    createComponent(UserRole.OFFICER);
+    createComponent(UserRole.PURCHASE_OFFICER);
 
     component.filtersForm.patchValue({ keyword: 'Acme', city: 'Pune' });
     component.onSearch();
@@ -113,7 +113,7 @@ describe('SupplierListComponent', () => {
   });
 
   it('should show status badges and hide actions by role', () => {
-    createComponent(UserRole.STAFF);
+    createComponent(UserRole.WAREHOUSE_STAFF);
 
     expect(component.canCreate).toBe(false);
     expect(component.canEdit).toBe(false);
@@ -123,7 +123,7 @@ describe('SupplierListComponent', () => {
   it('should handle empty state', () => {
     supplierApiStub.getSuppliers.mockReturnValue(of({ ...supplierPage, content: [], totalElements: 0, empty: true }));
 
-    createComponent(UserRole.OFFICER);
+    createComponent(UserRole.PURCHASE_OFFICER);
 
     expect(component.suppliers).toEqual([]);
     expect(fixture.nativeElement.textContent).toContain('No suppliers matched the current filters.');
@@ -132,7 +132,7 @@ describe('SupplierListComponent', () => {
   it('should handle API error', () => {
     supplierApiStub.getSuppliers.mockReturnValue(throwError(() => new Error('boom')));
 
-    createComponent(UserRole.OFFICER);
+    createComponent(UserRole.PURCHASE_OFFICER);
 
     expect(component.suppliers).toEqual([]);
     expect(component.pageData).toBeNull();

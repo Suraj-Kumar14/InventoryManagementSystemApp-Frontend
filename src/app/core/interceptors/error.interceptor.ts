@@ -21,21 +21,16 @@ export class ErrorInterceptor implements HttpInterceptor {
   private readonly publicAuthEndpoints = [
     '/auth/login',
     '/auth/register',
-    '/api/v1/auth/login',
-    '/api/v1/auth/register',
-    '/api/v1/auth/register-request',
     '/auth/forgot-password',
     '/auth/send-otp',
     '/auth/verify-otp',
-    '/api/v1/auth/verify-otp',
     '/auth/reset-password',
     '/auth/refresh',
-    '/api/v1/auth/refresh-token',
     '/oauth2/authorization/google',
     '/login/oauth2/code/google',
   ];
 
-  private readonly sessionEndpoints = ['/auth/profile', '/auth/logout', '/auth/refresh', '/api/v1/auth/profile', '/api/v1/auth/refresh-token'];
+  private readonly sessionEndpoints = ['/auth/profile', '/auth/logout', '/auth/refresh'];
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     return next.handle(req).pipe(
@@ -72,12 +67,7 @@ export class ErrorInterceptor implements HttpInterceptor {
         break;
 
       case 403:
-        if (!this.isPublicAuthRequest(error.url)) {
-          this.router.navigate(['/403']);
-          this.notification.error('You are not allowed to access this module', 'Access Denied');
-        } else {
-          this.notification.error(message || 'You are not allowed to perform this action', 'Access Denied');
-        }
+        this.notification.error(message || 'You are not allowed to perform this action', 'Access Denied');
         break;
 
       case 400:
@@ -89,7 +79,7 @@ export class ErrorInterceptor implements HttpInterceptor {
         break;
 
       case 409:
-        this.notification.error(message || 'Conflict error occurred.', 'Conflict');
+        this.notification.error(message || 'Email already registered', 'Conflict');
         break;
 
       case 500:

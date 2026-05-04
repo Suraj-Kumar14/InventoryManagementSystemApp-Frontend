@@ -20,8 +20,8 @@ export class SupplierDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly authService = inject(AuthService);
 
-  readonly canEdit = this.authService.hasRole([UserRole.ADMIN, UserRole.OFFICER, UserRole.MANAGER]);
-  readonly canViewPerformance = this.authService.hasRole([UserRole.ADMIN, UserRole.OFFICER, UserRole.MANAGER]);
+  readonly canEdit = this.authService.hasRole([UserRole.ADMIN, UserRole.PURCHASE_OFFICER, UserRole.INVENTORY_MANAGER]);
+  readonly canViewPerformance = this.authService.hasRole([UserRole.ADMIN, UserRole.PURCHASE_OFFICER, UserRole.INVENTORY_MANAGER]);
 
   supplier: SupplierResponse | null = null;
   performance: SupplierPerformanceResponse | null = null;

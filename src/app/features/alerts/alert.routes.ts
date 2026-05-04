@@ -11,13 +11,13 @@ export const alertRoutes: Routes = [
     path: '',
     component: AlertCenterComponent,
     canActivate: [roleGuard],
-    data: { roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.OFFICER] },
+    data: { roles: [UserRole.ADMIN, UserRole.INVENTORY_MANAGER, UserRole.WAREHOUSE_STAFF, UserRole.PURCHASE_OFFICER] },
   },
   {
     path: 'analytics',
     component: AlertAnalyticsComponent,
     canActivate: [roleGuard],
-    data: { roles: [UserRole.ADMIN, UserRole.MANAGER] },
+    data: { roles: [UserRole.ADMIN, UserRole.INVENTORY_MANAGER] },
   },
   {
     path: 'broadcast',
@@ -29,6 +29,6 @@ export const alertRoutes: Routes = [
     path: ':id',
     component: AlertDetailComponent,
     canActivate: [roleGuard],
-    data: { roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF, UserRole.OFFICER] },
+    data: { roles: [UserRole.ADMIN, UserRole.INVENTORY_MANAGER, UserRole.WAREHOUSE_STAFF, UserRole.PURCHASE_OFFICER] },
   },
 ];

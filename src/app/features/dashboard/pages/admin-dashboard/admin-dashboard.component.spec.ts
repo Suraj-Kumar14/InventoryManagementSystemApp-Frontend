@@ -71,9 +71,9 @@ describe('AdminDashboardComponent', () => {
         inactiveUsers: 1,
         usersByRole: {
           [UserRole.ADMIN]: 1,
-          [UserRole.MANAGER]: 1,
-          [UserRole.OFFICER]: 1,
-          [UserRole.STAFF]: 1,
+          [UserRole.INVENTORY_MANAGER]: 1,
+          [UserRole.PURCHASE_OFFICER]: 1,
+          [UserRole.WAREHOUSE_STAFF]: 1,
         },
       },
       paymentSummary: {

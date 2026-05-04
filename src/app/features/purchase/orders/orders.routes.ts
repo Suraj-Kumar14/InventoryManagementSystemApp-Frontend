@@ -196,6 +196,6 @@ export const ordersRoutes: Routes = [
     path: '',
     component: OrdersPageComponent,
     canActivate: [roleGuard],
-    data: { roles: [UserRole.ADMIN, UserRole.OFFICER] },
+    data: { roles: [UserRole.ADMIN, UserRole.PURCHASE_OFFICER] },
   },
 ];

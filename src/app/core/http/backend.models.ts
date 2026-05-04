@@ -21,6 +21,10 @@ export interface UserProfile {
   department?: string | null;
   isActive?: boolean;
   createdAt?: string;
+  updatedAt?: string;
+  lastLoginAt?: string;
+  roleLabel?: string;
+  provider?: string;
 }
 
 export interface UpdateProfileRequest {
@@ -32,6 +36,7 @@ export interface UpdateProfileRequest {
 export interface ChangePasswordRequest {
   oldPassword: string;
   newPassword: string;
+  confirmPassword?: string;
 }
 
 export interface Product {

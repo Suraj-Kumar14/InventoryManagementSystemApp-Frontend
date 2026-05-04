@@ -37,10 +37,10 @@ export class PoListComponent implements OnInit {
     'REJECTED',
   ];
 
-  readonly canCreate = this.authService.hasRole([UserRole.ADMIN, UserRole.OFFICER]);
-  readonly canApprove = this.authService.hasRole([UserRole.ADMIN, UserRole.MANAGER]);
-  readonly canReceive = this.authService.hasRole([UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF]);
-  readonly canViewAnalytics = this.authService.hasRole([UserRole.ADMIN, UserRole.MANAGER, UserRole.OFFICER]);
+  readonly canCreate = this.authService.hasRole([UserRole.ADMIN, UserRole.PURCHASE_OFFICER]);
+  readonly canApprove = this.authService.hasRole([UserRole.ADMIN, UserRole.INVENTORY_MANAGER]);
+  readonly canReceive = this.authService.hasRole([UserRole.ADMIN, UserRole.INVENTORY_MANAGER, UserRole.WAREHOUSE_STAFF]);
+  readonly canViewAnalytics = this.authService.hasRole([UserRole.ADMIN, UserRole.INVENTORY_MANAGER, UserRole.PURCHASE_OFFICER]);
 
   filtersForm = this.fb.group({
     keyword: this.fb.control<string>(''),
@@ -146,12 +146,12 @@ export class PoListComponent implements OnInit {
       status !== 'RECEIVED' &&
       status !== 'CANCELLED' &&
       status !== 'REJECTED' &&
-      (this.authService.hasRole(UserRole.ADMIN) || (this.authService.hasRole(UserRole.OFFICER) && isOwner))
+      (this.authService.hasRole(UserRole.ADMIN) || (this.authService.hasRole(UserRole.PURCHASE_OFFICER) && isOwner))
     );
   }
 
   canSubmit(order: PurchaseOrderResponse): boolean {
-    return order.status === 'DRAFT' && (this.authService.hasRole(UserRole.ADMIN) || this.authService.hasRole(UserRole.OFFICER));
+    return order.status === 'DRAFT' && (this.authService.hasRole(UserRole.ADMIN) || this.authService.hasRole(UserRole.PURCHASE_OFFICER));
   }
 
   canCancel(order: PurchaseOrderResponse): boolean {

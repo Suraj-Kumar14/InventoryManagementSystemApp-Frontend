@@ -85,11 +85,11 @@ export class PaymentDetailComponent {
     this.load();
   }
 
-  get canEdit(): boolean { return !!this.payment && this.auth.hasRole([UserRole.ADMIN, UserRole.OFFICER]) && ['DRAFT', 'PENDING_APPROVAL'].includes(this.payment.status); }
-  get canSubmit(): boolean { return !!this.payment && this.auth.hasRole([UserRole.ADMIN, UserRole.OFFICER]) && this.payment.status === 'DRAFT'; }
-  get canApprove(): boolean { return !!this.payment && this.auth.hasRole([UserRole.ADMIN, UserRole.MANAGER]) && this.payment.status === 'PENDING_APPROVAL'; }
-  get canMarkPaid(): boolean { return !!this.payment && this.auth.hasRole([UserRole.ADMIN, UserRole.OFFICER]) && this.payment.status === 'APPROVED'; }
-  get canCancel(): boolean { return !!this.payment && this.auth.hasRole([UserRole.ADMIN, UserRole.OFFICER]) && ['DRAFT', 'PENDING_APPROVAL', 'APPROVED'].includes(this.payment.status); }
+  get canEdit(): boolean { return !!this.payment && this.auth.hasRole([UserRole.ADMIN, UserRole.PURCHASE_OFFICER]) && ['DRAFT', 'PENDING_APPROVAL'].includes(this.payment.status); }
+  get canSubmit(): boolean { return !!this.payment && this.auth.hasRole([UserRole.ADMIN, UserRole.PURCHASE_OFFICER]) && this.payment.status === 'DRAFT'; }
+  get canApprove(): boolean { return !!this.payment && this.auth.hasRole([UserRole.ADMIN, UserRole.INVENTORY_MANAGER]) && this.payment.status === 'PENDING_APPROVAL'; }
+  get canMarkPaid(): boolean { return !!this.payment && this.auth.hasRole([UserRole.ADMIN, UserRole.PURCHASE_OFFICER]) && this.payment.status === 'APPROVED'; }
+  get canCancel(): boolean { return !!this.payment && this.auth.hasRole([UserRole.ADMIN, UserRole.PURCHASE_OFFICER]) && ['DRAFT', 'PENDING_APPROVAL', 'APPROVED'].includes(this.payment.status); }
   get canReverse(): boolean { return !!this.payment && this.auth.hasRole(UserRole.ADMIN) && ['PAID', 'PARTIALLY_PAID'].includes(this.payment.status); }
 
   submit(): void {

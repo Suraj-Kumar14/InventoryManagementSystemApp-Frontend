@@ -15,7 +15,8 @@ export class LoggingInterceptor implements HttpInterceptor {
 
     console.debug('[HTTP] Request', {
       method: req.method,
-      url: req.urlWithParams,
+      urlWithParams: req.urlWithParams,
+      hasAuthHeader: req.headers.has('Authorization'),
     });
 
     return next.handle(req).pipe(
@@ -24,8 +25,9 @@ export class LoggingInterceptor implements HttpInterceptor {
           if (event instanceof HttpResponse) {
             console.debug('[HTTP] Response', {
               method: req.method,
-              url: req.urlWithParams,
+              urlWithParams: req.urlWithParams,
               status: event.status,
+              hasAuthHeader: req.headers.has('Authorization'),
               durationMs: Math.round(performance.now() - startedAt),
             });
           }
@@ -33,8 +35,10 @@ export class LoggingInterceptor implements HttpInterceptor {
         error: (error) => {
           console.error('[HTTP] Error', {
             method: req.method,
-            url: req.urlWithParams,
+            urlWithParams: req.urlWithParams,
             status: error?.status ?? 'UNKNOWN',
+            errorBody: error?.error ?? null,
+            hasAuthHeader: req.headers.has('Authorization'),
             durationMs: Math.round(performance.now() - startedAt),
           });
         },

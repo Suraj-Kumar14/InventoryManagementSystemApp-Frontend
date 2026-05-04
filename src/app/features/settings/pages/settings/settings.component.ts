@@ -71,7 +71,11 @@ export class SettingsComponent {
     if (raw.newPassword !== raw.confirmNewPassword) { this.passwordError = 'Passwords do not match'; return; }
     this.passwordError = '';
     this.passwordSaving = true;
-    this.authService.changePassword({ oldPassword: raw.currentPassword, newPassword: raw.newPassword })
+    this.authService.changePassword({
+      oldPassword: raw.currentPassword,
+      newPassword: raw.newPassword,
+      confirmPassword: raw.confirmNewPassword,
+    })
       .pipe(finalize(() => (this.passwordSaving = false)))
       .subscribe({
         next: () => {

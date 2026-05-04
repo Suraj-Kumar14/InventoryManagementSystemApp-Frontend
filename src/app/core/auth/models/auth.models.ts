@@ -44,6 +44,27 @@ export interface User {
   department?: string | null;
   isActive?: boolean;
   createdAt?: string;
+  updatedAt?: string;
+  lastLoginAt?: string;
+}
+
+export interface CreateUserRequest {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword?: string;
+  role: UserRole;
+  phone?: string | null;
+  department?: string | null;
+  isActive?: boolean;
+}
+
+export interface AdminUpdateUserRequest {
+  name: string;
+  role: UserRole;
+  phone?: string | null;
+  department?: string | null;
+  isActive?: boolean;
 }
 
 export interface JwtPayload {

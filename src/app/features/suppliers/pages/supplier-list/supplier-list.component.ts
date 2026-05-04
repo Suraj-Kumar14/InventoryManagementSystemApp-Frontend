@@ -33,12 +33,12 @@ export class SupplierListComponent implements OnInit {
   private readonly notifications = inject(NotificationService);
   private readonly fb = inject(FormBuilder);
 
-  readonly canCreate = this.authService.hasRole([UserRole.ADMIN, UserRole.OFFICER]);
-  readonly canEdit = this.authService.hasRole([UserRole.ADMIN, UserRole.OFFICER, UserRole.MANAGER]);
-  readonly canDeactivate = this.authService.hasRole([UserRole.ADMIN, UserRole.MANAGER]);
+  readonly canCreate = this.authService.hasRole([UserRole.ADMIN, UserRole.PURCHASE_OFFICER]);
+  readonly canEdit = this.authService.hasRole([UserRole.ADMIN, UserRole.PURCHASE_OFFICER, UserRole.INVENTORY_MANAGER]);
+  readonly canDeactivate = this.authService.hasRole([UserRole.ADMIN, UserRole.INVENTORY_MANAGER]);
   readonly canBlacklist = this.authService.hasRole(UserRole.ADMIN);
-  readonly canRate = this.authService.hasRole([UserRole.ADMIN, UserRole.OFFICER, UserRole.MANAGER]);
-  readonly canViewAnalytics = this.authService.hasRole([UserRole.ADMIN, UserRole.OFFICER, UserRole.MANAGER]);
+  readonly canRate = this.authService.hasRole([UserRole.ADMIN, UserRole.PURCHASE_OFFICER, UserRole.INVENTORY_MANAGER]);
+  readonly canViewAnalytics = this.authService.hasRole([UserRole.ADMIN, UserRole.PURCHASE_OFFICER, UserRole.INVENTORY_MANAGER]);
 
   readonly filtersForm = this.fb.group({
     keyword: this.fb.control(''),

@@ -1,28 +1,47 @@
 export enum UserRole {
   ADMIN = 'ADMIN',
-  MANAGER = 'MANAGER',
-  OFFICER = 'OFFICER',
-  STAFF = 'STAFF',
+  INVENTORY_MANAGER = 'INVENTORY_MANAGER',
+  PURCHASE_OFFICER = 'PURCHASE_OFFICER',
+  WAREHOUSE_STAFF = 'WAREHOUSE_STAFF',
+}
+
+export function normalizeRole(role?: string | null): UserRole | null {
+  if (!role) {
+    return null;
+  }
+
+  const value = role.replace(/^ROLE_/, '').toUpperCase();
+  const aliases: Record<string, UserRole> = {
+    ADMIN: UserRole.ADMIN,
+    INVENTORY_MANAGER: UserRole.INVENTORY_MANAGER,
+    MANAGER: UserRole.INVENTORY_MANAGER,
+    PURCHASE_OFFICER: UserRole.PURCHASE_OFFICER,
+    OFFICER: UserRole.PURCHASE_OFFICER,
+    WAREHOUSE_STAFF: UserRole.WAREHOUSE_STAFF,
+    STAFF: UserRole.WAREHOUSE_STAFF,
+  };
+
+  return aliases[value] ?? null;
 }
 
 export const ROLE_LABELS: Record<UserRole, string> = {
   [UserRole.ADMIN]: 'Administrator',
-  [UserRole.MANAGER]: 'Inventory Manager',
-  [UserRole.OFFICER]: 'Purchase Officer',
-  [UserRole.STAFF]: 'Warehouse Staff',
+  [UserRole.INVENTORY_MANAGER]: 'Inventory Manager',
+  [UserRole.PURCHASE_OFFICER]: 'Purchase Officer',
+  [UserRole.WAREHOUSE_STAFF]: 'Warehouse Staff',
 };
 
 export const ROLE_PAGES: Record<UserRole, string> = {
   [UserRole.ADMIN]: '/dashboard/admin',
-  [UserRole.MANAGER]: '/dashboard/manager',
-  [UserRole.OFFICER]: '/dashboard/officer',
-  [UserRole.STAFF]: '/dashboard/staff',
+  [UserRole.INVENTORY_MANAGER]: '/dashboard/manager',
+  [UserRole.PURCHASE_OFFICER]: '/dashboard/officer',
+  [UserRole.WAREHOUSE_STAFF]: '/dashboard/staff',
 };
 
 export const ROLE_REGISTRATION_ALLOWED: UserRole[] = [
-  UserRole.MANAGER,
-  UserRole.OFFICER,
-  UserRole.STAFF,
+  UserRole.INVENTORY_MANAGER,
+  UserRole.PURCHASE_OFFICER,
+  UserRole.WAREHOUSE_STAFF,
 ];
 
 export const API_ENDPOINTS = {
@@ -38,6 +57,7 @@ export const API_ENDPOINTS = {
     UPDATE_PROFILE: '/auth/profile',
     CHANGE_PASSWORD: '/auth/password',
     USERS: '/auth/users',
+    USER_DETAIL: (id: number) => `/auth/users/${id}`,
     DEACTIVATE_USER: (id: number) => `/auth/users/${id}/deactivate`,
     ACTIVATE_USER: (id: number) => `/auth/users/${id}/activate`,
     GOOGLE_LOGIN: '/oauth2/authorization/google',

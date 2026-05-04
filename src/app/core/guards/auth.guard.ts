@@ -4,7 +4,9 @@ import {
   CanActivateFn,
   ActivatedRouteSnapshot,
   RouterStateSnapshot,
+  UrlTree,
 } from '@angular/router';
+import { Observable, map } from 'rxjs';
 import { AuthService } from '../auth/services/auth.service';
 
 @Injectable({
@@ -14,14 +16,16 @@ export class AuthGuardService {
   private authService = inject(AuthService);
   private router = inject(Router);
 
-  canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
-    if (this.authService.isAuthenticated() && this.authService.isTokenValid()) {
-      return true;
-    }
+  canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean | UrlTree> {
+    return this.authService.waitUntilInitialized().pipe(
+      map(() => {
+        if (this.authService.isAuthenticated() && this.authService.isTokenValid()) {
+          return true;
+        }
 
-    // Redirect to login
-    this.router.navigate(['/login'], { queryParams: { returnUrl: state.url } });
-    return false;
+        return this.router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
+      })
+    );
   }
 }
 

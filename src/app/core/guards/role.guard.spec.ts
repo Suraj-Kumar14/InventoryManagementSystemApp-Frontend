@@ -40,23 +40,23 @@ describe('roleGuard', () => {
     authServiceStub.hasRole.mockReturnValue(true);
     authServiceStub.getUserRole.mockReturnValue(UserRole.ADMIN);
 
-    expect(runGuard({ roles: [UserRole.ADMIN, UserRole.OFFICER] })).toBe(true);
+    expect(runGuard({ roles: [UserRole.ADMIN, UserRole.PURCHASE_OFFICER] })).toBe(true);
   });
 
   it('PURCHASE_OFFICER can access supplier create and edit routes', () => {
     authServiceStub.isAuthenticated.mockReturnValue(true);
     authServiceStub.hasRole.mockReturnValue(true);
-    authServiceStub.getUserRole.mockReturnValue(UserRole.OFFICER);
+    authServiceStub.getUserRole.mockReturnValue(UserRole.PURCHASE_OFFICER);
 
-    expect(runGuard({ roles: [UserRole.ADMIN, UserRole.OFFICER] })).toBe(true);
+    expect(runGuard({ roles: [UserRole.ADMIN, UserRole.PURCHASE_OFFICER] })).toBe(true);
   });
 
   it('WAREHOUSE_STAFF cannot access supplier create and edit routes', () => {
     authServiceStub.isAuthenticated.mockReturnValue(true);
     authServiceStub.hasRole.mockReturnValue(false);
-    authServiceStub.getUserRole.mockReturnValue(UserRole.STAFF);
+    authServiceStub.getUserRole.mockReturnValue(UserRole.WAREHOUSE_STAFF);
 
-    expect(runGuard({ roles: [UserRole.ADMIN, UserRole.OFFICER] })).toBe(false);
+    expect(runGuard({ roles: [UserRole.ADMIN, UserRole.PURCHASE_OFFICER] })).toBe(false);
     expect(routerStub.navigate).toHaveBeenCalledWith(['/403']);
   });
 
@@ -65,16 +65,16 @@ describe('roleGuard', () => {
     authServiceStub.hasRole.mockReturnValue(true);
     authServiceStub.getUserRole.mockReturnValue(UserRole.ADMIN);
 
-    expect(runGuard({ roles: [UserRole.MANAGER] })).toBe(true);
+    expect(runGuard({ roles: [UserRole.INVENTORY_MANAGER] })).toBe(true);
   });
 
   it('WAREHOUSE_STAFF can access warehouse dashboard route', () => {
     authServiceStub.isAuthenticated.mockReturnValue(true);
     authServiceStub.hasRole.mockReturnValue(true);
-    authServiceStub.getUserRole.mockReturnValue(UserRole.STAFF);
+    authServiceStub.getUserRole.mockReturnValue(UserRole.WAREHOUSE_STAFF);
 
     expect(
-      runGuard({ roles: [UserRole.STAFF], allowAdminOverride: false, redirectUnauthorizedToRoleHome: true })
+      runGuard({ roles: [UserRole.WAREHOUSE_STAFF], allowAdminOverride: false, redirectUnauthorizedToRoleHome: true })
     ).toBe(true);
   });
 
@@ -84,7 +84,7 @@ describe('roleGuard', () => {
     authServiceStub.getUserRole.mockReturnValue(UserRole.ADMIN);
 
     expect(
-      runGuard({ roles: [UserRole.STAFF], allowAdminOverride: false, redirectUnauthorizedToRoleHome: true })
+      runGuard({ roles: [UserRole.WAREHOUSE_STAFF], allowAdminOverride: false, redirectUnauthorizedToRoleHome: true })
     ).toBe(false);
     expect(routerStub.navigate).toHaveBeenCalledWith(['/dashboard/admin']);
   });
@@ -92,10 +92,10 @@ describe('roleGuard', () => {
   it('INVENTORY_MANAGER is redirected to manager dashboard when warehouse dashboard is staff-only', () => {
     authServiceStub.isAuthenticated.mockReturnValue(true);
     authServiceStub.hasRole.mockReturnValue(false);
-    authServiceStub.getUserRole.mockReturnValue(UserRole.MANAGER);
+    authServiceStub.getUserRole.mockReturnValue(UserRole.INVENTORY_MANAGER);
 
     expect(
-      runGuard({ roles: [UserRole.STAFF], allowAdminOverride: false, redirectUnauthorizedToRoleHome: true })
+      runGuard({ roles: [UserRole.WAREHOUSE_STAFF], allowAdminOverride: false, redirectUnauthorizedToRoleHome: true })
     ).toBe(false);
     expect(routerStub.navigate).toHaveBeenCalledWith(['/dashboard/manager']);
   });
@@ -103,7 +103,7 @@ describe('roleGuard', () => {
   it('PURCHASE_OFFICER cannot access admin dashboard routes', () => {
     authServiceStub.isAuthenticated.mockReturnValue(true);
     authServiceStub.hasRole.mockReturnValue(false);
-    authServiceStub.getUserRole.mockReturnValue(UserRole.OFFICER);
+    authServiceStub.getUserRole.mockReturnValue(UserRole.PURCHASE_OFFICER);
 
     expect(runGuard({ roles: [UserRole.ADMIN] })).toBe(false);
     expect(routerStub.navigate).toHaveBeenCalledWith(['/403']);
@@ -113,7 +113,7 @@ describe('roleGuard', () => {
     authServiceStub.isAuthenticated.mockReturnValue(false);
     authServiceStub.getUserRole.mockReturnValue(null);
 
-    expect(runGuard({ roles: [UserRole.STAFF] })).toBe(false);
+    expect(runGuard({ roles: [UserRole.WAREHOUSE_STAFF] })).toBe(false);
     expect(routerStub.navigate).toHaveBeenCalledWith(['/login']);
   });
 });

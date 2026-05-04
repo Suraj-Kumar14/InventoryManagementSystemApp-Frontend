@@ -23,22 +23,23 @@ export class OauthSuccessComponent implements OnInit {
   ngOnInit(): void {
     const token = this.route.snapshot.queryParamMap.get('token');
     const refreshToken = this.route.snapshot.queryParamMap.get('refreshToken');
-    if (!token) {
+    if (!token || !refreshToken) {
       this.message = 'Google login failed.';
       this.notification.error('Google login failed');
-      this.router.navigate(['/login']);
+      this.router.navigate(['/login'], { replaceUrl: true });
       return;
     }
-    this.authService.completeOAuthLogin(token, refreshToken || '').subscribe({
+
+    this.authService.completeOAuthLogin(token, refreshToken).subscribe({
       next: (user) => {
         this.notification.success('Login successful!');
         const rolePage = ROLE_PAGES[user.role] || '/dashboard/admin';
-        this.router.navigateByUrl(rolePage);
+        this.router.navigateByUrl(rolePage, { replaceUrl: true });
       },
       error: () => {
         this.message = 'Google login failed.';
         this.notification.error('Google login failed');
-        this.router.navigate(['/login']);
+        this.router.navigate(['/login'], { replaceUrl: true });
       },
     });
   }

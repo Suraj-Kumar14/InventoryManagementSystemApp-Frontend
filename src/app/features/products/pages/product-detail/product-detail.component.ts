@@ -24,7 +24,7 @@ export class ProductDetailComponent implements OnInit {
   private readonly notifications = inject(NotificationService);
   private readonly authService = inject(AuthService);
 
-  readonly canManage = this.authService.hasRole([UserRole.ADMIN, UserRole.MANAGER]);
+  readonly canManage = this.authService.hasRole([UserRole.ADMIN, UserRole.INVENTORY_MANAGER]);
   readonly canDelete = this.authService.hasRole(UserRole.ADMIN);
 
   product: Product | null = null;

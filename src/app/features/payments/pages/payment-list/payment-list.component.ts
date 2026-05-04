@@ -145,11 +145,11 @@ export class PaymentListComponent {
   }
 
   get canCreate(): boolean {
-    return this.authService.hasRole([UserRole.ADMIN, UserRole.OFFICER]);
+    return this.authService.hasRole([UserRole.ADMIN, UserRole.PURCHASE_OFFICER]);
   }
 
   get canApprove(): boolean {
-    return this.authService.hasRole([UserRole.ADMIN, UserRole.MANAGER]);
+    return this.authService.hasRole([UserRole.ADMIN, UserRole.INVENTORY_MANAGER]);
   }
 
   loadSummary(): void {

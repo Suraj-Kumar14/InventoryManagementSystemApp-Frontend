@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -17,7 +18,7 @@ import { roleGuard } from '../../../core/guards/role.guard';
 @Component({
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule],
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './users-page.component.html',
   styleUrls: ['./users-page.component.css'],
 })
@@ -25,11 +26,34 @@ class UsersPageComponent implements OnInit {
   private authService = inject(AuthService);
   private notifications = inject(NotificationService);
   private cdr = inject(ChangeDetectorRef);
+  private fb = inject(FormBuilder);
 
   users: UserProfile[] = [];
   loading = false;
   loadError = '';
   actionUserId: number | null = null;
+  formSaving = false;
+  formError = '';
+  formMode: 'create' | 'edit' = 'create';
+  editingUserId: number | null = null;
+  readonly roleOptions = [UserRole.ADMIN, UserRole.INVENTORY_MANAGER, UserRole.PURCHASE_OFFICER, UserRole.WAREHOUSE_STAFF];
+
+  filterForm = this.fb.nonNullable.group({
+    keyword: [''],
+    role: [''],
+    isActive: [''],
+  });
+
+  userForm = this.fb.nonNullable.group({
+    name: ['', Validators.required],
+    email: ['', [Validators.required, Validators.email]],
+    phone: [''],
+    role: [UserRole.WAREHOUSE_STAFF, Validators.required],
+    department: [''],
+    password: ['', Validators.required],
+    confirmPassword: ['', Validators.required],
+    isActive: [true],
+  });
 
   confirmModal: {
     visible: boolean;
@@ -53,8 +77,13 @@ class UsersPageComponent implements OnInit {
   loadUsers(): void {
     this.loading = true;
     this.loadError = '';
+    const filters = this.filterForm.getRawValue();
     this.authService
-      .getUsers()
+      .searchUsers({
+        keyword: filters.keyword,
+        role: filters.role as UserRole | '',
+        isActive: filters.isActive === '' ? '' : filters.isActive === 'true',
+      })
       .pipe(
         retry(1),
         finalize(() => {
@@ -70,6 +99,110 @@ class UsersPageComponent implements OnInit {
         error: (err) => {
           this.loadError = err?.error?.message || 'Failed to load users. Please try refreshing.';
           this.users = [];
+          this.cdr.markForCheck();
+        },
+      });
+  }
+
+  applyFilters(): void {
+    this.loadUsers();
+  }
+
+  resetFilters(): void {
+    this.filterForm.reset({ keyword: '', role: '', isActive: '' });
+    this.loadUsers();
+  }
+
+  startCreate(): void {
+    this.formMode = 'create';
+    this.editingUserId = null;
+    this.formError = '';
+    this.userForm.reset({
+      name: '',
+      email: '',
+      phone: '',
+      role: UserRole.WAREHOUSE_STAFF,
+      department: '',
+      password: '',
+      confirmPassword: '',
+      isActive: true,
+    });
+    this.userForm.controls.email.enable();
+    this.userForm.controls.password.setValidators([Validators.required]);
+    this.userForm.controls.confirmPassword.setValidators([Validators.required]);
+    this.userForm.controls.password.updateValueAndValidity();
+    this.userForm.controls.confirmPassword.updateValueAndValidity();
+    this.cdr.markForCheck();
+  }
+
+  startEdit(user: UserProfile): void {
+    this.formMode = 'edit';
+    this.editingUserId = user.userId;
+    this.formError = '';
+    this.userForm.reset({
+      name: user.name,
+      email: user.email,
+      phone: user.phone || '',
+      role: user.role,
+      department: user.department || '',
+      password: '',
+      confirmPassword: '',
+      isActive: user.isActive !== false,
+    });
+    this.userForm.controls.email.disable();
+    this.userForm.controls.password.clearValidators();
+    this.userForm.controls.confirmPassword.clearValidators();
+    this.userForm.controls.password.updateValueAndValidity();
+    this.userForm.controls.confirmPassword.updateValueAndValidity();
+    this.cdr.markForCheck();
+  }
+
+  submitUserForm(): void {
+    if (this.userForm.invalid || this.formSaving) {
+      this.userForm.markAllAsTouched();
+      return;
+    }
+
+    const raw = this.userForm.getRawValue();
+    if (this.formMode === 'create' && raw.password !== raw.confirmPassword) {
+      this.formError = 'Password and confirm password do not match';
+      return;
+    }
+
+    this.formError = '';
+    this.formSaving = true;
+    const request$ = this.formMode === 'create'
+      ? this.authService.createUser({
+          name: raw.name,
+          email: raw.email,
+          phone: raw.phone || null,
+          role: raw.role,
+          department: raw.department || null,
+          password: raw.password,
+          confirmPassword: raw.confirmPassword,
+          isActive: raw.isActive,
+        })
+      : this.authService.updateUser(this.editingUserId!, {
+          name: raw.name,
+          phone: raw.phone || null,
+          role: raw.role,
+          department: raw.department || null,
+          isActive: raw.isActive,
+        });
+
+    request$
+      .pipe(finalize(() => {
+        this.formSaving = false;
+        this.cdr.markForCheck();
+      }))
+      .subscribe({
+        next: () => {
+          this.notifications.success(this.formMode === 'create' ? 'User created successfully' : 'User updated successfully');
+          this.startCreate();
+          this.loadUsers();
+        },
+        error: (err) => {
+          this.formError = err?.error?.message || (this.formMode === 'create' ? 'Unable to create user' : 'Unable to update user');
           this.cdr.markForCheck();
         },
       });
@@ -143,6 +276,10 @@ class UsersPageComponent implements OnInit {
 
   getRoleLabel(role: UserRole): string {
     return ROLE_LABELS[role] ?? role;
+  }
+
+  formatDate(value?: string | null): string {
+    return value ? new Date(value).toLocaleString() : 'Never';
   }
 }
 

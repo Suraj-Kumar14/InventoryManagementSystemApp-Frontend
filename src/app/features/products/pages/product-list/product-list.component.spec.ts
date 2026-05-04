@@ -106,7 +106,7 @@ describe('ProductListComponent', () => {
   });
 
   it('should load products', () => {
-    createComponent(UserRole.MANAGER);
+    createComponent(UserRole.INVENTORY_MANAGER);
 
     expect(productApiStub.getProducts).toHaveBeenCalled();
     expect(component.products.length).toBe(1);
@@ -114,7 +114,7 @@ describe('ProductListComponent', () => {
   });
 
   it('should search products', () => {
-    createComponent(UserRole.MANAGER);
+    createComponent(UserRole.INVENTORY_MANAGER);
 
     component.onSearch({ keyword: 'lap' });
 
@@ -122,7 +122,7 @@ describe('ProductListComponent', () => {
   });
 
   it('should show or hide buttons based on role', () => {
-    createComponent(UserRole.STAFF);
+    createComponent(UserRole.WAREHOUSE_STAFF);
 
     expect(component.canManage).toBe(false);
     expect(component.canDelete).toBe(false);
@@ -139,7 +139,7 @@ describe('ProductListComponent', () => {
       })
     );
 
-    createComponent(UserRole.STAFF);
+    createComponent(UserRole.WAREHOUSE_STAFF);
 
     expect(component.products).toEqual([]);
     expect(fixture.nativeElement.textContent).toContain('No products matched the current search and filter combination.');
@@ -148,7 +148,7 @@ describe('ProductListComponent', () => {
   it('should handle API error', () => {
     productApiStub.getProducts.mockReturnValue(throwError(() => new Error('boom')));
 
-    createComponent(UserRole.STAFF);
+    createComponent(UserRole.WAREHOUSE_STAFF);
 
     expect(component.products).toEqual([]);
     expect(component.pageData).toBeNull();

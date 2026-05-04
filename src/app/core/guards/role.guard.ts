@@ -4,7 +4,9 @@ import {
   CanActivateFn,
   ActivatedRouteSnapshot,
   RouterStateSnapshot,
+  UrlTree,
 } from '@angular/router';
+import { Observable, map } from 'rxjs';
 import { AuthService } from '../auth/services/auth.service';
 import { ROLE_PAGES, UserRole } from '../../shared/config/app-config';
 
@@ -18,41 +20,37 @@ export class RoleGuardService {
   canActivate(
     route: ActivatedRouteSnapshot,
     state: RouterStateSnapshot
-  ): boolean {
-    if (!this.authService.isAuthenticated()) {
-      this.router.navigate(['/login']);
-      return false;
-    }
+  ): Observable<boolean | UrlTree> {
+    return this.authService.waitUntilInitialized().pipe(
+      map(() => {
+        if (!this.authService.isAuthenticated()) {
+          return this.router.createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
+        }
 
-    // Get required roles from route data
-    const requiredRoles = route.data['roles'] as UserRole[] | undefined;
-    const allowAdminOverride = route.data['allowAdminOverride'] as boolean | undefined;
-    const redirectUnauthorizedToRoleHome = route.data['redirectUnauthorizedToRoleHome'] as boolean | undefined;
-    const currentRole = this.authService.getUserRole();
+        const requiredRoles = route.data['roles'] as UserRole[] | undefined;
+        const allowAdminOverride = route.data['allowAdminOverride'] as boolean | undefined;
+        const redirectUnauthorizedToRoleHome = route.data['redirectUnauthorizedToRoleHome'] as boolean | undefined;
+        const currentRole = this.authService.getUserRole();
 
-    if (!requiredRoles || requiredRoles.length === 0) {
-      // If no roles are specified, allow access
-      return true;
-    }
+        if (!requiredRoles || requiredRoles.length === 0) {
+          return true;
+        }
 
-    if (currentRole === UserRole.ADMIN && allowAdminOverride === false && !requiredRoles.includes(UserRole.ADMIN)) {
-      this.router.navigate([ROLE_PAGES[UserRole.ADMIN]]);
-      return false;
-    }
+        if (currentRole === UserRole.ADMIN && allowAdminOverride === false && !requiredRoles.includes(UserRole.ADMIN)) {
+          return this.router.parseUrl(ROLE_PAGES[UserRole.ADMIN]);
+        }
 
-    // Check if user has required role
-    if (this.authService.hasRole(requiredRoles)) {
-      return true;
-    }
+        if (this.authService.hasRole(requiredRoles)) {
+          return true;
+        }
 
-    // User doesn't have required role
-    if (redirectUnauthorizedToRoleHome && currentRole) {
-      this.router.navigate([ROLE_PAGES[currentRole]]);
-      return false;
-    }
+        if (redirectUnauthorizedToRoleHome && currentRole) {
+          return this.router.parseUrl(ROLE_PAGES[currentRole]);
+        }
 
-    this.router.navigate(['/403']);
-    return false;
+        return this.router.parseUrl('/403');
+      })
+    );
   }
 }
 

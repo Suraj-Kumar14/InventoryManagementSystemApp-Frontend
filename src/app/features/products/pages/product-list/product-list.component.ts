@@ -24,9 +24,9 @@ export class ProductListComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly notifications = inject(NotificationService);
 
-  readonly canManage = this.authService.hasRole([UserRole.ADMIN, UserRole.MANAGER]);
+  readonly canManage = this.authService.hasRole([UserRole.ADMIN, UserRole.INVENTORY_MANAGER]);
   readonly canDelete = this.authService.hasRole(UserRole.ADMIN);
-  readonly canViewSummary = this.authService.hasRole([UserRole.ADMIN, UserRole.MANAGER]);
+  readonly canViewSummary = this.authService.hasRole([UserRole.ADMIN, UserRole.INVENTORY_MANAGER]);
 
   products: Product[] = [];
   categories: string[] = [];
