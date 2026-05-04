@@ -185,7 +185,7 @@
             <strong>User Management</strong>
             <p>Manage users, roles, activation, and account status from one place.</p>
           </div>
-          <a routerLink="/admin/users" class="user-management-card__action">Open Users</a>
+          <a routerLink="/admin/users" class="user-management-card__action" (click)="logUsersNavigation()">Open Users</a>
         </div>
 
         <div class="section-error" *ngIf="sectionError('users')">{{ sectionError('users') }}</div>

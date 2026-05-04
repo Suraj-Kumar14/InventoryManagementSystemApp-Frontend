@@ -25,6 +25,13 @@ export class RoleGuardService {
     const allowAdminOverride = route.data['allowAdminOverride'] as boolean | undefined;
     const redirectUnauthorizedToRoleHome = route.data['redirectUnauthorizedToRoleHome'] as boolean | undefined;
 
+    console.debug('RoleGuard', {
+      url: state.url,
+      currentUser: this.authService.getCurrentUser(),
+      allowedRoles: requiredRoles,
+      userRole: this.authService.getCurrentUser()?.role,
+    });
+
     return this.authService.restoreSession().pipe(
       map((user) => {
         if (!user) {

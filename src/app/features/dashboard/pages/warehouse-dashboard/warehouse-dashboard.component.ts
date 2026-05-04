@@ -1,5 +1,6 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs/operators';
 import { AuthService } from '../../../../core/auth/services/auth.service';
@@ -50,6 +51,8 @@ export class WarehouseDashboardComponent implements OnInit {
   private readonly notifications = inject(NotificationService);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly destroyRef = inject(DestroyRef);
 
   loading = true;
   refreshing = false;
@@ -93,12 +96,14 @@ export class WarehouseDashboardComponent implements OnInit {
     this.dashboardApi
       .refreshDashboard()
       .pipe(
+        takeUntilDestroyed(this.destroyRef),
         finalize(() => {
           this.loading = false;
           this.refreshing = false;
           if (this.headerActionLoading === 'refresh') {
             this.headerActionLoading = null;
           }
+          this.syncView();
         })
       )
       .subscribe({
@@ -109,10 +114,12 @@ export class WarehouseDashboardComponent implements OnInit {
           } else if (!initial) {
             this.notifications.warning('Some dashboard sections could not be loaded');
           }
+          this.syncView();
         },
         error: () => {
           this.view = null;
           this.notifications.error('Unable to load dashboard summary');
+          this.syncView();
         },
       });
   }
@@ -206,5 +213,11 @@ export class WarehouseDashboardComponent implements OnInit {
     void this.router.navigate([route]).finally(() => {
       this.headerActionLoading = null;
     });
+  }
+
+  private syncView(): void {
+    if (!this.destroyRef.destroyed) {
+      this.cdr.detectChanges();
+    }
   }
 }

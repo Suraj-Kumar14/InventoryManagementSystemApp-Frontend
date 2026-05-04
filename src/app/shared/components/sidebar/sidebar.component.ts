@@ -196,4 +196,10 @@ export class SidebarComponent {
 
     return this.menuItems.filter((item) => item.roles.includes(userRole));
   }
+
+  logNavigation(item: MenuItem): void {
+    if (item.route === '/admin/users') {
+      console.log('Navigate to users clicked');
+    }
+  }
 }

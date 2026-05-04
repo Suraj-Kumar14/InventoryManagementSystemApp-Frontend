@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { map, Observable } from 'rxjs';
+import { catchError, map, Observable, of } from 'rxjs';
 import {
   AdjustStockRequest,
   PageResponse,
@@ -36,6 +36,21 @@ export class WarehouseService {
       .pipe(
         map((response) => this.normalizeWarehouseList(response)),
         handleServiceError(this.serviceName, 'getWarehouses')
+      );
+  }
+
+  getWarehouseCount(): Observable<number> {
+    return this.api
+      .get<unknown>(API_ENDPOINTS.WAREHOUSES.ROOT, {
+        service: 'warehouse',
+        params: { page: 0, size: 1 },
+      })
+      .pipe(
+        map((response) => this.extractWarehouseCount(response)),
+        catchError((error) => {
+          console.error('Failed to load warehouse count', error);
+          return of(0);
+        })
       );
   }
 
@@ -233,5 +248,31 @@ export class WarehouseService {
       state: warehouse.state ?? null,
       country: warehouse.country ?? null,
     };
+  }
+
+  private extractWarehouseCount(response: unknown): number {
+    const wrapped = response as { data?: unknown } | null | undefined;
+    const data = wrapped && typeof wrapped === 'object' && 'data' in wrapped ? wrapped.data : response;
+    const value = data as { totalWarehouses?: unknown; totalElements?: unknown; content?: unknown } | unknown[] | null | undefined;
+
+    if (value && !Array.isArray(value) && typeof value === 'object') {
+      if (typeof value.totalWarehouses === 'number') {
+        return value.totalWarehouses;
+      }
+
+      if (typeof value.totalElements === 'number') {
+        return value.totalElements;
+      }
+
+      if (Array.isArray(value.content)) {
+        return value.content.length;
+      }
+    }
+
+    if (Array.isArray(value)) {
+      return value.length;
+    }
+
+    return 0;
   }
 }

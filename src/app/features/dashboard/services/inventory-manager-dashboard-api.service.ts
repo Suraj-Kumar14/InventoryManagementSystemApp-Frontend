@@ -181,6 +181,10 @@ export class InventoryManagerDashboardApiService {
           })
         )
       ),
+      warehouseCountResult: this.warehouseService.getWarehouseCount().pipe(
+        map((totalWarehouses) => ({ totalWarehouses, error: null as string | null })),
+        catchError(() => of({ totalWarehouses: null, error: 'Unable to load warehouse count' }))
+      ),
       purchaseResult: this.getPurchaseApprovalSummary().pipe(
         map((purchaseSummary) => ({ purchaseSummary, error: null as string | null })),
         catchError(() => of({ purchaseSummary: null as InventoryManagerPurchaseSummary | null, error: 'Unable to load purchase approvals' }))
@@ -206,6 +210,7 @@ export class InventoryManagerDashboardApiService {
         if (result.productResult.error) sectionErrors.products = result.productResult.error;
         if (result.stockResult.error) sectionErrors.stock = result.stockResult.error;
         if (result.warehouseResult.error) sectionErrors.warehouse = result.warehouseResult.error;
+        if (result.warehouseCountResult.error) sectionErrors.warehouse = sectionErrors.warehouse ?? result.warehouseCountResult.error;
         if (result.purchaseResult.error) sectionErrors.purchase = result.purchaseResult.error;
         if (result.movementResult.error) sectionErrors.movement = result.movementResult.error;
         if (result.alertResult.error) sectionErrors.alerts = result.alertResult.error;
@@ -215,6 +220,7 @@ export class InventoryManagerDashboardApiService {
           result.productResult.productSummary,
           result.stockResult.inventorySummary,
           result.warehouseResult.warehouseSummary,
+          result.warehouseCountResult.totalWarehouses,
           result.purchaseResult.purchaseSummary,
           result.movementResult.movementSummary,
           result.alertResult.alertSummary
@@ -247,6 +253,7 @@ export class InventoryManagerDashboardApiService {
     productSummary: InventoryManagerDashboardView['productSummary'],
     inventorySummary: InventoryManagerDashboardView['inventorySummary'],
     warehouseSummary: InventoryManagerDashboardView['warehouseSummary'],
+    warehouseCount: number | null,
     purchaseSummary: InventoryManagerDashboardView['purchaseSummary'],
     movementSummary: InventoryManagerDashboardView['movementSummary'],
     alertSummary: InventoryManagerDashboardView['alertSummary']
@@ -256,10 +263,10 @@ export class InventoryManagerDashboardApiService {
     }
 
     return {
-      totalProducts: roleDashboard?.totalProducts ?? productSummary?.totalProducts ?? 0,
+      totalProducts: productSummary?.totalProducts ?? roleDashboard?.totalProducts ?? 0,
       activeProducts: productSummary?.activeProducts ?? 0,
       inactiveProducts: productSummary?.inactiveProducts ?? 0,
-      totalWarehouses: roleDashboard?.totalWarehouses ?? warehouseSummary?.totalWarehouses ?? 0,
+      totalWarehouses: warehouseCount ?? roleDashboard?.totalWarehouses ?? warehouseSummary?.totalWarehouses ?? 0,
       totalInventoryValue: roleDashboard?.totalInventoryValue ?? inventorySummary?.totalInventoryValue ?? 0,
       totalStockQuantity: inventorySummary?.totalStockQuantity ?? 0,
       reservedQuantity: inventorySummary?.reservedQuantity ?? 0,

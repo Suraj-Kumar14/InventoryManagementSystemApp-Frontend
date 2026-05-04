@@ -24,6 +24,7 @@ describe('InventoryManagerDashboardApiService', () => {
 
   const warehouseServiceStub = {
     getWarehouseSummary: vi.fn(),
+    getWarehouseCount: vi.fn(),
     getStockSummary: vi.fn(),
     getWarehouses: vi.fn(),
   };
@@ -64,7 +65,7 @@ describe('InventoryManagerDashboardApiService', () => {
 
   function seedHappyPath() {
     reportServiceStub.getMyDashboard.mockReturnValue(of({
-      totalProducts: 50,
+      totalProducts: 0,
       totalWarehouses: 3,
       totalInventoryValue: 250000,
       lowStockCount: 4,
@@ -129,6 +130,7 @@ describe('InventoryManagerDashboardApiService', () => {
       availableCapacity: 300,
       averageUtilizationPercentage: 70,
     }));
+    warehouseServiceStub.getWarehouseCount.mockReturnValue(of(3));
     warehouseServiceStub.getStockSummary.mockReturnValue(of({
       totalStockItems: 30,
       totalQuantity: 1200,
@@ -218,7 +220,9 @@ describe('InventoryManagerDashboardApiService', () => {
 
     const view = await firstValueFrom(service.refreshDashboard());
 
+    expect(view.overview?.totalProducts).toBe(50);
     expect(view.overview?.activeProducts).toBe(45);
+    expect(view.overview?.totalWarehouses).toBe(3);
     expect(view.overview?.pendingPurchaseApprovals).toBe(3);
     expect(view.recentMovements[0]?.movementNumber).toBe('MV-11');
     expect(view.sectionErrors).toEqual({});

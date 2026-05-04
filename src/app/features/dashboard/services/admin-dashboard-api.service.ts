@@ -1,15 +1,17 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { AlertResponse } from '../../../core/http/backend.models';
+import { AlertResponse, ProductSummary } from '../../../core/http/backend.models';
 import { PaymentSummaryReportResponse } from '../../../core/http/backend.models';
 import { AdminUserService } from '../../../core/services/admin-user.service';
 import { PurchaseService } from '../../../core/services/purchase.service';
 import { PaymentService } from '../../../core/services/payment.service';
 import { ReportService } from '../../../core/services/report.service';
+import { WarehouseService } from '../../../core/services/warehouse.service';
 import { UI_CONSTANTS, UserRole } from '../../../shared/config/app-config';
 import { AlertApiService } from '../../alerts/services/alert-api.service';
 import { MovementApiService } from '../../movements/services/movement-api.service';
+import { ProductApiService } from '../../products/services/product-api.service';
 import { AdminDashboardUserSummary, AdminDashboardView, RecentActivity, ServiceHealth } from '../models/admin-dashboard.model';
 
 @Injectable({ providedIn: 'root' })
@@ -20,6 +22,8 @@ export class AdminDashboardApiService {
   private readonly adminUserService = inject(AdminUserService);
   private readonly movementApiService = inject(MovementApiService);
   private readonly purchaseService = inject(PurchaseService);
+  private readonly warehouseService = inject(WarehouseService);
+  private readonly productApiService = inject(ProductApiService);
 
   getExecutiveDashboard() {
     return this.reportService.getExecutiveDashboard();
@@ -154,6 +158,14 @@ export class AdminDashboardApiService {
         map((userSummary) => ({ userSummary, error: null as string | null })),
         catchError(() => of({ userSummary: null, error: 'Unable to load user summary' }))
       ),
+      warehouseCountResult: this.warehouseService.getWarehouseCount().pipe(
+        map((totalWarehouses) => ({ totalWarehouses, error: null as string | null })),
+        catchError(() => of({ totalWarehouses: null, error: 'Unable to load warehouse count' }))
+      ),
+      productSummaryResult: this.productApiService.getProductSummary().pipe(
+        map((productSummary) => ({ productSummary, error: null as string | null })),
+        catchError(() => of({ productSummary: null as ProductSummary | null, error: 'Unable to load product summary' }))
+      ),
       paymentSummaryResult: this.getPaymentSummary().pipe(
         map((paymentSummary) => ({ paymentSummary, error: null as string | null })),
         catchError(() => of({ paymentSummary: null, error: 'Unable to load payment summary' }))
@@ -182,12 +194,22 @@ export class AdminDashboardApiService {
           sectionErrors.alerts = result.alertSummaryResult.error ?? result.unreadResult.error ?? undefined;
         }
         if (result.userSummaryResult.error) sectionErrors.users = result.userSummaryResult.error;
+        if (result.warehouseCountResult.error) sectionErrors.executive = sectionErrors.executive ?? result.warehouseCountResult.error;
+        if (result.productSummaryResult.error) sectionErrors.executive = sectionErrors.executive ?? result.productSummaryResult.error;
         if (result.paymentSummaryResult.error) sectionErrors.payments = result.paymentSummaryResult.error;
         if (result.recentActivitiesResult.error) sectionErrors.activity = result.recentActivitiesResult.error;
         if (result.serviceHealthResult.error) sectionErrors.health = result.serviceHealthResult.error;
 
         return {
-          executive: result.executiveResult.executive,
+          executive: result.executiveResult.executive
+            ? {
+                ...result.executiveResult.executive,
+                totalProducts:
+                  result.productSummaryResult.productSummary?.totalProducts ?? result.executiveResult.executive.totalProducts ?? 0,
+                totalWarehouses:
+                  result.warehouseCountResult.totalWarehouses ?? result.executiveResult.executive.totalWarehouses ?? 0,
+              }
+            : result.executiveResult.executive,
           alertSummary: result.alertSummaryResult.alertSummary,
           unreadAlertCount: result.unreadResult.unreadAlertCount,
           userSummary: result.userSummaryResult.userSummary,

@@ -27,7 +27,7 @@ import { INDIAN_PHONE_REGEX, ROLE_LABELS, UserRole } from '../../../shared/confi
 type UserStatusFilter = 'ALL' | 'ACTIVE' | 'INACTIVE';
 type UserRoleFilter = UserRole | 'ALL';
 type UserModalMode = 'create' | 'edit';
-type LoadMode = 'initial' | 'search' | 'refresh';
+type LoadAction = 'init' | 'search' | 'refresh';
 
 function passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
   const password = control.get('password')?.value;
@@ -126,20 +126,22 @@ class UsersPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.configureUserForm('create');
-    this.loadData('initial');
+    this.loadUsers('init');
   }
 
   get isCreateMode(): boolean {
     return this.createEditModal.mode === 'create';
   }
 
-  loadData(mode: LoadMode): void {
-    this.loading = mode === 'initial';
-    this.searching = mode === 'search';
-    this.refreshing = mode === 'refresh';
+  loadUsers(action: LoadAction = 'init'): void {
+    this.loading = action === 'init';
+    this.searching = action === 'search';
+    this.refreshing = action === 'refresh';
     this.loadError = '';
 
     const filters = this.filtersForm.getRawValue();
+    console.log('loadUsers called by:', action);
+    console.log('search value:', filters);
 
     forkJoin({
       page: this.adminUserService.getUsers({
@@ -174,17 +176,34 @@ class UsersPageComponent implements OnInit {
       });
   }
 
+  onSearch(): void {
+    console.log('Search clicked');
+    this.loadUsers('search');
+  }
+
+  onRefresh(): void {
+    this.loadUsers('refresh');
+  }
+
+  onClearFilters(): void {
+    this.filtersForm.setValue({ search: '', role: 'ALL', status: 'ALL' });
+    this.loadUsers('refresh');
+  }
+
+  loadData(mode: LoadAction): void {
+    this.loadUsers(mode);
+  }
+
   applyFilters(): void {
-    this.loadData('search');
+    this.onSearch();
   }
 
   clearFilters(): void {
-    this.filtersForm.setValue({ search: '', role: 'ALL', status: 'ALL' });
-    this.loadData('search');
+    this.onClearFilters();
   }
 
   refreshUsers(): void {
-    this.loadData('refresh');
+    this.onRefresh();
   }
 
   openCreateModal(): void {
@@ -285,7 +304,7 @@ class UsersPageComponent implements OnInit {
             ? [savedUser, ...this.users]
             : this.users.map((user) => (user.userId === savedUser.userId ? savedUser : user));
           this.closeCreateEditModal();
-          this.loadData('refresh');
+          this.loadUsers('refresh');
           this.cdr.detectChanges();
         },
         error: (err) => {
@@ -334,7 +353,7 @@ class UsersPageComponent implements OnInit {
         next: () => {
           this.notifications.success('User role updated successfully.', 'Role Updated');
           this.closeRoleModal();
-          this.loadData('refresh');
+          this.loadUsers('refresh');
         },
         error: (err) => {
           this.notifications.error(err?.error?.message || 'Unable to update user role.', 'Error');
@@ -417,7 +436,7 @@ class UsersPageComponent implements OnInit {
           this.notifications.success(
             message || (user.isActive !== false ? 'User deactivated successfully.' : 'User activated successfully.')
           );
-          this.loadData('refresh');
+          this.loadUsers('refresh');
         },
         error: (err) => {
           this.notifications.error(err?.error?.message || 'Unable to update user status.', 'Error');

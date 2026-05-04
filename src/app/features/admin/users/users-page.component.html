@@ -17,7 +17,7 @@
         [label]="refreshing ? 'Refreshing...' : 'Refresh'"
         [isLoading]="refreshing"
         [disabled]="loading || searching || refreshing"
-        (clicked)="refreshUsers()"
+        (clicked)="onRefresh()"
       />
     </div>
   </div>
@@ -53,7 +53,7 @@
     </article>
   </div>
 
-  <form class="filter-card" [formGroup]="filtersForm" (ngSubmit)="applyFilters()">
+  <form class="filter-card" [formGroup]="filtersForm" (ngSubmit)="onSearch()">
     <div class="filter-grid">
       <label class="field">
         <span>Search users</span>
@@ -83,19 +83,20 @@
         [label]="searching ? 'Searching...' : 'Search'"
         [isLoading]="searching"
         [disabled]="loading || searching || refreshing"
+        (clicked)="onSearch()"
       />
       <app-button
         label="Clear Filters"
         [disabled]="loading || searching || refreshing"
         variant="secondary"
-        (clicked)="clearFilters()"
+        (clicked)="onClearFilters()"
       />
       <app-button
         [label]="refreshing ? 'Refreshing...' : 'Refresh'"
         [isLoading]="refreshing"
         [disabled]="loading || searching || refreshing"
         variant="secondary"
-        (clicked)="refreshUsers()"
+        (clicked)="onRefresh()"
       />
     </div>
   </form>
@@ -117,7 +118,7 @@
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
     <span>{{ loadError }}</span>
-    <button type="button" class="error-banner__retry" (click)="loadData('refresh')">Retry</button>
+    <button type="button" class="error-banner__retry" (click)="loadUsers('refresh')">Retry</button>
   </div>
 
   <div *ngIf="!loading && !loadError && users.length === 0" class="empty-state">

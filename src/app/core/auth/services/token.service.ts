@@ -137,7 +137,9 @@ export class TokenService {
     }
 
     try {
-      return JSON.parse(rawUser) as User;
+      const user = JSON.parse(rawUser) as User;
+      const normalizedRole = normalizeUserRole(user.role);
+      return normalizedRole ? { ...user, role: normalizedRole } : null;
     } catch {
       localStorage.removeItem(this.userKey);
       return null;

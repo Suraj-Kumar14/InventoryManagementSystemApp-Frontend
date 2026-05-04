@@ -27,10 +27,21 @@ export class JwtInterceptor implements HttpInterceptor {
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     if (this.isPublicEndpoint(req.url)) {
+      console.debug('[AUTH HEADER]', {
+        url: req.url,
+        hasToken: !!this.tokenService.getToken(),
+        attaching: false,
+      });
       return next.handle(req);
     }
 
     const token = this.tokenService.getToken();
+    console.debug('[AUTH HEADER]', {
+      url: req.url,
+      hasToken: !!token,
+      attaching: !!token,
+    });
+
     if (token) {
       req = req.clone({
         setHeaders: {

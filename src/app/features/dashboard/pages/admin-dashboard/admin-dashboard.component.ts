@@ -1,5 +1,6 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs/operators';
 import { AuthService } from '../../../../core/auth/services/auth.service';
@@ -24,6 +25,8 @@ export class AdminDashboardComponent implements OnInit {
   private readonly notifications = inject(NotificationService);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly destroyRef = inject(DestroyRef);
 
   loading = true;
   refreshing = false;
@@ -85,10 +88,14 @@ export class AdminDashboardComponent implements OnInit {
 
     this.dashboardApi
       .refreshDashboard()
-      .pipe(finalize(() => {
-        this.loading = false;
-        this.refreshing = false;
-      }))
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => {
+          this.loading = false;
+          this.refreshing = false;
+          this.syncView();
+        })
+      )
       .subscribe({
         next: (view) => {
           this.view = view;
@@ -97,10 +104,12 @@ export class AdminDashboardComponent implements OnInit {
           } else if (!initial && Object.keys(view.sectionErrors).length > 0) {
             this.notifications.warning('Some dashboard sections could not be loaded');
           }
+          this.syncView();
         },
         error: () => {
           this.view = null;
           this.notifications.error('Unable to load dashboard summary');
+          this.syncView();
         },
       });
   }
@@ -123,7 +132,14 @@ export class AdminDashboardComponent implements OnInit {
     if (!route) {
       return;
     }
+    if (route === '/admin/users') {
+      this.logUsersNavigation();
+    }
     void this.router.navigate([route]);
+  }
+
+  logUsersNavigation(): void {
+    console.log('Navigate to users clicked');
   }
 
   sectionError(key: keyof NonNullable<AdminDashboardView['sectionErrors']>): string | null {
@@ -140,5 +156,11 @@ export class AdminDashboardComponent implements OnInit {
       currency: 'INR',
       maximumFractionDigits: 0,
     }).format(value ?? 0);
+  }
+
+  private syncView(): void {
+    if (!this.destroyRef.destroyed) {
+      this.cdr.detectChanges();
+    }
   }
 }

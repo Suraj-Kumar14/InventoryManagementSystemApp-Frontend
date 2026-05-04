@@ -74,7 +74,7 @@ export class AuthService {
   private initializeAuthState(): void {
     this.tokenService.currentUser$.subscribe((user) => {
       this.currentUserSubject.next(user);
-      this.isAuthenticatedSubject.next(!!user && this.tokenService.hasValidToken());
+      this.isAuthenticatedSubject.next(this.tokenService.hasValidToken());
     });
 
     if (!this.tokenService.hasValidToken()) {
@@ -83,14 +83,12 @@ export class AuthService {
     }
 
     const restoredUser = this.tokenService.getUser() ?? this.tokenService.decodeToken();
-    if (!restoredUser) {
-      this.logoutLocal();
-      return;
+    if (restoredUser) {
+      this.currentUserSubject.next(restoredUser);
+      this.tokenService.setUser(restoredUser);
     }
 
-    this.currentUserSubject.next(restoredUser);
     this.isAuthenticatedSubject.next(true);
-    this.tokenService.setUser(restoredUser);
   }
 
   login(credentials: LoginRequest): Observable<AuthResponse> {
@@ -212,6 +210,13 @@ export class AuthService {
     }
 
     if (this.tokenService.hasValidToken()) {
+      const restoredUser = this.tokenService.getUser() ?? this.tokenService.decodeToken();
+      if (restoredUser) {
+        this.tokenService.setUser(restoredUser);
+        this.isAuthenticatedSubject.next(true);
+        return of(restoredUser);
+      }
+
       return this.refreshCurrentUser().pipe(
         catchError(() => of(null))
       );
@@ -321,8 +326,12 @@ export class AuthService {
     return this.currentUserSubject.value;
   }
 
+  getToken(): string | null {
+    return this.tokenService.getToken();
+  }
+
   isAuthenticated(): boolean {
-    return this.isAuthenticatedSubject.value && this.tokenService.hasValidToken();
+    return this.tokenService.hasValidToken();
   }
 
   hasRole(role: UserRole | UserRole[]): boolean {
@@ -331,16 +340,23 @@ export class AuthService {
       return false;
     }
 
-    if (user.role === UserRole.ADMIN) {
+    const userRole = normalizeUserRole(user.role);
+    if (!userRole) {
+      return false;
+    }
+
+    if (userRole === UserRole.ADMIN) {
       return true;
     }
 
     const requiredRoles = Array.isArray(role) ? role : [role];
-    return requiredRoles.includes(user.role);
+    return requiredRoles
+      .map((requiredRole) => normalizeUserRole(requiredRole))
+      .includes(userRole);
   }
 
   getUserRole(): UserRole | null {
-    return this.currentUserSubject.value?.role || null;
+    return normalizeUserRole(this.currentUserSubject.value?.role) || null;
   }
 
   getUserId(): number | null {

@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { TimeoutError } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 import { Product } from '../../../../core/http/backend.models';
 import { NotificationService } from '../../../../core/services/notification.service';
@@ -26,8 +28,14 @@ export class ProductEditComponent implements OnInit {
   saving = false;
 
   ngOnInit(): void {
-    this.loading = true;
     const productId = Number(this.route.snapshot.paramMap.get('id'));
+    if (!Number.isFinite(productId) || productId <= 0) {
+      this.notifications.error('Product ID is missing');
+      void this.router.navigate(['/products']);
+      return;
+    }
+
+    this.loading = true;
     this.productApi
       .getProductById(productId)
       .pipe(finalize(() => (this.loading = false)))
@@ -35,25 +43,39 @@ export class ProductEditComponent implements OnInit {
         next: (product) => {
           this.product = product;
         },
+        error: (error) => {
+          this.notifications.error(this.getErrorMessage(error) || 'Failed to load product');
+          void this.router.navigate(['/products']);
+        },
       });
   }
 
   updateProduct(payload: ProductFormPayload): void {
-    if (!this.product) {
+    if (this.saving) {
       return;
     }
+
     if ('sku' in payload) {
+      return;
+    }
+
+    const productId = this.product?.productId;
+    if (!Number.isFinite(productId) || !productId || productId <= 0) {
+      this.notifications.error('Product ID is missing');
       return;
     }
 
     this.saving = true;
     this.productApi
-      .updateProduct(this.product.productId, payload)
+      .updateProduct(productId, payload)
       .pipe(finalize(() => (this.saving = false)))
       .subscribe({
-        next: (product) => {
+        next: () => {
           this.notifications.success('Product updated successfully');
-          this.router.navigate(['/products', product.productId]);
+          void this.router.navigate(['/products']);
+        },
+        error: (error) => {
+          this.notifications.error(this.getErrorMessage(error) || 'Failed to update product');
         },
       });
   }
@@ -64,5 +86,35 @@ export class ProductEditComponent implements OnInit {
       return;
     }
     this.router.navigate(['/products']);
+  }
+
+  private getErrorMessage(error: unknown): string {
+    if (error instanceof TimeoutError) {
+      return 'Product update timed out. Please try again.';
+    }
+
+    if (error instanceof HttpErrorResponse) {
+      const backendError = error.error;
+      if (typeof backendError === 'string' && backendError.trim()) {
+        return backendError;
+      }
+      if (backendError?.message) {
+        return backendError.message;
+      }
+      if (backendError?.error) {
+        return backendError.error;
+      }
+      if (error.status === 403) {
+        return 'You are not allowed to update products';
+      }
+      if (error.status === 404) {
+        return 'Product not found';
+      }
+      if (error.status === 409) {
+        return 'SKU or barcode already exists';
+      }
+    }
+
+    return '';
   }
 }
