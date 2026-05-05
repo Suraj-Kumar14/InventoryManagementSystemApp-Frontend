@@ -63,11 +63,11 @@ export class AdminDashboardComponent implements OnInit {
       { title: 'Inventory Value', value: this.formatCurrency(executive.totalInventoryValue), subtitle: 'Current stock valuation', icon: 'bi bi-cash-stack', route: '/reports/inventory/valuation' },
       { title: 'Low Stock Items', value: executive.lowStockCount, subtitle: 'Needs replenishment', icon: 'bi bi-exclamation-triangle', route: '/reports/inventory/low-stock', severity: 'warning' },
       { title: 'Overstock Items', value: executive.overstockCount, subtitle: 'Above max level', icon: 'bi bi-boxes', route: '/reports/inventory/overstock' },
-      { title: 'Pending PO Approvals', value: executive.pendingPurchaseApprovals, subtitle: 'Waiting for action', icon: 'bi bi-hourglass-split', route: '/purchase-orders' },
-      { title: 'Overdue Purchase Orders', value: executive.overduePurchaseOrders, subtitle: 'Delayed inbound supply', icon: 'bi bi-calendar-x', route: '/reports/purchase/summary', severity: 'warning' },
+      { title: 'Pending PO Approvals', value: executive.pendingPurchaseApprovals, subtitle: 'Waiting for action', icon: 'bi bi-hourglass-split', route: '/purchase-orders/approvals' },
+      { title: 'Overdue Purchase Orders', value: executive.overduePurchaseOrders, subtitle: 'Delayed inbound supply', icon: 'bi bi-calendar-x', route: '/purchase-orders?overdueOnly=true', severity: 'warning' },
       { title: 'Total Purchase Value', value: this.formatCurrency(executive.totalPurchaseValue), subtitle: 'Procurement spend window', icon: 'bi bi-receipt', route: '/reports/purchase/summary' },
-      { title: 'Total Paid Amount', value: this.formatCurrency(executive.totalPaidAmount), subtitle: 'Released payments', icon: 'bi bi-credit-card-2-front', route: '/payments' },
-      { title: 'Active Users', value: activeUsers, subtitle: 'Currently enabled accounts', icon: 'bi bi-people-fill', route: '/admin/users' },
+      { title: 'Total Paid Amount', value: this.formatCurrency(executive.totalPaidAmount), subtitle: 'Released payments', icon: 'bi bi-credit-card-2-front', route: '/payments?status=PAID' },
+      { title: 'Active Users', value: activeUsers, subtitle: 'Currently enabled accounts', icon: 'bi bi-people-fill', route: '/admin/users?status=ACTIVE' },
     ];
   }
 
@@ -132,7 +132,7 @@ export class AdminDashboardComponent implements OnInit {
     if (!route) {
       return;
     }
-    void this.router.navigate([route]);
+    void this.router.navigateByUrl(route);
   }
 
   sectionError(key: keyof NonNullable<AdminDashboardView['sectionErrors']>): string | null {

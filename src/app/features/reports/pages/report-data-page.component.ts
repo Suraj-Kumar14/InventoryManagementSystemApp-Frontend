@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 import {
@@ -59,7 +59,15 @@ interface ReportColumn {
       <app-report-filter
         [loading]="loading"
         [showSupplier]="kind.includes('supplier') || kind.includes('purchase') || kind.includes('payment')"
+        [initialFilters]="filters"
         (filtersChange)="applyFilters($event)"
+      />
+
+      <app-report-empty-state
+        *ngIf="dashboardFilterLabel"
+        class="toolbar"
+        title="Dashboard filter applied"
+        [message]="dashboardFilterLabel"
       />
 
       <app-report-export-buttons
@@ -220,6 +228,7 @@ interface ReportColumn {
 })
 export class ReportDataPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly reportService = inject(ReportService);
   private readonly notifications = inject(NotificationService);
 
@@ -238,8 +247,10 @@ export class ReportDataPageComponent implements OnInit {
   rows: Record<string, unknown>[] = [];
   pageMeta: PageResponse<unknown> | null = null;
   permissionMessage: string | null = null;
+  dashboardFilterLabel: string | null = null;
 
   ngOnInit(): void {
+    this.applyDashboardQueryParams();
     this.load();
   }
 
@@ -249,11 +260,13 @@ export class ReportDataPageComponent implements OnInit {
       this.notifications.error('Invalid date range');
       return;
     }
+    this.syncQueryParams();
     this.load();
   }
 
   goToPage(page: number): void {
     this.filters = { ...this.filters, page };
+    this.syncQueryParams();
     this.load();
   }
 
@@ -380,6 +393,7 @@ export class ReportDataPageComponent implements OnInit {
         break;
       case 'stock-summary':
         this.applyStockSummary(data as InventoryReportSummaryResponse);
+        this.applyClientSideFilter();
         break;
       case 'product-stock':
         this.applyPage(data as PageResponse<ProductValuationItem>, [
@@ -390,6 +404,7 @@ export class ReportDataPageComponent implements OnInit {
           { key: 'unitCost', label: 'Unit Cost', type: 'currency' },
           { key: 'totalValue', label: 'Total Value', type: 'currency' },
         ]);
+        this.applyClientSideFilter();
         break;
       case 'warehouse-stock':
         this.applyPage(data as PageResponse<WarehouseValuationItem>, [
@@ -576,5 +591,56 @@ export class ReportDataPageComponent implements OnInit {
   private applyRows<T>(rows: T[], columns: ReportColumn[]): void {
     this.columns = columns;
     this.rows = rows as unknown as Record<string, unknown>[];
+  }
+
+  private applyDashboardQueryParams(): void {
+    const queryParams = this.route.snapshot.queryParamMap;
+    const period = queryParams.get('period');
+    const warehouseId = queryParams.get('warehouseId');
+    const productId = queryParams.get('productId');
+    const supplierId = queryParams.get('supplierId');
+    const fromDate = queryParams.get('fromDate');
+    const toDate = queryParams.get('toDate');
+    const filter = queryParams.get('filter');
+
+    this.filters = {
+      ...this.filters,
+      period: (period as ReportFilter['period']) ?? this.filters.period,
+      warehouseId: warehouseId ? Number(warehouseId) : undefined,
+      productId: productId ? Number(productId) : undefined,
+      supplierId: supplierId ? Number(supplierId) : undefined,
+      fromDate: fromDate || undefined,
+      toDate: toDate || undefined,
+    };
+
+    this.dashboardFilterLabel =
+      filter === 'out-of-stock'
+        ? 'Showing only products with zero quantity from the product stock report.'
+        : null;
+  }
+
+  private syncQueryParams(): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        period: this.filters.period ?? null,
+        warehouseId: this.filters.warehouseId ?? null,
+        productId: this.filters.productId ?? null,
+        supplierId: this.filters.supplierId ?? null,
+        fromDate: this.filters.fromDate ?? null,
+        toDate: this.filters.toDate ?? null,
+        page: this.filters.page ? this.filters.page : null,
+        filter: this.route.snapshot.queryParamMap.get('filter') ?? null,
+      },
+      queryParamsHandling: '',
+      replaceUrl: true,
+    });
+  }
+
+  private applyClientSideFilter(): void {
+    const filter = this.route.snapshot.queryParamMap.get('filter');
+    if (filter === 'out-of-stock') {
+      this.rows = this.rows.filter((row) => Number(row['quantity'] ?? row['availableQuantity'] ?? -1) === 0);
+    }
   }
 }

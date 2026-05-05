@@ -57,7 +57,7 @@ export class SupplierFormComponent implements OnChanges {
   }
 
   submit(): void {
-    if (this.readOnly) {
+    if (this.readOnly || this.loading) {
       return;
     }
 

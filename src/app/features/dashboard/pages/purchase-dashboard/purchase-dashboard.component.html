@@ -71,23 +71,23 @@
           </div>
         </div>
 
-        <div class="metrics-inline" *ngIf="dashboard.overview as overview">
-          <article>
+        <div class="metrics-inline metrics-inline--clickable" *ngIf="dashboard.overview as overview">
+          <button type="button" (click)="openRoute('/purchase-orders?status=DRAFT')">
             <span>Draft POs</span>
             <strong>{{ overview.draftPurchaseOrders }}</strong>
-          </article>
-          <article>
+          </button>
+          <button type="button" (click)="openRoute('/purchase-orders?status=PENDING_APPROVAL')">
             <span>Pending approval</span>
             <strong>{{ overview.pendingApprovalPurchaseOrders }}</strong>
-          </article>
-          <article>
+          </button>
+          <button type="button" (click)="openRoute('/purchase-orders?status=APPROVED')">
             <span>Approved awaiting receipt</span>
             <strong>{{ overview.approvedAwaitingReceiptPurchaseOrders }}</strong>
-          </article>
-          <article>
+          </button>
+          <button type="button" (click)="openRoute('/purchase-orders?overdueOnly=true')">
             <span>Overdue receipts</span>
             <strong>{{ overview.overduePurchaseOrders }}</strong>
-          </article>
+          </button>
         </div>
 
         <div class="list" *ngIf="dashboard.recentPurchaseOrders.length; else purchaseEmpty">
@@ -123,14 +123,14 @@
         </div>
 
         <div class="metric-list" *ngIf="dashboard.overview as overview; else suppliersEmpty">
-          <article class="metric-row">
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/suppliers?isActive=true')">
             <span>Active suppliers</span>
             <strong>{{ overview.activeSuppliers }}</strong>
-          </article>
-          <article class="metric-row">
+          </button>
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/suppliers?isActive=false')">
             <span>Inactive suppliers</span>
             <strong>{{ overview.inactiveSuppliers }}</strong>
-          </article>
+          </button>
           <article class="metric-row">
             <span>Average rating</span>
             <strong>{{ overview.averageSupplierRating | number:'1.1-1' }}</strong>
@@ -206,14 +206,14 @@
         </div>
 
         <div class="metric-list" *ngIf="dashboard.overview as overview; else paymentEmpty">
-          <article class="metric-row">
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/payments?status=PENDING_APPROVAL')">
             <span>Pending payments</span>
             <strong>{{ overview.pendingPayments }}</strong>
-          </article>
-          <article class="metric-row">
+          </button>
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/payments?status=APPROVED')">
             <span>Approved payments</span>
             <strong>{{ overview.approvedPayments }}</strong>
-          </article>
+          </button>
           <article class="metric-row">
             <span>Paid amount</span>
             <strong>{{ overview.paidAmount | currency:'INR':'symbol':'1.0-0' }}</strong>
@@ -256,18 +256,18 @@
         </div>
 
         <div class="metric-list" *ngIf="dashboard.alertSummary as alerts; else alertsEmpty">
-          <article class="metric-row">
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/alerts?quick=unread')">
             <span>Unread alerts</span>
             <strong>{{ alerts.unreadCount }}</strong>
-          </article>
-          <article class="metric-row">
+          </button>
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/alerts?type=PO_OVERDUE_RECEIPT')">
             <span>Overdue PO alerts</span>
             <strong>{{ alerts.overduePoCount }}</strong>
-          </article>
-          <article class="metric-row">
+          </button>
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/alerts?severity=CRITICAL&quick=critical')">
             <span>Critical alerts</span>
             <strong>{{ alerts.criticalCount }}</strong>
-          </article>
+          </button>
           <article class="metric-row">
             <span>Supplier-related alerts</span>
             <strong>{{ alerts.warningCount + alerts.criticalCount }}</strong>

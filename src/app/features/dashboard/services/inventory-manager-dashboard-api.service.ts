@@ -15,7 +15,6 @@ import {
   InventoryManagerDashboardView,
   InventoryManagerInventorySummary,
   InventoryManagerPurchaseSummary,
-  ProductCategorySummary,
   RecentMovement,
   WarehouseUtilization,
 } from '../models/inventory-manager-dashboard.model';
@@ -38,24 +37,16 @@ export class InventoryManagerDashboardApiService {
     return this.productApiService.getProductSummary();
   }
 
-  getRecentProducts() {
-    return this.productApiService.getProducts({ page: 0, size: 5, sortBy: 'updatedAt', sortDir: 'desc' }).pipe(
-      map((page) => page.content ?? [])
-    );
-  }
-
   getInventorySummary(): Observable<{
     inventorySummary: InventoryManagerInventorySummary;
-    productCategorySummary: ProductCategorySummary[];
   }> {
     return forkJoin({
       valuation: this.api.get<InventoryValuationReportResponse>(API_ENDPOINTS.REPORTS.INVENTORY_VALUATION, {
         headers: { 'X-Skip-Global-Error': 'true' },
       }),
       stockSummary: this.reportService.getStockSummary(),
-      products: this.productApiService.getProducts({ page: 0, size: 200, sortBy: 'updatedAt', sortDir: 'desc' }),
     }).pipe(
-      map(({ valuation, stockSummary, products }) => ({
+      map(({ valuation, stockSummary }) => ({
         inventorySummary: {
           totalInventoryValue: valuation.totalInventoryValue,
           totalStockQuantity: stockSummary.totalStockQuantity,
@@ -65,7 +56,6 @@ export class InventoryManagerDashboardApiService {
           overstockCount: stockSummary.overstockCount,
           outOfStockCount: stockSummary.outOfStockCount,
         },
-        productCategorySummary: this.buildCategorySummary(products.content ?? [], valuation.valuationByCategory),
       }))
     );
   }
@@ -150,17 +140,15 @@ export class InventoryManagerDashboardApiService {
       ),
       productResult: forkJoin({
         productSummary: this.getProductSummary(),
-        recentProducts: this.getRecentProducts(),
       }).pipe(
-        map(({ productSummary, recentProducts }) => ({ productSummary, recentProducts, error: null as string | null })),
-        catchError(() => of({ productSummary: null as ProductSummary | null, recentProducts: [] as Product[], error: 'Unable to load product summary' }))
+        map(({ productSummary }) => ({ productSummary, error: null as string | null })),
+        catchError(() => of({ productSummary: null as ProductSummary | null, error: 'Unable to load product summary' }))
       ),
       stockResult: this.getInventorySummary().pipe(
-        map(({ inventorySummary, productCategorySummary }) => ({ inventorySummary, productCategorySummary, error: null as string | null })),
+        map(({ inventorySummary }) => ({ inventorySummary, error: null as string | null })),
         catchError(() =>
           of({
             inventorySummary: null as InventoryManagerInventorySummary | null,
-            productCategorySummary: [] as ProductCategorySummary[],
             error: 'Unable to load stock health',
           })
         )
@@ -238,9 +226,8 @@ export class InventoryManagerDashboardApiService {
           alertSummary: result.alertResult.alertSummary,
           recentAlerts: result.alertResult.recentAlerts,
           recentMovements: result.movementResult.recentMovements,
-          recentProducts: result.productResult.recentProducts,
+          recentProducts: [] as Product[],
           warehouseUtilization: result.warehouseResult.warehouseUtilization,
-          productCategorySummary: result.stockResult.productCategorySummary,
           sectionErrors,
           generatedAt: new Date().toISOString(),
         };
@@ -306,19 +293,4 @@ export class InventoryManagerDashboardApiService {
     };
   }
 
-  private buildCategorySummary(products: Product[], valuationByCategory: Record<string, number>): ProductCategorySummary[] {
-    const productCountByCategory = products.reduce<Record<string, number>>((acc, product) => {
-      acc[product.category] = (acc[product.category] ?? 0) + 1;
-      return acc;
-    }, {});
-
-    return Object.entries(valuationByCategory)
-      .map(([category, stockValue]) => ({
-        category,
-        productCount: productCountByCategory[category] ?? 0,
-        stockValue,
-      }))
-      .sort((left, right) => right.stockValue - left.stockValue)
-      .slice(0, 4);
-  }
 }

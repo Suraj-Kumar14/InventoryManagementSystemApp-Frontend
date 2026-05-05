@@ -96,9 +96,7 @@ describe('InventoryDashboardComponent', () => {
       recentMovements: [
         { movementId: 11, movementNumber: 'MV-11', productName: 'Item 1', warehouseName: 'Main', movementType: 'TRANSFER OUT', quantity: 3, movementDate: '2026-05-01T09:00:00Z', route: '/movements/11' },
       ],
-      recentProducts: [
-        { productId: 1, sku: 'SKU1', name: 'Item 1', category: 'Electronics', unitOfMeasure: 'EA', costPrice: 1, sellingPrice: 2, reorderLevel: 1, maxStockLevel: 10, leadTimeDays: 2, isActive: true, updatedAt: '2026-05-01T10:00:00Z' },
-      ],
+      recentProducts: [],
       warehouseUtilization: [
         { warehouseId: 1, warehouseName: 'Main', capacity: 500, usedCapacity: 350, utilizationPercent: 70, route: '/movements/warehouse/1' },
       ],
@@ -130,6 +128,9 @@ describe('InventoryDashboardComponent', () => {
     expect(text).toContain('Welcome back, Manager');
     expect(text).toContain('Operational snapshot');
     expect(text.match(/Total Products/g)?.length).toBe(1);
+    expect(text).toContain('Manage Products');
+    expect(text).toContain('Barcode Lookup');
+    expect(text).not.toContain('Item 1');
   });
 
   it('should not show admin-only widgets or purchase-officer-only create PO form', () => {

@@ -59,7 +59,7 @@
 .list-item p,
 .warehouse-card p,
 .shortcut-card span,
-.category-chip small {
+.action-shortcut-card span {
   color: var(--color-text-muted);
 }
 
@@ -96,10 +96,10 @@
 }
 
 .kpi-grid,
-.category-grid,
 .warehouse-grid,
 .shortcut-card-grid,
-.panel-grid {
+.panel-grid,
+.product-action-grid {
   display: grid;
   gap: 1rem;
 }
@@ -155,8 +155,8 @@
 .metric-row,
 .list-item,
 .warehouse-card,
-.category-chip,
 .shortcut-card,
+.action-shortcut-card,
 .metrics-inline article {
   border-radius: 18px;
   padding: 0.95rem 1rem;
@@ -173,10 +173,28 @@
   gap: 1rem;
 }
 
+.metric-row--button {
+  width: 100%;
+  border: 1px solid #e1eaf5;
+  cursor: pointer;
+  text-align: left;
+  transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.metric-row--button:hover,
+.metric-row--button:focus-visible,
+.shortcut-card:focus-visible,
+.action-shortcut-card:focus-visible,
+.kpi-button:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(13, 116, 184, 0.28);
+  box-shadow: var(--shadow-sm);
+  outline: none;
+}
+
 .metric-row span,
 .list-item strong,
 .warehouse-card__head strong,
-.category-chip strong,
 .metrics-inline strong {
   color: var(--color-text);
 }
@@ -215,15 +233,15 @@
   font-size: 1.18rem;
 }
 
-.category-grid,
 .warehouse-grid,
-.shortcut-card-grid {
+.shortcut-card-grid,
+.product-action-grid {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
-.category-chip,
 .warehouse-card,
-.shortcut-card {
+.shortcut-card,
+.action-shortcut-card {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -252,7 +270,8 @@
 }
 
 .list-item strong,
-.shortcut-card strong {
+.shortcut-card strong,
+.action-shortcut-card strong {
   display: block;
 }
 
@@ -287,20 +306,37 @@
 }
 
 .shortcut-list a,
-.shortcut-card {
+.shortcut-card,
+.action-shortcut-card {
   color: var(--color-success);
   text-decoration: none;
   font-weight: 700;
 }
 
-.shortcut-card {
+.shortcut-card,
+.action-shortcut-card {
   gap: 0.35rem;
   transition: transform var(--transition-fast), border-color var(--transition-fast);
 }
 
-.shortcut-card:hover {
+.shortcut-card:hover,
+.action-shortcut-card:hover {
   transform: translateY(-2px);
   border-color: rgba(13, 116, 184, 0.28);
+}
+
+.product-action-grid {
+  margin-top: 1rem;
+}
+
+.action-shortcut-card {
+  min-height: 120px;
+  box-shadow: var(--shadow-sm);
+}
+
+.action-shortcut-card strong {
+  color: var(--color-text);
+  font-size: 0.98rem;
 }
 
 @media (max-width: 1100px) {

@@ -1,4 +1,4 @@
-import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
@@ -15,7 +15,7 @@ import { InventoryManagerDashboardView, InventoryManagerKpiCard } from '../../mo
 @Component({
   selector: 'app-inventory-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, CurrencyPipe, DatePipe, ButtonComponent, SkeletonLoaderComponent, ReportKpiCardComponent, ReportEmptyStateComponent],
+  imports: [CommonModule, RouterLink, DatePipe, ButtonComponent, SkeletonLoaderComponent, ReportKpiCardComponent, ReportEmptyStateComponent],
   templateUrl: './inventory-dashboard.component.html',
   styleUrls: ['./inventory-dashboard.component.css'],
 })
@@ -50,12 +50,12 @@ export class InventoryDashboardComponent implements OnInit {
 
     return [
       { title: 'Total Products', value: overview.totalProducts, subtitle: 'Catalog footprint', icon: 'bi bi-box-seam', route: '/products' },
-      { title: 'Active Products', value: overview.activeProducts, subtitle: 'Ready for operations', icon: 'bi bi-check-circle', route: '/products' },
+      { title: 'Active Products', value: overview.activeProducts, subtitle: 'Ready for operations', icon: 'bi bi-check-circle', route: '/products?status=active' },
       { title: 'Total Warehouses', value: overview.totalWarehouses, subtitle: 'Visible storage nodes', icon: 'bi bi-building', route: '/warehouses' },
       { title: 'Inventory Value', value: this.formatCurrency(overview.totalInventoryValue), subtitle: 'Current stock valuation', icon: 'bi bi-cash-stack', route: '/reports/inventory/valuation' },
       { title: 'Low Stock Items', value: overview.lowStockCount, subtitle: 'Needs replenishment', icon: 'bi bi-exclamation-triangle', route: '/reports/inventory/low-stock', severity: 'warning' },
       { title: 'Overstock Items', value: overview.overstockCount, subtitle: 'Above max threshold', icon: 'bi bi-boxes', route: '/reports/inventory/overstock' },
-      { title: 'Out of Stock Items', value: overview.outOfStockCount, subtitle: 'Unavailable now', icon: 'bi bi-slash-circle', route: '/reports/inventory/stock-summary', severity: 'critical' },
+      { title: 'Out of Stock Items', value: overview.outOfStockCount, subtitle: 'Unavailable now', icon: 'bi bi-slash-circle', route: '/reports/inventory/product-stock?filter=out-of-stock', severity: 'critical' },
       { title: 'Pending PO Approvals', value: overview.pendingPurchaseApprovals, subtitle: 'Waiting for manager action', icon: 'bi bi-hourglass-split', route: '/purchase-orders/approvals' },
     ];
   }
@@ -66,10 +66,6 @@ export class InventoryDashboardComponent implements OnInit {
 
   get criticalAlerts() {
     return (this.view?.recentAlerts ?? []).filter((alert) => alert.severity === 'CRITICAL').slice(0, 3);
-  }
-
-  get categorySummary() {
-    return this.view?.productCategorySummary ?? [];
   }
 
   load(initial = false): void {
@@ -145,8 +141,31 @@ export class InventoryDashboardComponent implements OnInit {
       return;
     }
 
-    void this.router.navigate([route]);
+    void this.router.navigateByUrl(route);
   }
+
+  readonly productShortcuts = [
+    {
+      title: 'Manage Products',
+      description: 'Open the complete product catalog and maintenance page.',
+      route: '/products',
+    },
+    {
+      title: 'Add Product',
+      description: 'Create a new product without leaving the manager workflow.',
+      route: '/products/create',
+    },
+    {
+      title: 'Barcode Lookup',
+      description: 'Find products quickly using existing barcode lookup tools.',
+      route: '/products/barcode-lookup',
+    },
+    {
+      title: 'Product Reports',
+      description: 'Open the product stock report for category and stock analysis.',
+      route: '/reports/inventory/product-stock',
+    },
+  ];
 
   sectionError(key: keyof NonNullable<InventoryManagerDashboardView['sectionErrors']>): string | null {
     return this.view?.sectionErrors[key] ?? null;

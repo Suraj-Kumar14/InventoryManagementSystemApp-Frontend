@@ -169,6 +169,33 @@
   gap: 1rem;
 }
 
+.metric-row--button,
+.metrics-inline--clickable button {
+  width: 100%;
+  border: 1px solid #e1eaf5;
+  cursor: pointer;
+  text-align: left;
+  transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.metrics-inline--clickable button {
+  border-radius: 18px;
+  padding: 0.95rem 1rem;
+  background: linear-gradient(180deg, #fff8ec 0%, #ffffff 100%);
+}
+
+.metric-row--button:hover,
+.metric-row--button:focus-visible,
+.metrics-inline--clickable button:hover,
+.metrics-inline--clickable button:focus-visible,
+.shortcut-card:focus-visible,
+.kpi-button:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(185, 115, 22, 0.32);
+  box-shadow: var(--shadow-sm);
+  outline: none;
+}
+
 .metric-row span,
 .metrics-inline span {
   color: var(--color-text-muted);

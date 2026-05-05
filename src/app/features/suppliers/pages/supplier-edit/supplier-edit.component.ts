@@ -34,14 +34,17 @@ export class SupplierEditComponent implements OnInit {
   }
 
   save(request: UpdateSupplierRequest): void {
-    if (!this.supplier) {
+    if (!this.supplier || this.saving) {
       return;
     }
     this.saving = true;
     this.supplierApi.updateSupplier(this.supplier.supplierId, request).pipe(finalize(() => (this.saving = false))).subscribe({
       next: (supplier) => {
         this.notifications.success('Supplier updated successfully');
-        this.router.navigate(['/suppliers', supplier.supplierId]);
+        void this.router.navigate(['/suppliers', supplier.supplierId]);
+      },
+      error: () => {
+        this.notifications.error('Failed to save supplier. Please try again.');
       },
     });
   }

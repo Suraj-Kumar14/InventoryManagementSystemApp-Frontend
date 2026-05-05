@@ -25,6 +25,10 @@ describe('ProductListComponent', () => {
         leadTimeDays: 7,
         barcode: 'BAR-001',
         isActive: true,
+        createdByUserId: 10,
+        createdByName: 'Manager A',
+        createdByEmail: 'manager.a@test.com',
+        canModify: true,
       },
     ],
     totalElements: 1,
@@ -59,6 +63,8 @@ describe('ProductListComponent', () => {
   };
   let authServiceStub: {
     hasRole: ReturnType<typeof vi.fn>;
+    getCurrentUser: ReturnType<typeof vi.fn>;
+    getUserRole: ReturnType<typeof vi.fn>;
   };
 
   function createComponent(role: UserRole) {
@@ -66,6 +72,7 @@ describe('ProductListComponent', () => {
       const roles = Array.isArray(required) ? required : [required];
       return role === UserRole.ADMIN ? true : roles.includes(role);
     });
+    authServiceStub.getUserRole.mockReturnValue(role);
 
     fixture = TestBed.createComponent(ProductListComponent);
     component = fixture.componentInstance;
@@ -86,6 +93,13 @@ describe('ProductListComponent', () => {
 
     authServiceStub = {
       hasRole: vi.fn(),
+      getCurrentUser: vi.fn().mockReturnValue({
+        userId: 10,
+        name: 'Manager A',
+        email: 'manager.a@test.com',
+        role: UserRole.MANAGER,
+      }),
+      getUserRole: vi.fn().mockReturnValue(UserRole.MANAGER),
     };
 
     await TestBed.configureTestingModule({
@@ -126,6 +140,20 @@ describe('ProductListComponent', () => {
 
     expect(component.canManage).toBe(false);
     expect(component.canDelete).toBe(false);
+  });
+
+  it('should show view only for products the manager cannot modify', () => {
+    productApiStub.getProducts.mockReturnValue(
+      of({
+        ...productPage,
+        content: [{ ...productPage.content[0], canModify: false, createdByUserId: 20 }],
+      })
+    );
+
+    createComponent(UserRole.MANAGER);
+
+    expect(component.canModifyProduct(component.products[0])).toBe(false);
+    expect(fixture.nativeElement.textContent).toContain('View only');
   });
 
   it('should show empty state', () => {

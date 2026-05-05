@@ -161,7 +161,7 @@ export class WarehouseDashboardComponent implements OnInit {
       return;
     }
 
-    void this.router.navigate([route]);
+    void this.router.navigateByUrl(route);
   }
 
   acknowledgeAlert(alert: RecentAlert): void {

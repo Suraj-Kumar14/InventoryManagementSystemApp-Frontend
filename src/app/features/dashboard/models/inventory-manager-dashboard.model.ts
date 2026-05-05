@@ -80,12 +80,6 @@ export interface WarehouseUtilization {
   route: string;
 }
 
-export interface ProductCategorySummary {
-  category: string;
-  productCount: number;
-  stockValue: number;
-}
-
 export interface InventoryManagerInventorySummary {
   totalInventoryValue: number;
   totalStockQuantity: number;
@@ -116,7 +110,6 @@ export interface InventoryManagerDashboardView {
   recentMovements: RecentMovement[];
   recentProducts: Product[];
   warehouseUtilization: WarehouseUtilization[];
-  productCategorySummary: ProductCategorySummary[];
   sectionErrors: Partial<Record<InventoryManagerDashboardSectionKey, string>>;
   generatedAt: string;
 }

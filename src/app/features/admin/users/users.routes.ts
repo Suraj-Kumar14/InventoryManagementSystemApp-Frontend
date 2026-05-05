@@ -8,7 +8,7 @@ import {
   inject,
 } from '@angular/core';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
-import { Routes } from '@angular/router';
+import { ActivatedRoute, Router, Routes } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 import { roleGuard } from '../../../core/guards/role.guard';
@@ -55,6 +55,8 @@ class UsersPageComponent implements OnInit {
   private readonly adminUserService = inject(AdminUserService);
   private readonly authService = inject(AuthService);
   private readonly notifications = inject(NotificationService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   readonly filtersForm = this.fb.nonNullable.group({
     search: [''],
@@ -125,6 +127,7 @@ class UsersPageComponent implements OnInit {
   ];
 
   ngOnInit(): void {
+    this.applyDashboardQueryParams();
     this.configureUserForm('create');
     this.loadUsers('init');
   }
@@ -178,6 +181,7 @@ class UsersPageComponent implements OnInit {
 
   onSearch(): void {
     console.log('Search clicked');
+    this.syncQueryParams();
     this.loadUsers('search');
   }
 
@@ -187,6 +191,7 @@ class UsersPageComponent implements OnInit {
 
   onClearFilters(): void {
     this.filtersForm.setValue({ search: '', role: 'ALL', status: 'ALL' });
+    this.syncQueryParams();
     this.loadUsers('refresh');
   }
 
@@ -309,7 +314,7 @@ class UsersPageComponent implements OnInit {
         },
         error: (err) => {
           console.error('Admin user save failed', err);
-          this.notifications.error(err?.error?.message || 'Unable to save user changes.', 'Error');
+          this.notifications.error(this.extractErrorMessage(err), 'Error');
         },
       });
   }
@@ -505,6 +510,53 @@ class UsersPageComponent implements OnInit {
       warehouseStaffCount: 0,
       recentLoginCount: 0,
     };
+  }
+
+  private extractErrorMessage(error: unknown): string {
+    const httpError = error as {
+      error?: { message?: string; error?: string } | Record<string, string> | string;
+      message?: string;
+    };
+
+    if (typeof httpError?.error === 'string') {
+      return httpError.error;
+    }
+
+    if (typeof httpError?.error === 'object' && httpError.error) {
+      return httpError.error.message
+        ?? httpError.error.error
+        ?? Object.values(httpError.error).find((value): value is string => typeof value === 'string')
+        ?? 'Something went wrong';
+    }
+
+    return httpError?.message || 'Something went wrong';
+  }
+
+  private applyDashboardQueryParams(): void {
+    const queryParams = this.route.snapshot.queryParamMap;
+    const status = queryParams.get('status');
+    const role = queryParams.get('role');
+    const search = queryParams.get('search');
+
+    this.filtersForm.patchValue({
+      search: search ?? '',
+      role: (role as UserRoleFilter) ?? 'ALL',
+      status: (status as UserStatusFilter) ?? 'ALL',
+    });
+  }
+
+  private syncQueryParams(): void {
+    const raw = this.filtersForm.getRawValue();
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        search: raw.search || null,
+        role: raw.role !== 'ALL' ? raw.role : null,
+        status: raw.status !== 'ALL' ? raw.status : null,
+      },
+      queryParamsHandling: '',
+      replaceUrl: true,
+    });
   }
 }
 

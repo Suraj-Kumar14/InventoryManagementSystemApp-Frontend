@@ -26,7 +26,6 @@ export class ProductDetailComponent implements OnInit {
 
   readonly canManage = this.authService.hasRole([UserRole.ADMIN, UserRole.MANAGER]);
   readonly canDelete = this.authService.hasRole(UserRole.ADMIN);
-
   product: Product | null = null;
   loading = false;
   actionLoading = false;

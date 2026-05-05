@@ -22,20 +22,28 @@
       </span>
     </div>
 
-    <p class="product-card__description">{{ product.description || 'No product description available.' }}</p>
+    <p class="product-card__description">
+      {{ product.description || 'No product description available.' }}
+    </p>
 
     <div class="product-card__grid">
       <div><strong>Barcode:</strong> {{ product.barcode || 'Not set' }}</div>
       <div><strong>Category:</strong> {{ product.category }}</div>
       <div><strong>Brand:</strong> {{ product.brand || 'Not set' }}</div>
       <div><strong>Unit:</strong> {{ product.unitOfMeasure }}</div>
-      <div><strong>Cost Price:</strong> {{ product.costPrice | number:'1.2-2' }}</div>
-      <div><strong>Selling Price:</strong> {{ product.sellingPrice | number:'1.2-2' }}</div>
+      <div><strong>Cost Price:</strong> {{ product.costPrice | number: '1.2-2' }}</div>
+      <div><strong>Selling Price:</strong> {{ product.sellingPrice | number: '1.2-2' }}</div>
       <div><strong>Reorder Level:</strong> {{ product.reorderLevel }}</div>
       <div><strong>Max Stock:</strong> {{ product.maxStockLevel }}</div>
       <div><strong>Lead Time:</strong> {{ product.leadTimeDays }} days</div>
-      <div><strong>Created:</strong> {{ product.createdAt ? (product.createdAt | date:'medium') : 'N/A' }}</div>
-      <div><strong>Updated:</strong> {{ product.updatedAt ? (product.updatedAt | date:'medium') : 'N/A' }}</div>
+      <div>
+        <strong>Created:</strong>
+        {{ product.createdAt ? (product.createdAt | date: 'medium') : 'N/A' }}
+      </div>
+      <div>
+        <strong>Updated:</strong>
+        {{ product.updatedAt ? (product.updatedAt | date: 'medium') : 'N/A' }}
+      </div>
     </div>
   </div>
 </section>

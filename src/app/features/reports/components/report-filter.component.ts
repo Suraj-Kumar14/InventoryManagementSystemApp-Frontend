@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ReportFilter, ReportPeriod } from '../../../core/http/backend.models';
 
@@ -92,13 +92,14 @@ import { ReportFilter, ReportPeriod } from '../../../core/http/backend.models';
     `,
   ],
 })
-export class ReportFilterComponent {
+export class ReportFilterComponent implements OnChanges {
   private readonly fb = inject(FormBuilder);
 
   @Input() loading = false;
   @Input() showWarehouse = true;
   @Input() showProduct = true;
   @Input() showSupplier = false;
+  @Input() initialFilters: ReportFilter | null = null;
   @Output() filtersChange = new EventEmitter<ReportFilter>();
 
   readonly periods: ReportPeriod[] = ['LAST_7_DAYS', 'LAST_30_DAYS', 'THIS_MONTH', 'LAST_MONTH', 'CUSTOM', 'TODAY'];
@@ -110,6 +111,22 @@ export class ReportFilterComponent {
     productId: this.fb.control<number | null>(null),
     supplierId: this.fb.control<number | null>(null),
   });
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['initialFilters'] && this.initialFilters) {
+      this.form.patchValue(
+        {
+          period: this.initialFilters.period ?? 'LAST_30_DAYS',
+          fromDate: this.initialFilters.fromDate ?? null,
+          toDate: this.initialFilters.toDate ?? null,
+          warehouseId: this.initialFilters.warehouseId ?? null,
+          productId: this.initialFilters.productId ?? null,
+          supplierId: this.initialFilters.supplierId ?? null,
+        },
+        { emitEvent: false }
+      );
+    }
+  }
 
   apply(): void {
     const value = this.form.getRawValue();

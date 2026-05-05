@@ -49,13 +49,13 @@ export class PurchaseDashboardComponent implements OnInit {
     const overview = this.view.overview;
     const cards: PurchaseOfficerKpiCard[] = [
       { title: 'Total Purchase Orders', value: overview.totalPurchaseOrders, subtitle: 'Current procurement pipeline', icon: 'bi bi-cart3', route: '/purchase-orders' },
-      { title: 'Draft POs', value: overview.draftPurchaseOrders, subtitle: 'Still being prepared', icon: 'bi bi-file-earmark-text', route: '/purchase-orders' },
-      { title: 'Pending Approval POs', value: overview.pendingApprovalPurchaseOrders, subtitle: 'Waiting for manager review', icon: 'bi bi-hourglass-split', route: '/purchase-orders', severity: 'warning' },
-      { title: 'Approved POs', value: overview.approvedPurchaseOrders, subtitle: 'Ready or partially received', icon: 'bi bi-patch-check', route: '/purchase-orders' },
-      { title: 'Received POs', value: overview.receivedPurchaseOrders, subtitle: 'Fully received orders', icon: 'bi bi-box-arrow-in-down', route: '/purchase-orders' },
-      { title: 'Overdue Receipts', value: overview.overduePurchaseOrders, subtitle: 'Needs supplier follow-up', icon: 'bi bi-calendar-x', route: '/purchase-orders/overdue', severity: 'critical' },
+      { title: 'Draft POs', value: overview.draftPurchaseOrders, subtitle: 'Still being prepared', icon: 'bi bi-file-earmark-text', route: '/purchase-orders?status=DRAFT' },
+      { title: 'Pending Approval POs', value: overview.pendingApprovalPurchaseOrders, subtitle: 'Waiting for manager review', icon: 'bi bi-hourglass-split', route: '/purchase-orders?status=PENDING_APPROVAL', severity: 'warning' },
+      { title: 'Approved POs', value: overview.approvedPurchaseOrders, subtitle: 'Ready or partially received', icon: 'bi bi-patch-check', route: '/purchase-orders?status=APPROVED' },
+      { title: 'Received POs', value: overview.receivedPurchaseOrders, subtitle: 'Fully received orders', icon: 'bi bi-box-arrow-in-down', route: '/purchase-orders?status=RECEIVED' },
+      { title: 'Overdue Receipts', value: overview.overduePurchaseOrders, subtitle: 'Needs supplier follow-up', icon: 'bi bi-calendar-x', route: '/purchase-orders?overdueOnly=true', severity: 'critical' },
       { title: 'Total Purchase Value', value: this.formatCurrency(overview.totalPurchaseValue), subtitle: 'Approved and pending spend', icon: 'bi bi-cash-stack', route: '/reports/purchase/summary' },
-      { title: 'Active Suppliers', value: overview.activeSuppliers, subtitle: 'Available sourcing partners', icon: 'bi bi-truck', route: '/suppliers' },
+      { title: 'Active Suppliers', value: overview.activeSuppliers, subtitle: 'Available sourcing partners', icon: 'bi bi-truck', route: '/suppliers?isActive=true' },
     ];
 
     if (this.view.paymentSectionEnabled) {
@@ -64,7 +64,7 @@ export class PurchaseDashboardComponent implements OnInit {
         value: overview.pendingPayments,
         subtitle: 'Awaiting payment progression',
         icon: 'bi bi-credit-card-2-front',
-        route: '/payments',
+        route: '/payments?status=PENDING_APPROVAL',
       });
     }
 
@@ -133,7 +133,7 @@ export class PurchaseDashboardComponent implements OnInit {
       return;
     }
 
-    void this.router.navigate([route]);
+    void this.router.navigateByUrl(route);
   }
 
   sectionError(key: keyof NonNullable<PurchaseOfficerDashboardView['sectionErrors']>): string | null {

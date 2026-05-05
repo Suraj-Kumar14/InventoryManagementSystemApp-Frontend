@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { finalize } from 'rxjs/operators';
@@ -42,6 +42,8 @@ export class PoListComponent implements OnInit {
   private readonly notifications = inject(NotificationService);
   private readonly fb = inject(FormBuilder);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   readonly roles = UserRole;
   readonly statuses: PurchaseOrderStatus[] = [
@@ -84,6 +86,7 @@ export class PoListComponent implements OnInit {
   query: PurchaseOrderListQuery = { page: 0, size: 10, sortBy: 'createdAt', sortDir: 'desc' };
 
   ngOnInit(): void {
+    this.applyDashboardQueryParams();
     this.loadLookups();
     this.loadSummary();
     this.loadPurchaseOrders();
@@ -102,6 +105,7 @@ export class PoListComponent implements OnInit {
       overdueOnly: raw.overdueOnly || undefined,
       page: 0,
     };
+    this.syncQueryParams();
     this.loadPurchaseOrders();
   }
 
@@ -116,6 +120,7 @@ export class PoListComponent implements OnInit {
       overdueOnly: false,
     });
     this.query = { page: 0, size: 10, sortBy: 'createdAt', sortDir: 'desc' };
+    this.syncQueryParams();
     this.loadPurchaseOrders();
   }
 
@@ -124,12 +129,14 @@ export class PoListComponent implements OnInit {
       return;
     }
     this.query = { ...this.query, page };
+    this.syncQueryParams();
     this.loadPurchaseOrders();
   }
 
   sortBy(column: string): void {
     const sortDir = this.query.sortBy === column && this.query.sortDir === 'asc' ? 'desc' : 'asc';
     this.query = { ...this.query, sortBy: column, sortDir, page: 0 };
+    this.syncQueryParams();
     this.loadPurchaseOrders();
   }
 
@@ -334,5 +341,42 @@ export class PoListComponent implements OnInit {
 
   getOrderId(order: PurchaseOrderResponse): number {
     return order.purchaseOrderId ?? order.poId;
+  }
+
+  private applyDashboardQueryParams(): void {
+    const queryParams = this.route.snapshot.queryParamMap;
+    const status = queryParams.get('status');
+    const overdueOnly = queryParams.get('overdueOnly') === 'true';
+    const warehouseId = queryParams.get('warehouseId');
+    const supplierId = queryParams.get('supplierId');
+
+    this.filtersForm.patchValue({
+      status: (status as PurchaseOrderStatus | null) ?? null,
+      overdueOnly,
+      warehouseId: warehouseId ? Number(warehouseId) : null,
+      supplierId: supplierId ? Number(supplierId) : null,
+    });
+
+    this.query = {
+      ...this.query,
+      status: (status as PurchaseOrderStatus | null) ?? undefined,
+      overdueOnly: overdueOnly || undefined,
+      warehouseId: warehouseId ? Number(warehouseId) : undefined,
+      supplierId: supplierId ? Number(supplierId) : undefined,
+    };
+  }
+
+  private syncQueryParams(): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        status: this.query.status ?? null,
+        overdueOnly: this.query.overdueOnly ? true : null,
+        warehouseId: this.query.warehouseId ?? null,
+        supplierId: this.query.supplierId ?? null,
+      },
+      queryParamsHandling: '',
+      replaceUrl: true,
+    });
   }
 }

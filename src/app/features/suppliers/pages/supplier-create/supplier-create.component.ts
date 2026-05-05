@@ -22,11 +22,23 @@ export class SupplierCreateComponent {
   loading = false;
 
   save(request: CreateSupplierRequest): void {
+    if (this.loading) {
+      return;
+    }
+
     this.loading = true;
     this.supplierApi.createSupplier(request).pipe(finalize(() => (this.loading = false))).subscribe({
       next: (supplier) => {
-        this.notifications.success('Supplier created successfully');
-        this.router.navigate(['/suppliers', supplier.supplierId]);
+        this.notifications.success('Supplier saved successfully');
+        void this.router.navigate(['/suppliers'], {
+          state: {
+            createdSupplierId: supplier.supplierId,
+            createdSupplierName: supplier.name,
+          },
+        });
+      },
+      error: () => {
+        this.notifications.error('Failed to save supplier. Please try again.');
       },
     });
   }

@@ -85,14 +85,14 @@
         </div>
 
         <div class="metric-list">
-          <article class="metric-row">
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/reports/inventory/low-stock')">
             <span>Low stock items</span>
             <strong>{{ dashboard.executive?.lowStockCount ?? '-' }}</strong>
-          </article>
-          <article class="metric-row">
+          </button>
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/reports/inventory/overstock')">
             <span>Overstock items</span>
             <strong>{{ dashboard.executive?.overstockCount ?? '-' }}</strong>
-          </article>
+          </button>
           <article class="metric-row">
             <span>Total inventory value</span>
             <strong>{{ dashboard.executive?.totalInventoryValue | currency:'INR':'symbol':'1.0-0' }}</strong>
@@ -119,26 +119,26 @@
         </div>
 
         <div class="metric-list">
-          <article class="metric-row">
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/purchase-orders/approvals')">
             <span>Pending approvals</span>
             <strong>{{ dashboard.executive?.pendingPurchaseApprovals ?? '-' }}</strong>
-          </article>
-          <article class="metric-row">
+          </button>
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/purchase-orders?overdueOnly=true')">
             <span>Overdue purchase orders</span>
             <strong>{{ dashboard.executive?.overduePurchaseOrders ?? '-' }}</strong>
-          </article>
+          </button>
           <article class="metric-row">
             <span>Total purchase value</span>
             <strong>{{ dashboard.executive?.totalPurchaseValue | currency:'INR':'symbol':'1.0-0' }}</strong>
           </article>
-          <article class="metric-row" *ngIf="hasPaymentSection">
+          <button type="button" class="metric-row metric-row--button" *ngIf="hasPaymentSection" (click)="openRoute('/payments?status=PENDING_APPROVAL')">
             <span>Pending payments</span>
             <strong>{{ dashboard.paymentSummary?.pendingAmount | currency:'INR':'symbol':'1.0-0' }}</strong>
-          </article>
-          <article class="metric-row" *ngIf="hasPaymentSection">
+          </button>
+          <button type="button" class="metric-row metric-row--button" *ngIf="hasPaymentSection" (click)="openRoute('/payments?status=PAID')">
             <span>Total paid amount</span>
             <strong>{{ dashboard.paymentSummary?.totalPaidAmount | currency:'INR':'symbol':'1.0-0' }}</strong>
-          </article>
+          </button>
         </div>
 
         <div class="section-error" *ngIf="sectionError('payments')">{{ sectionError('payments') }}</div>
@@ -159,18 +159,18 @@
         </div>
 
         <div class="metric-list" *ngIf="dashboard.userSummary as users; else userSummaryEmpty">
-          <article class="metric-row">
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/admin/users?status=ACTIVE')">
             <span>Active users</span>
             <strong>{{ users.activeUsers }}</strong>
-          </article>
-          <article class="metric-row">
+          </button>
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/admin/users?status=INACTIVE')">
             <span>Inactive users</span>
             <strong>{{ users.inactiveUsers }}</strong>
-          </article>
-          <article class="metric-row">
+          </button>
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/admin/users')">
             <span>Total users</span>
             <strong>{{ users.totalUsers }}</strong>
-          </article>
+          </button>
         </div>
 
         <div class="roles-grid" *ngIf="userRoleBreakdown.length">
@@ -204,14 +204,14 @@
         </div>
 
         <div class="alert-stats">
-          <div>
+          <button type="button" class="metric-row metric-row--button alert-stat-button" (click)="openRoute('/alerts?severity=CRITICAL&quick=critical')">
             <span>Critical alerts</span>
             <strong>{{ dashboard.executive?.criticalAlerts ?? dashboard.alertSummary?.criticalCount ?? 0 }}</strong>
-          </div>
-          <div>
+          </button>
+          <button type="button" class="metric-row metric-row--button alert-stat-button" (click)="openRoute('/alerts?quick=unread')">
             <span>Unread system alerts</span>
             <strong>{{ dashboard.unreadAlertCount ?? dashboard.alertSummary?.unreadCount ?? 0 }}</strong>
-          </div>
+          </button>
         </div>
 
         <div class="list" *ngIf="dashboard.recentAlerts.length; else noRecentAlerts">

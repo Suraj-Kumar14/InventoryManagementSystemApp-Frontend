@@ -118,7 +118,9 @@ export class ProductApiService {
       .pipe(handleServiceError(this.serviceName, 'getProductSummary'));
   }
 
-  private normalizeProductSummary(response: ProductSummary | { data?: ProductSummary }): ProductSummary {
+  private normalizeProductSummary(
+    response: ProductSummary | { data?: ProductSummary },
+  ): ProductSummary {
     const data = this.unwrap(response);
     const totalProducts = this.extractTotalCount(data);
     const activeProducts = this.extractActiveCount(data);
@@ -126,7 +128,10 @@ export class ProductApiService {
     return {
       totalProducts,
       activeProducts,
-      inactiveProducts: this.toCount((data as Partial<ProductSummary>)?.inactiveProducts, Math.max(totalProducts - activeProducts, 0)),
+      inactiveProducts: this.toCount(
+        (data as Partial<ProductSummary>)?.inactiveProducts,
+        Math.max(totalProducts - activeProducts, 0),
+      ),
       categoriesCount: this.toCount((data as Partial<ProductSummary>)?.categoriesCount),
       brandsCount: this.toCount((data as Partial<ProductSummary>)?.brandsCount),
     };
@@ -162,7 +167,8 @@ export class ProductApiService {
     }
 
     if (Array.isArray(data?.content)) {
-      return data.content.filter((product: any) => (product.active ?? product.isActive) === true).length;
+      return data.content.filter((product: any) => (product.active ?? product.isActive) === true)
+        .length;
     }
 
     if (Array.isArray(data)) {

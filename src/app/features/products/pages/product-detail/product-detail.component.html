@@ -2,15 +2,42 @@
   <div class="page-header page-header--actions">
     <div>
       <h1 class="page-header__title">Product Detail</h1>
-      <p class="page-header__subtitle">Full product profile including pricing, replenishment, and catalog status.</p>
+      <p class="page-header__subtitle">
+        Full product profile including pricing, replenishment, and catalog status.
+      </p>
     </div>
     <div class="page-actions">
       <a routerLink="/products" class="btn-secondary page-link-btn">Back to List</a>
-      <a *ngIf="product && canManage" [routerLink]="['/products', product.productId, 'edit']" class="btn-primary page-link-btn">Edit Product</a>
-      <button *ngIf="product && canManage" type="button" class="btn-secondary" [disabled]="actionLoading" (click)="toggleStatus()">
-        {{ actionLoading ? (product.isActive ? 'Deactivating...' : 'Activating...') : (product.isActive ? 'Deactivate' : 'Activate') }}
+      <a
+        *ngIf="product && canManage"
+        [routerLink]="['/products', product.productId, 'edit']"
+        class="btn-primary page-link-btn"
+        >Edit Product</a
+      >
+      <button
+        *ngIf="product && canManage"
+        type="button"
+        class="btn-secondary"
+        [disabled]="actionLoading"
+        (click)="toggleStatus()"
+      >
+        {{
+          actionLoading
+            ? product.isActive
+              ? 'Deactivating...'
+              : 'Activating...'
+            : product.isActive
+              ? 'Deactivate'
+              : 'Activate'
+        }}
       </button>
-      <button *ngIf="product && canDelete" type="button" class="btn-danger" [disabled]="actionLoading" (click)="deleteProduct()">
+      <button
+        *ngIf="product && canDelete"
+        type="button"
+        class="btn-danger"
+        [disabled]="actionLoading"
+        (click)="deleteProduct()"
+      >
         {{ actionLoading ? 'Deleting...' : 'Delete' }}
       </button>
     </div>

@@ -1,4 +1,4 @@
-<form class="supplier-form" [formGroup]="form" (ngSubmit)="submit()">
+<form class="supplier-form" [formGroup]="form" (ngSubmit)="submit()" [attr.aria-busy]="loading">
   <section class="form-card">
     <div class="form-card__header">
       <div>
@@ -108,7 +108,7 @@
   </section>
 
   <div class="actions" *ngIf="!readOnly">
-    <button type="button" class="btn btn-secondary" (click)="cancelled.emit()">Cancel</button>
+    <button type="button" class="btn btn-secondary" [disabled]="loading" (click)="cancelled.emit()">Cancel</button>
     <button type="submit" class="btn btn-primary" [disabled]="loading || form.invalid">
       {{ loading ? (mode === 'create' ? 'Saving...' : 'Updating...') : (mode === 'create' ? 'Save Supplier' : 'Update Supplier') }}
     </button>

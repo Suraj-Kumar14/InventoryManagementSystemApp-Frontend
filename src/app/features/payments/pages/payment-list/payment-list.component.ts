@@ -1,7 +1,7 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../../../core/auth/services/auth.service';
 import { PaymentService } from '../../../../core/services/payment.service';
@@ -124,6 +124,7 @@ export class PaymentListComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   readonly statuses: PaymentStatus[] = ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'PARTIALLY_PAID', 'PAID', 'CANCELLED', 'REJECTED', 'REVERSED'];
   readonly filters = this.fb.group({
@@ -140,6 +141,7 @@ export class PaymentListComponent implements OnInit {
   loading = false;
 
   ngOnInit(): void {
+    this.applyDashboardQueryParams();
     this.loadSummary();
     this.loadPayments();
   }
@@ -159,6 +161,7 @@ export class PaymentListComponent implements OnInit {
   loadPayments(): void {
     this.loading = true;
     const raw = this.filters.getRawValue();
+    this.syncQueryParams();
     this.paymentService.searchPayments({
       keyword: raw.keyword || null,
       purchaseOrderId: raw.purchaseOrderId ? Number(raw.purchaseOrderId) : null,
@@ -255,5 +258,34 @@ export class PaymentListComponent implements OnInit {
     this.notifications.success(message);
     this.loadSummary();
     this.loadPayments();
+  }
+
+  private applyDashboardQueryParams(): void {
+    const queryParams = this.route.snapshot.queryParamMap;
+    this.filters.patchValue({
+      keyword: queryParams.get('keyword') ?? '',
+      purchaseOrderId: queryParams.get('purchaseOrderId') ?? '',
+      supplierId: queryParams.get('supplierId') ?? '',
+      status: queryParams.get('status') ?? '',
+      fromDate: queryParams.get('fromDate') ?? '',
+      toDate: queryParams.get('toDate') ?? '',
+    });
+  }
+
+  private syncQueryParams(): void {
+    const raw = this.filters.getRawValue();
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        keyword: raw.keyword || null,
+        purchaseOrderId: raw.purchaseOrderId || null,
+        supplierId: raw.supplierId || null,
+        status: raw.status || null,
+        fromDate: raw.fromDate || null,
+        toDate: raw.toDate || null,
+      },
+      queryParamsHandling: '',
+      replaceUrl: true,
+    });
   }
 }

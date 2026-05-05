@@ -1,7 +1,7 @@
 import { CommonModule, DatePipe, NgClass } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AlertResponse, AlertSearchRequest, AlertStatus, AlertSummaryResponse, AlertType } from '../../../../core/http/backend.models';
 import { NotificationService } from '../../../../core/services/notification.service';
@@ -130,10 +130,12 @@ import { AlertApiService } from '../../services/alert-api.service';
     @media (max-width: 900px) { .alert-row { flex-direction:column; } .alert-row__actions { min-width:auto; justify-content:flex-start; } .page-header { flex-direction:column; } }
   `],
 })
-export class AlertCenterComponent {
+export class AlertCenterComponent implements OnInit {
   private readonly alertApi = inject(AlertApiService);
   private readonly notification = inject(NotificationService);
   private readonly fb = inject(FormBuilder);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   readonly types: AlertType[] = ['LOW_STOCK', 'OVERSTOCK', 'PO_APPROVAL_PENDING', 'PO_OVERDUE_RECEIPT', 'SUPPLIER_BLACKLISTED', 'MOVEMENT_ANOMALY', 'SYSTEM_BROADCAST', 'GENERAL'];
   readonly statuses: AlertStatus[] = ['NEW', 'READ', 'ACKNOWLEDGED', 'DISMISSED', 'RESOLVED', 'EXPIRED'];
@@ -164,7 +166,8 @@ export class AlertCenterComponent {
   pageSize = 10;
   totalPages = 0;
 
-  constructor() {
+  ngOnInit(): void {
+    this.applyDashboardQueryParams();
     this.loadSummary();
     this.loadAlerts();
   }
@@ -172,6 +175,7 @@ export class AlertCenterComponent {
   applyFormFilters(): void {
     this.activeQuickFilter = 'all';
     this.pageIndex = 0;
+    this.syncQueryParams();
     this.loadAlerts();
   }
 
@@ -227,6 +231,7 @@ export class AlertCenterComponent {
         this.filters.patchValue({ severity: '', status: '', type: '' }, { emitEvent: false });
     }
 
+    this.syncQueryParams();
     this.loadAlerts();
   }
 
@@ -236,6 +241,7 @@ export class AlertCenterComponent {
       return;
     }
     this.pageIndex = nextPage;
+    this.syncQueryParams();
     this.loadAlerts();
   }
 
@@ -284,6 +290,36 @@ export class AlertCenterComponent {
         this.loadSummary();
         this.loadAlerts();
       },
+    });
+  }
+
+  private applyDashboardQueryParams(): void {
+    const queryParams = this.route.snapshot.queryParamMap;
+    const severity = queryParams.get('severity') ?? '';
+    const status = queryParams.get('status') ?? '';
+    const type = queryParams.get('type') ?? '';
+    const quick = queryParams.get('quick');
+
+    this.filters.patchValue({ severity, status, type }, { emitEvent: false });
+
+    if (quick && this.quickFilters.some((filter) => filter.key === quick)) {
+      this.activeQuickFilter = quick as typeof this.quickFilters[number]['key'];
+    }
+  }
+
+  private syncQueryParams(): void {
+    const raw = this.filters.getRawValue();
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        severity: raw.severity || null,
+        status: raw.status || null,
+        type: raw.type || null,
+        quick: this.activeQuickFilter !== 'all' ? this.activeQuickFilter : null,
+        page: this.pageIndex > 0 ? this.pageIndex : null,
+      },
+      queryParamsHandling: '',
+      replaceUrl: true,
     });
   }
 }

@@ -76,22 +76,22 @@
         <div class="section-notice" *ngIf="sectionNotice('stock')">{{ sectionNotice('stock') }}</div>
         <ng-container *ngIf="vm.overview as overview">
           <div class="summary-chips">
-            <div class="summary-chip">
+            <button type="button" class="summary-chip summary-chip--button" (click)="openStockWorkspace('/inventory/stock')">
               <span>Available</span>
               <strong>{{ overview.availableQuantity }}</strong>
-            </div>
-            <div class="summary-chip">
+            </button>
+            <button type="button" class="summary-chip summary-chip--button" (click)="openStockWorkspace('/inventory/stock')">
               <span>Reserved</span>
               <strong>{{ overview.reservedQuantity }}</strong>
-            </div>
-            <div class="summary-chip">
+            </button>
+            <button type="button" class="summary-chip summary-chip--button" (click)="openRoute('/reports/inventory/low-stock')">
               <span>Low Stock</span>
               <strong>{{ overview.lowStockCount }}</strong>
-            </div>
-            <div class="summary-chip">
+            </button>
+            <button type="button" class="summary-chip summary-chip--button" (click)="openRoute('/reports/inventory/product-stock?filter=out-of-stock')">
               <span>Out of Stock</span>
               <strong>{{ overview.outOfStockCount }}</strong>
-            </div>
+            </button>
           </div>
         </ng-container>
         <div class="list-shell" *ngIf="vm.assignedStockItems.length; else noStockItems">
@@ -118,9 +118,9 @@
         </div>
         <div class="section-error" *ngIf="sectionError('receipts')">{{ sectionError('receipts') }}</div>
         <div class="receipt-summary" *ngIf="vm.overview as overview">
-          <div><span>Pending</span><strong>{{ overview.goodsReceiptsPending }}</strong></div>
-          <div><span>Partial</span><strong>{{ overview.partiallyReceivedOrders }}</strong></div>
-          <div><span>Overdue</span><strong>{{ overview.overdueReceipts }}</strong></div>
+          <button type="button" class="summary-chip summary-chip--button" (click)="openRoute('/purchase-orders?status=APPROVED')"><span>Pending</span><strong>{{ overview.goodsReceiptsPending }}</strong></button>
+          <button type="button" class="summary-chip summary-chip--button" (click)="openRoute('/purchase-orders?status=PARTIALLY_RECEIVED')"><span>Partial</span><strong>{{ overview.partiallyReceivedOrders }}</strong></button>
+          <button type="button" class="summary-chip summary-chip--button" (click)="openRoute('/purchase-orders?overdueOnly=true')"><span>Overdue</span><strong>{{ overview.overdueReceipts }}</strong></button>
         </div>
         <div class="list-shell" *ngIf="vm.pendingReceipts.length; else noReceipts">
           <article class="receipt-card" *ngFor="let receipt of vm.pendingReceipts">

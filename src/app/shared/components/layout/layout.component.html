@@ -1,5 +1,6 @@
 <div class="app-shell">
   <app-navbar (toggleSidebar)="sidebarCollapsed.set(!sidebarCollapsed())"></app-navbar>
+  <app-toast-container></app-toast-container>
   <div class="app-body">
     <app-sidebar [isCollapsed]="sidebarCollapsed()"></app-sidebar>
     <main class="main-shell">

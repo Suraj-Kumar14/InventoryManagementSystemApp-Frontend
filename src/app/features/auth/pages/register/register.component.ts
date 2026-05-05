@@ -73,19 +73,24 @@ export class RegisterComponent implements OnInit {
 
   private mapError(error: unknown): string {
     const message = this.extractMessage(error);
-    if (message.toLowerCase().includes('email already exists')) return 'Email already exists';
+    const lowerMessage = message.toLowerCase();
+    if (lowerMessage.includes('email already exists') || lowerMessage.includes('email is already registered')) {
+      return 'Email is already registered';
+    }
     return message || 'Unable to continue signup right now.';
   }
 
   private extractMessage(error: unknown): string {
-    const httpError = error as { error?: { message?: string } | Record<string, string>; message?: string };
-    if (typeof httpError?.error === 'object' && httpError.error && 'message' in httpError.error) {
-      return String(httpError.error.message || '');
+    const httpError = error as { error?: { message?: string; error?: string } | Record<string, string> | string; message?: string };
+    if (typeof httpError?.error === 'string') {
+      return httpError.error;
     }
     if (typeof httpError?.error === 'object' && httpError.error) {
-      const first = Object.values(httpError.error)[0];
-      if (typeof first === 'string') return first;
+      return httpError.error.message
+        ?? httpError.error.error
+        ?? Object.values(httpError.error).find((value): value is string => typeof value === 'string')
+        ?? '';
     }
-    return httpError?.message || '';
+    return httpError?.message || 'Something went wrong';
   }
 }

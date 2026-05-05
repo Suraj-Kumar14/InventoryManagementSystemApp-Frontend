@@ -24,13 +24,17 @@ export class SupplierApiService {
 
   createSupplier(request: CreateSupplierRequest): Observable<SupplierResponse> {
     return this.api
-      .post<SupplierResponse>(API_ENDPOINTS.SUPPLIERS.ROOT, request)
+      .post<SupplierResponse>(API_ENDPOINTS.SUPPLIERS.ROOT, request, {
+        headers: { 'X-Skip-Global-Error': 'true' },
+      })
       .pipe(handleServiceError(this.serviceName, 'createSupplier'));
   }
 
   updateSupplier(id: number, request: UpdateSupplierRequest): Observable<SupplierResponse> {
     return this.api
-      .put<SupplierResponse>(API_ENDPOINTS.SUPPLIERS.DETAIL(id), request)
+      .put<SupplierResponse>(API_ENDPOINTS.SUPPLIERS.DETAIL(id), request, {
+        headers: { 'X-Skip-Global-Error': 'true' },
+      })
       .pipe(handleServiceError(this.serviceName, 'updateSupplier'));
   }
 

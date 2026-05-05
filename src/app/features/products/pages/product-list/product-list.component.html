@@ -2,9 +2,13 @@
   <div class="page-header page-header--actions">
     <div>
       <h1 class="page-header__title">Products</h1>
-      <p class="page-header__subtitle">Search, review, and maintain the central product catalog through the API gateway.</p>
+      <p class="page-header__subtitle">
+        Search, review, and maintain the central product catalog through the API gateway.
+      </p>
     </div>
-    <a *ngIf="canManage" routerLink="/products/create" class="btn-primary page-link-btn">Add Product</a>
+    <a *ngIf="canManage" routerLink="/products/create" class="btn-primary page-link-btn"
+      >Add Product</a
+    >
   </div>
 
   <div *ngIf="summary" class="summary-grid">
@@ -39,6 +43,10 @@
     (reset)="onResetFilters()"
   />
 
+  <div *ngIf="dashboardContext === 'category-overview'" class="page-empty">
+    Category overview mode is active. Products are sorted by category so you can scan catalog coverage quickly.
+  </div>
+
   <app-loading-spinner *ngIf="loading" [message]="'Loading products...'" />
 
   <div *ngIf="!loading && products.length === 0" class="page-empty">
@@ -50,10 +58,26 @@
       <table class="page-table">
         <thead>
           <tr>
-            <th><button type="button" class="sort-button" (click)="sortBy('sku')">SKU {{ getSortLabel('sku') }}</button></th>
-            <th><button type="button" class="sort-button" (click)="sortBy('name')">Name {{ getSortLabel('name') }}</button></th>
-            <th><button type="button" class="sort-button" (click)="sortBy('category')">Category {{ getSortLabel('category') }}</button></th>
-            <th><button type="button" class="sort-button" (click)="sortBy('brand')">Brand {{ getSortLabel('brand') }}</button></th>
+            <th>
+              <button type="button" class="sort-button" (click)="sortBy('sku')">
+                SKU {{ getSortLabel('sku') }}
+              </button>
+            </th>
+            <th>
+              <button type="button" class="sort-button" (click)="sortBy('name')">
+                Name {{ getSortLabel('name') }}
+              </button>
+            </th>
+            <th>
+              <button type="button" class="sort-button" (click)="sortBy('category')">
+                Category {{ getSortLabel('category') }}
+              </button>
+            </th>
+            <th>
+              <button type="button" class="sort-button" (click)="sortBy('brand')">
+                Brand {{ getSortLabel('brand') }}
+              </button>
+            </th>
             <th>Cost Price</th>
             <th>Selling Price</th>
             <th>Reorder Level</th>
@@ -68,8 +92,8 @@
             <td>{{ product.name }}</td>
             <td>{{ product.category }}</td>
             <td>{{ product.brand || 'N/A' }}</td>
-            <td>{{ product.costPrice | number:'1.2-2' }}</td>
-            <td>{{ product.sellingPrice | number:'1.2-2' }}</td>
+            <td>{{ product.costPrice | number: '1.2-2' }}</td>
+            <td>{{ product.sellingPrice | number: '1.2-2' }}</td>
             <td>{{ product.reorderLevel }}</td>
             <td>{{ product.maxStockLevel }}</td>
             <td>
@@ -78,13 +102,36 @@
               </span>
             </td>
             <td class="table-actions">
-              <a [routerLink]="['/products', product.productId]" class="btn-neutral btn--sm">View</a>
-              <a *ngIf="canManage" [routerLink]="['/products', product.productId, 'edit']" class="btn-neutral btn--sm">Edit</a>
-              <button *ngIf="canManage" type="button" class="btn-secondary btn--sm" [disabled]="actionLoadingId === product.productId" (click)="toggleStatus(product)">
+              <a [routerLink]="['/products', product.productId]" class="btn-neutral btn--sm"
+                >View</a
+              >
+              <a
+                *ngIf="canManage"
+                [routerLink]="['/products', product.productId, 'edit']"
+                class="btn-neutral btn--sm"
+                >Edit</a
+              >
+              <button
+                *ngIf="canManage"
+                type="button"
+                class="btn-secondary btn--sm"
+                [disabled]="actionLoadingId === product.productId"
+                (click)="toggleStatus(product)"
+              >
                 {{ getActionLabel(product) }}
               </button>
-              <button *ngIf="canDelete" type="button" class="btn-danger btn--sm" [disabled]="actionLoadingId === product.productId" (click)="deleteProduct(product)">
-                {{ actionLoadingId === product.productId && actionType === 'delete' ? 'Deleting...' : 'Delete' }}
+              <button
+                *ngIf="canDelete"
+                type="button"
+                class="btn-danger btn--sm"
+                [disabled]="actionLoadingId === product.productId"
+                (click)="deleteProduct(product)"
+              >
+                {{
+                  actionLoadingId === product.productId && actionType === 'delete'
+                    ? 'Deleting...'
+                    : 'Delete'
+                }}
               </button>
             </td>
           </tr>
@@ -95,9 +142,25 @@
     <div class="pagination-bar" *ngIf="pageData">
       <span>Showing {{ pageData.numberOfElements }} of {{ pageData.totalElements }} products</span>
       <div class="page-actions">
-        <button type="button" class="btn-secondary" [disabled]="pageData.first" (click)="changePage(pageData.number - 1)">Previous</button>
-        <span class="pagination-bar__label">Page {{ pageData.number + 1 }} of {{ pageData.totalPages }}</span>
-        <button type="button" class="btn-secondary" [disabled]="pageData.last" (click)="changePage(pageData.number + 1)">Next</button>
+        <button
+          type="button"
+          class="btn-secondary"
+          [disabled]="pageData.first"
+          (click)="changePage(pageData.number - 1)"
+        >
+          Previous
+        </button>
+        <span class="pagination-bar__label"
+          >Page {{ pageData.number + 1 }} of {{ pageData.totalPages }}</span
+        >
+        <button
+          type="button"
+          class="btn-secondary"
+          [disabled]="pageData.last"
+          (click)="changePage(pageData.number + 1)"
+        >
+          Next
+        </button>
       </div>
     </div>
   </div>

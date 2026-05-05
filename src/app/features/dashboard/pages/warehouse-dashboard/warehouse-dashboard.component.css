@@ -150,6 +150,26 @@
   border: 1px solid #e1eaf5;
 }
 
+.summary-chip--button,
+.operation-card:focus-visible,
+.kpi-button:focus-visible {
+  cursor: pointer;
+  text-align: left;
+  transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.summary-chip--button:hover,
+.summary-chip--button:focus-visible,
+.operation-card:hover,
+.operation-card:focus-visible,
+.kpi-button:hover,
+.kpi-button:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(13, 116, 184, 0.28);
+  box-shadow: var(--shadow-sm);
+  outline: none;
+}
+
 .summary-chip span,
 .receipt-summary span {
   display: block;

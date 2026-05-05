@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs/operators';
 import { AuthService } from '../../../../core/auth/services/auth.service';
 import { PageResponse, SupplierResponse, SupplierSummaryResponse } from '../../../../core/http/backend.models';
@@ -42,6 +42,8 @@ export class SupplierListComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly notifications = inject(NotificationService);
   private readonly fb = inject(FormBuilder);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   readonly canCreate = this.authService.hasRole([UserRole.ADMIN, UserRole.OFFICER]);
   readonly canEdit = this.authService.hasRole([UserRole.ADMIN, UserRole.OFFICER, UserRole.MANAGER]);
@@ -70,6 +72,8 @@ export class SupplierListComponent implements OnInit {
   query: SupplierListQuery = { page: 0, size: 10, sortBy: 'name', sortDir: 'asc' };
 
   ngOnInit(): void {
+    this.applyDashboardQueryParams();
+    this.applyCreateNavigationState();
     this.loadSummary();
     this.loadSuppliers();
   }
@@ -87,6 +91,7 @@ export class SupplierListComponent implements OnInit {
       maxLeadTimeDays: raw.maxLeadTimeDays ?? undefined,
       page: 0,
     };
+    this.syncQueryParams();
     this.loadSuppliers();
   }
 
@@ -101,12 +106,14 @@ export class SupplierListComponent implements OnInit {
       maxLeadTimeDays: null,
     });
     this.query = { page: 0, size: 10, sortBy: 'name', sortDir: 'asc' };
+    this.syncQueryParams();
     this.loadSuppliers();
   }
 
   sortBy(field: SupplierSortField): void {
     const sortDir = this.query.sortBy === field && this.query.sortDir === 'asc' ? 'desc' : 'asc';
     this.query = { ...this.query, sortBy: field, sortDir, page: 0 };
+    this.syncQueryParams();
     this.loadSuppliers();
   }
 
@@ -115,6 +122,7 @@ export class SupplierListComponent implements OnInit {
       return;
     }
     this.query = { ...this.query, page };
+    this.syncQueryParams();
     this.loadSuppliers();
   }
 
@@ -257,5 +265,56 @@ export class SupplierListComponent implements OnInit {
           this.loadSummary();
         },
       });
+  }
+
+  private applyDashboardQueryParams(): void {
+    const queryParams = this.route.snapshot.queryParamMap;
+    const status = queryParams.get('status');
+    const isActive = queryParams.get('isActive');
+
+    this.filtersForm.patchValue({
+      status,
+      isActive: isActive === null ? 'all' : isActive,
+    });
+
+    this.query = {
+      ...this.query,
+      status: status || undefined,
+      isActive:
+        isActive === 'true' ? true :
+        isActive === 'false' ? false :
+        undefined,
+    };
+  }
+
+  private applyCreateNavigationState(): void {
+    const state = history.state as { createdSupplierName?: string } | null;
+    const createdSupplierName = state?.createdSupplierName?.trim();
+
+    if (!createdSupplierName) {
+      return;
+    }
+
+    this.filtersForm.patchValue({ keyword: createdSupplierName });
+    this.query = {
+      ...this.query,
+      keyword: createdSupplierName,
+      page: 0,
+    };
+  }
+
+  private syncQueryParams(): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        status: this.query.status ?? null,
+        isActive:
+          this.query.isActive === true ? 'true' :
+          this.query.isActive === false ? 'false' :
+          null,
+      },
+      queryParamsHandling: '',
+      replaceUrl: true,
+    });
   }
 }

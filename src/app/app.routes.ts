@@ -14,8 +14,10 @@ import { dashboardRoutes } from './features/dashboard/dashboard.routes';
 import { settingsRoutes } from './features/settings/settings.routes';
 import { UserRole } from './shared/config/app-config';
 import { guestGuard } from './core/guards/guest.guard';
+import { LandingPageComponent } from './features/landing/pages/landing-page/landing-page.component';
 
 export const routes: Routes = [
+  { path: '', component: LandingPageComponent },
   { path: 'login', component: LoginComponent, canActivate: [guestGuard] },
   { path: 'register', component: RegisterComponent, canActivate: [guestGuard] },
   { path: 'verify-otp', component: VerifyOtpComponent, canActivate: [guestGuard] },
@@ -145,6 +147,5 @@ export const routes: Routes = [
     data: { roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.OFFICER, UserRole.STAFF] },
     loadChildren: () => import('./features/inventory/stock/stock.routes').then((m) => m.stockRoutes),
   },
-  { path: '', redirectTo: '/login', pathMatch: 'full' },
   { path: '**', redirectTo: '/403' },
 ];

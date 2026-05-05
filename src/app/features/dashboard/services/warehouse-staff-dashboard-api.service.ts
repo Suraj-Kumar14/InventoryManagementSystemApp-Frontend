@@ -507,7 +507,7 @@ export class WarehouseStaffDashboardApiService {
         value: overview.goodsReceiptsPending,
         subtitle: 'Approved POs awaiting receipt',
         icon: 'bi bi-box-arrow-in-down',
-        route: '/purchase-orders',
+        route: '/purchase-orders?status=APPROVED',
         severity: overview.goodsReceiptsPending > 0 ? 'warning' : 'default',
       },
       {
@@ -530,7 +530,7 @@ export class WarehouseStaffDashboardApiService {
         value: overview.unreadAlerts,
         subtitle: 'Assigned warehouse notifications',
         icon: 'bi bi-bell',
-        route: '/alerts',
+        route: '/alerts?quick=unread',
         severity: overview.unreadAlerts > 0 ? 'warning' : 'default',
       },
       {

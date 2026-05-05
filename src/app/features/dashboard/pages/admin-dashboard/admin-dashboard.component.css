@@ -160,6 +160,25 @@
   align-items: flex-start;
 }
 
+.metric-row--button,
+.alert-stat-button {
+  width: 100%;
+  cursor: pointer;
+  text-align: left;
+  transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.metric-row--button:hover,
+.metric-row--button:focus-visible,
+.shortcut-card:focus-visible,
+.kpi-button:focus-visible,
+.user-management-card__action:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(30, 79, 174, 0.28);
+  box-shadow: var(--shadow-sm);
+  outline: none;
+}
+
 .metric-row span,
 .list-meta small {
   color: var(--color-text-muted);
