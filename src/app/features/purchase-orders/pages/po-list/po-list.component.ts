@@ -81,7 +81,7 @@ export class PoListComponent implements OnInit {
   loadError: string | null = null;
   summaryError: string | null = null;
   lookupError: string | null = null;
-  actionLoadingId: number | null = null;
+  actionLoadingIds = new Set<number>();
   actionLabel = '';
   query: PurchaseOrderListQuery = { page: 0, size: 10, sortBy: 'createdAt', sortDir: 'desc' };
 
@@ -141,8 +141,12 @@ export class PoListComponent implements OnInit {
   }
 
   submitPurchaseOrder(order: PurchaseOrderResponse): void {
+    const orderId = this.getOrderId(order);
+    if (this.isActionLoading(orderId)) {
+      return;
+    }
     const remarks = window.prompt('Remarks for submission (optional):') ?? '';
-    this.runAction(order, 'Submitting...', () => this.purchaseApi.submitPurchaseOrder(this.getOrderId(order), { remarks }), 'Purchase order submitted for approval');
+    this.runAction(order, 'Submitting...', () => this.purchaseApi.submitPurchaseOrder(orderId, { remarks }), 'Purchase order submitted for approval');
   }
 
   approvePurchaseOrder(order: PurchaseOrderResponse): void {
@@ -192,6 +196,10 @@ export class PoListComponent implements OnInit {
 
   canShowReceive(order: PurchaseOrderResponse): boolean {
     return this.canReceive && ['APPROVED', 'PARTIALLY_RECEIVED'].includes(order.status);
+  }
+
+  isActionLoading(orderId: number): boolean {
+    return this.actionLoadingIds.has(orderId);
   }
 
   getSortMarker(column: string): string {
@@ -323,12 +331,19 @@ export class PoListComponent implements OnInit {
     requestFactory: () => ReturnType<PurchaseOrderApiService['submitPurchaseOrder']>,
     successMessage: string
   ): void {
-    this.actionLoadingId = this.getOrderId(order);
+    const orderId = this.getOrderId(order);
+    if (this.actionLoadingIds.has(orderId)) {
+      return;
+    }
+
+    this.actionLoadingIds.add(orderId);
     this.actionLabel = loadingLabel;
+    this.cdr.markForCheck();
     requestFactory()
       .pipe(finalize(() => {
-        this.actionLoadingId = null;
+        this.actionLoadingIds.delete(orderId);
         this.actionLabel = '';
+        this.cdr.markForCheck();
       }))
       .subscribe({
         next: () => {

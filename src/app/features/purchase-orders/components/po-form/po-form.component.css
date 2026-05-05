@@ -42,6 +42,11 @@ textarea {
   font: inherit;
 }
 
+input[readonly] {
+  background: #f3f7fc;
+  color: var(--color-text-muted);
+}
+
 .section-title {
   display: flex;
   justify-content: space-between;

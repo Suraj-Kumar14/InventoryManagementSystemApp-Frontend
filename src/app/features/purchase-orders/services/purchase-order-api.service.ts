@@ -29,13 +29,17 @@ export class PurchaseOrderApiService {
 
   createPurchaseOrder(request: CreatePurchaseOrderRequest): Observable<PurchaseOrderResponse> {
     return this.api
-      .post<PurchaseOrderResponse>(API_ENDPOINTS.PURCHASE_ORDERS.ROOT, request)
+      .post<PurchaseOrderResponse>(API_ENDPOINTS.PURCHASE_ORDERS.ROOT, request, {
+        headers: { 'X-Skip-Global-Error': 'true' },
+      })
       .pipe(handleServiceError(this.serviceName, 'createPurchaseOrder'));
   }
 
   updatePurchaseOrder(id: number, request: UpdatePurchaseOrderRequest): Observable<PurchaseOrderResponse> {
     return this.api
-      .put<PurchaseOrderResponse>(API_ENDPOINTS.PURCHASE_ORDERS.DETAIL(id), request)
+      .put<PurchaseOrderResponse>(API_ENDPOINTS.PURCHASE_ORDERS.DETAIL(id), request, {
+        headers: { 'X-Skip-Global-Error': 'true' },
+      })
       .pipe(handleServiceError(this.serviceName, 'updatePurchaseOrder'));
   }
 
@@ -87,7 +91,9 @@ export class PurchaseOrderApiService {
 
   submitPurchaseOrder(id: number, request: SubmitPurchaseOrderRequest = {}): Observable<PurchaseOrderResponse> {
     return this.api
-      .post<PurchaseOrderResponse>(API_ENDPOINTS.PURCHASE_ORDERS.SUBMIT(id), request)
+      .post<PurchaseOrderResponse>(API_ENDPOINTS.PURCHASE_ORDERS.SUBMIT(id), request, {
+        headers: { 'X-Skip-Global-Error': 'true' },
+      })
       .pipe(handleServiceError(this.serviceName, 'submitPurchaseOrder'));
   }
 
@@ -159,7 +165,7 @@ export class PurchaseOrderApiService {
     return this.api
       .get<PageResponse<WarehouseResponse>>(API_ENDPOINTS.WAREHOUSES.ROOT, {
         headers: { 'X-Skip-Global-Error': 'true' },
-        params: { isActive: true, page: 0, size: 100, sortBy: 'warehouseName', sortDir: 'asc' },
+        params: { isActive: true, page: 0, size: 100, sortBy: 'name', sortDir: 'asc' },
       })
       .pipe(handleServiceError(this.serviceName, 'getWarehouses'));
   }

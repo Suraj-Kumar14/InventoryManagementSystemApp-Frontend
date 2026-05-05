@@ -71,7 +71,7 @@ describe('PoFormComponent', () => {
     component.form.patchValue({ supplierId: 0, warehouseId: 0, expectedDeliveryDate: '' });
     fixture.detectChanges();
 
-    const submitButton: HTMLButtonElement = fixture.debugElement.query(By.css('button[type="submit"]')).nativeElement;
+    const submitButton: HTMLButtonElement = fixture.debugElement.query(By.css('.btn.btn-primary')).nativeElement;
     expect(submitButton.disabled).toBe(true);
   });
 
@@ -79,8 +79,17 @@ describe('PoFormComponent', () => {
     fixture.componentRef.setInput('loading', true);
     fixture.detectChanges();
 
-    const submitButton: HTMLButtonElement = fixture.debugElement.query(By.css('button[type="submit"]')).nativeElement;
+    const submitButton: HTMLButtonElement = fixture.debugElement.query(By.css('.btn.btn-primary')).nativeElement;
     expect(submitButton.textContent?.trim()).toContain('Save Draft...');
     expect(submitButton.disabled).toBe(true);
+  });
+
+  it('should show submitting state on the submit button', () => {
+    fixture.componentRef.setInput('submitting', true);
+    fixture.detectChanges();
+
+    const submitAndApproveButton: HTMLButtonElement = fixture.debugElement.query(By.css('.btn.btn-accent')).nativeElement;
+    expect(submitAndApproveButton.textContent?.trim()).toContain('Submitting...');
+    expect(submitAndApproveButton.disabled).toBe(true);
   });
 });

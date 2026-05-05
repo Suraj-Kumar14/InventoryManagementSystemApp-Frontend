@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, inject } from '@angular/core';
 import { FormArray, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Product, SupplierResponse, WarehouseResponse } from '../../../../core/http/backend.models';
+import { NotificationService } from '../../../../core/services/notification.service';
 import { PurchaseOrderFormValue } from '../../models/purchase-order.model';
 
 @Component({
@@ -13,13 +14,16 @@ import { PurchaseOrderFormValue } from '../../models/purchase-order.model';
 })
 export class PoFormComponent implements OnChanges {
   private readonly fb = inject(FormBuilder);
+  private readonly notifications = inject(NotificationService);
 
   @Input() suppliers: SupplierResponse[] = [];
   @Input() warehouses: WarehouseResponse[] = [];
   @Input() products: Product[] = [];
   @Input() loading = false;
+  @Input() submitting = false;
   @Input() submitLabel = 'Save Draft';
   @Input() showSubmitAndApprove = true;
+  @Input() chargeFieldsReadOnly = false;
   @Input() initialValue: PurchaseOrderFormValue | null = null;
 
   @Output() save = new EventEmitter<PurchaseOrderFormValue>();
@@ -37,6 +41,10 @@ export class PoFormComponent implements OnChanges {
     lineItems: this.fb.array([]),
   });
 
+  constructor() {
+    this.addLineItem();
+  }
+
   get lineItems(): FormArray {
     return this.form.get('lineItems') as FormArray;
   }
@@ -44,9 +52,6 @@ export class PoFormComponent implements OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['initialValue']) {
       this.patchInitialValue();
-    }
-    if (!this.initialValue && this.lineItems.length === 0) {
-      this.addLineItem();
     }
   }
 
@@ -89,14 +94,36 @@ export class PoFormComponent implements OnChanges {
   }
 
   submit(saveAndSubmit = false): void {
+    if (this.loading || this.submitting) {
+      return;
+    }
+
     if (this.form.invalid || this.lineItems.length === 0) {
       this.form.markAllAsTouched();
       return;
     }
 
+    const warehouseId = Number(this.form.controls.warehouseId.value);
+
+    if (!warehouseId || Number.isNaN(warehouseId)) {
+      this.notifications.error('Please select a valid warehouse.');
+      this.form.controls.warehouseId.markAsTouched();
+      return;
+    }
+
+    const selectedWarehouseExists = this.warehouses.some(
+      (warehouse) => this.resolveWarehouseId(warehouse) === warehouseId
+    );
+
+    if (!selectedWarehouseExists) {
+      this.notifications.error('Selected warehouse is invalid. Please reselect warehouse.');
+      this.form.controls.warehouseId.markAsTouched();
+      return;
+    }
+
     const value: PurchaseOrderFormValue = {
       supplierId: Number(this.form.controls.supplierId.value),
-      warehouseId: Number(this.form.controls.warehouseId.value),
+      warehouseId,
       expectedDeliveryDate: this.form.controls.expectedDeliveryDate.value || '',
       paymentTerms: this.form.controls.paymentTerms.value || null,
       notes: this.form.controls.notes.value || null,
@@ -116,6 +143,18 @@ export class PoFormComponent implements OnChanges {
       return;
     }
     this.save.emit(value);
+  }
+
+  get disableActions(): boolean {
+    return this.form.invalid || this.loading || this.submitting || this.lineItems.length === 0;
+  }
+
+  getWarehouseId(warehouse: WarehouseResponse): number {
+    return Number(warehouse.id ?? warehouse.warehouseId ?? 0);
+  }
+
+  getWarehouseLabel(warehouse: WarehouseResponse & { warehouseName?: string | null }): string {
+    return warehouse.warehouseName ?? warehouse.name ?? `Warehouse #${this.getWarehouseId(warehouse)}`;
   }
 
   private patchInitialValue(): void {
@@ -148,5 +187,13 @@ export class PoFormComponent implements OnChanges {
         })
       );
     });
+
+    if (this.lineItems.length === 0) {
+      this.addLineItem();
+    }
+  }
+
+  private resolveWarehouseId(warehouse: WarehouseResponse): number {
+    return this.getWarehouseId(warehouse);
   }
 }

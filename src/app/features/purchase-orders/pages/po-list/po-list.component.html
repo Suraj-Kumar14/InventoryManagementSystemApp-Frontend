@@ -87,18 +87,18 @@
               <div class="actions">
                 <a [routerLink]="['/purchase-orders', getOrderId(order)]" class="btn-link">View</a>
                 <a *ngIf="canEdit(order)" [routerLink]="['/purchase-orders', getOrderId(order), 'edit']" class="btn-link">Edit</a>
-                <button *ngIf="canSubmit(order)" type="button" class="btn-link" (click)="submitPurchaseOrder(order)" [disabled]="actionLoadingId === getOrderId(order)">
-                  {{ actionLoadingId === getOrderId(order) ? actionLabel : 'Submit' }}
+                <button *ngIf="canSubmit(order)" type="button" class="btn-link" (click)="submitPurchaseOrder(order)" [disabled]="isActionLoading(getOrderId(order)) || order.status !== 'DRAFT'">
+                  {{ isActionLoading(getOrderId(order)) ? actionLabel : 'Submit' }}
                 </button>
-                <button *ngIf="canShowApprove(order)" type="button" class="btn-link" (click)="approvePurchaseOrder(order)" [disabled]="actionLoadingId === getOrderId(order)">
-                  {{ actionLoadingId === getOrderId(order) ? actionLabel : 'Approve' }}
+                <button *ngIf="canShowApprove(order)" type="button" class="btn-link" (click)="approvePurchaseOrder(order)" [disabled]="isActionLoading(getOrderId(order))">
+                  {{ isActionLoading(getOrderId(order)) ? actionLabel : 'Approve' }}
                 </button>
-                <button *ngIf="canShowApprove(order)" type="button" class="btn-link btn-link--danger" (click)="rejectPurchaseOrder(order)" [disabled]="actionLoadingId === getOrderId(order)">
-                  {{ actionLoadingId === getOrderId(order) ? actionLabel : 'Reject' }}
+                <button *ngIf="canShowApprove(order)" type="button" class="btn-link btn-link--danger" (click)="rejectPurchaseOrder(order)" [disabled]="isActionLoading(getOrderId(order))">
+                  {{ isActionLoading(getOrderId(order)) ? actionLabel : 'Reject' }}
                 </button>
                 <a *ngIf="canShowReceive(order)" [routerLink]="['/purchase-orders', getOrderId(order), 'receive']" class="btn-link">Receive</a>
-                <button *ngIf="canCancel(order)" type="button" class="btn-link btn-link--danger" (click)="cancelPurchaseOrder(order)" [disabled]="actionLoadingId === getOrderId(order)">
-                  {{ actionLoadingId === getOrderId(order) ? actionLabel : 'Cancel' }}
+                <button *ngIf="canCancel(order)" type="button" class="btn-link btn-link--danger" (click)="cancelPurchaseOrder(order)" [disabled]="isActionLoading(getOrderId(order))">
+                  {{ isActionLoading(getOrderId(order)) ? actionLabel : 'Cancel' }}
                 </button>
               </div>
             </td>

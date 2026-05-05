@@ -113,4 +113,28 @@ describe('PurchaseOrderApiService', () => {
     expect(request.request.method).toBe('GET');
     request.flush({ totalPurchaseOrders: 0 });
   });
+
+  it('should load active warehouses with the normalized sort field', () => {
+    service.getWarehouses().subscribe();
+
+    const request = httpMock.expectOne(
+      (req) =>
+        req.method === 'GET' &&
+        req.url === 'http://localhost:8080/api/v1/warehouses' &&
+        req.params.get('isActive') === 'true' &&
+        req.params.get('sortBy') === 'name'
+    );
+
+    request.flush({
+      content: [],
+      totalElements: 0,
+      totalPages: 0,
+      number: 0,
+      size: 100,
+      numberOfElements: 0,
+      first: true,
+      last: true,
+      empty: true,
+    });
+  });
 });
