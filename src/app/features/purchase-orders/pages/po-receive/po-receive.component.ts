@@ -15,7 +15,7 @@ import { PurchaseOrderApiService } from '../../services/purchase-order-api.servi
   styleUrls: ['./po-receive.component.css'],
 })
 export class PoReceiveComponent implements OnInit {
-  private static readonly RECEIVABLE_STATUSES = new Set(['APPROVED', 'PARTIALLY_RECEIVED']);
+  private static readonly RECEIVABLE_STATUSES = new Set(['PAID', 'PARTIALLY_RECEIVED']);
 
   private readonly purchaseApi = inject(PurchaseOrderApiService);
   private readonly route = inject(ActivatedRoute);
@@ -60,7 +60,11 @@ export class PoReceiveComponent implements OnInit {
       next: (order) => {
         this.purchaseOrder = order;
         if (!this.hasReceivableStatus(order.status)) {
-          this.notifications.warning(`Purchase order ${order.poNumber || `#${order.poId}`} cannot be received while in status ${order.status}.`);
+          this.notifications.warning(
+            order.status === 'APPROVED' || order.status === 'PENDING_PAYMENT' || order.status === 'PAYMENT_INITIATED'
+              ? 'Goods can be received only after payment is completed.'
+              : `Purchase order ${order.poNumber || `#${order.poId}`} cannot be received while in status ${order.status}.`
+          );
         }
         this.buildLineItems();
         this.loading = false;
@@ -79,7 +83,7 @@ export class PoReceiveComponent implements OnInit {
     }
 
     if (!this.hasReceivableStatus(this.purchaseOrder.status)) {
-      this.notifications.warning(`Receive goods is only available for APPROVED or PARTIALLY_RECEIVED purchase orders.`);
+      this.notifications.warning('Receive goods is available only after payment is completed.');
       return;
     }
 

@@ -34,7 +34,7 @@
     </div>
 
     <p *ngIf="purchaseOrder && !canSubmitReceipt" class="field-hint">
-      Receive goods is available only for valid purchase orders in APPROVED or PARTIALLY_RECEIVED status.
+      Receive goods is available only after payment is completed.
     </p>
 
     <button type="submit" class="btn btn-primary" [disabled]="!canSubmitReceipt">
