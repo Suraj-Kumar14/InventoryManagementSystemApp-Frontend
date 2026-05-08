@@ -1,11 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { AlertResponse, ProductSummary } from '../../../core/http/backend.models';
-import { PaymentSummaryReportResponse } from '../../../core/http/backend.models';
+import { AlertResponse, ProductSummary, PaymentSummaryReportResponse } from '../../../core/http/backend.models';
 import { AdminUserService } from '../../../core/services/admin-user.service';
 import { PurchaseService } from '../../../core/services/purchase.service';
-import { PaymentService } from '../../../core/services/payment.service';
 import { ReportService } from '../../../core/services/report.service';
 import { WarehouseService } from '../../../core/services/warehouse.service';
 import { UI_CONSTANTS, UserRole } from '../../../shared/config/app-config';
@@ -17,7 +15,6 @@ import { AdminDashboardUserSummary, AdminDashboardView, RecentActivity, ServiceH
 @Injectable({ providedIn: 'root' })
 export class AdminDashboardApiService {
   private readonly reportService = inject(ReportService);
-  private readonly paymentService = inject(PaymentService);
   private readonly alertApiService = inject(AlertApiService);
   private readonly adminUserService = inject(AdminUserService);
   private readonly movementApiService = inject(MovementApiService);
@@ -47,32 +44,23 @@ export class AdminDashboardApiService {
           [UserRole.OFFICER]: users.filter((user) => user.role === UserRole.OFFICER).length,
           [UserRole.STAFF]: users.filter((user) => user.role === UserRole.STAFF).length,
         };
-
         const activeUsers = users.filter((user) => user.isActive !== false).length;
-        return {
-          totalUsers: users.length,
-          activeUsers,
-          inactiveUsers: users.length - activeUsers,
-          usersByRole,
-        };
+        return { totalUsers: users.length, activeUsers, inactiveUsers: users.length - activeUsers, usersByRole };
       })
     );
   }
 
-  getPaymentSummary() {
-    return this.paymentService.getPaymentSummary().pipe(
-      map(
-        (summary): PaymentSummaryReportResponse => ({
-          totalPayments: summary.totalPayments,
-          pendingCount: summary.pendingApprovalCount,
-          paidCount: summary.paidCount,
-          cancelledCount: summary.cancelledCount,
-          pendingAmount: summary.pendingPaymentAmount,
-          totalPaidAmount: summary.totalPaidAmount,
-          supplierPayments: [],
-        })
-      )
-    );
+  /** Payment summary fallback — payment data is now exclusively from Razorpay. */
+  getPaymentSummary(): Observable<PaymentSummaryReportResponse> {
+    return of<PaymentSummaryReportResponse>({
+      totalPayments: 0,
+      pendingCount: 0,
+      paidCount: 0,
+      cancelledCount: 0,
+      pendingAmount: 0,
+      totalPaidAmount: 0,
+      supplierPayments: [],
+    });
   }
 
   getMovementSummary() {
@@ -83,6 +71,7 @@ export class AdminDashboardApiService {
   getServiceHealth(): Observable<ServiceHealth[]> {
     return of([]);
   }
+
 
   getRecentActivities(): Observable<RecentActivity[]> {
     return forkJoin({

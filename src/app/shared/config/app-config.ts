@@ -222,7 +222,6 @@ export const API_ENDPOINTS = {
     SUPPLIER_PERFORMANCE: '/api/v1/reports/purchase/supplier-performance',
     SUPPLIER_PERFORMANCE_BY_ID: (supplierId: number) =>
       `/api/v1/reports/purchase/supplier-performance/${supplierId}`,
-    PAYMENT_SUMMARY: '/api/v1/reports/payments/summary',
     ALERT_SUMMARY: '/api/v1/reports/alerts/summary',
     EXECUTIVE_DASHBOARD: '/api/v1/reports/dashboard/executive',
     MY_DASHBOARD: '/api/v1/reports/dashboard/my',
@@ -237,22 +236,12 @@ export const API_ENDPOINTS = {
   },
   PAYMENTS: {
     ROOT: '/api/v1/payments',
-    SEARCH: '/api/v1/payments/search',
-    SUMMARY: '/api/v1/payments/summary',
-    ANALYTICS: '/api/v1/payments/analytics',
     DETAIL: (id: number) => `/api/v1/payments/${id}`,
-    NUMBER: (paymentNumber: string) => `/api/v1/payments/number/${paymentNumber}`,
     BY_PURCHASE_ORDER: (poId: number) => `/api/v1/payments/purchase-order/${poId}`,
-    BY_SUPPLIER: (supplierId: number) => `/api/v1/payments/supplier/${supplierId}`,
-    SUBMIT: (id: number) => `/api/v1/payments/${id}/submit`,
-    APPROVE: (id: number) => `/api/v1/payments/${id}/approve`,
-    REJECT: (id: number) => `/api/v1/payments/${id}/reject`,
-    CANCEL: (id: number) => `/api/v1/payments/${id}/cancel`,
-    MARK_PAID: (id: number) => `/api/v1/payments/${id}/mark-paid`,
-    REVERSE: (id: number) => `/api/v1/payments/${id}/reverse`,
-    HISTORY: (id: number) => `/api/v1/payments/${id}/history`,
     PAID_AMOUNT: (poId: number) => `/api/v1/payments/purchase-order/${poId}/paid-amount`,
     REMAINING_AMOUNT: (poId: number) => `/api/v1/payments/purchase-order/${poId}/remaining-amount`,
+    RAZORPAY_INITIATE: '/api/v1/payments/razorpay/initiate',
+    RAZORPAY_VERIFY: '/api/v1/payments/razorpay/verify',
   },
 } as const;
 

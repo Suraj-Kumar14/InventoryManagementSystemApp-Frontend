@@ -6,7 +6,17 @@ import {
   SupplierPerformanceReportResponse,
   SupplierSummaryResponse,
 } from '../../../core/http/backend.models';
-import { PaymentSummaryResponse } from '../../payments/models/payment.model';
+
+/** Minimal payment summary derived from Razorpay payments — replaces the old PaymentSummaryResponse. */
+export interface RazorpayPaymentSummary {
+  pendingApprovalCount: number;
+  approvedCount: number;
+  paidCount: number;
+  cancelledCount: number;
+  totalPaidAmount: number;
+  pendingPaymentAmount: number;
+  totalPayments: number;
+}
 
 export type PurchaseOfficerDashboardSectionKey =
   | 'dashboard'
@@ -115,7 +125,7 @@ export interface PurchaseOfficerDashboardView {
   lowRatedSuppliers: SupplierSummaryItem[];
   supplierPerformance: SupplierPerformanceReportResponse[];
   procurementAttentionItems: ProcurementAttentionItem[];
-  paymentSummary: PaymentSummaryResponse | null;
+  paymentSummary: RazorpayPaymentSummary | null;
   paymentReportSummary: PaymentSummaryReportResponse | null;
   recentPayments: PaymentSummaryItem[];
   recentAlerts: PurchaseOfficerRecentAlert[];

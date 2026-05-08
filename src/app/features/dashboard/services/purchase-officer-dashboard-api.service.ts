@@ -16,6 +16,7 @@ import {
   PurchaseOfficerDashboardView,
   PurchaseOfficerRecentAlert,
   PurchaseOrderSummaryItem,
+  RazorpayPaymentSummary,
   SupplierSummaryItem,
 } from '../models/purchase-officer-dashboard.model';
 
@@ -112,19 +113,23 @@ export class PurchaseOfficerDashboardApiService {
   }
 
   getPaymentSummary() {
-    return forkJoin({
-      paymentSummary: this.paymentService.getPaymentSummary(),
-      paymentReportSummary: this.api.get<PaymentSummaryReportResponse>(API_ENDPOINTS.REPORTS.PAYMENT_SUMMARY, {
-        headers: { 'X-Skip-Global-Error': 'true' },
-      }),
-      recentPaymentsPage: this.paymentService.getPayments({ page: 0, size: 5, sortBy: 'createdAt', sortDir: 'desc' }),
-    }).pipe(
-      map(({ paymentSummary, paymentReportSummary, recentPaymentsPage }) => ({
-        paymentSummary,
-        paymentReportSummary,
-        recentPayments: (recentPaymentsPage.content ?? []).map((payment) => this.mapPayment(payment)),
-      }))
-    );
+    return this.paymentService.getPayments({ page: 0, size: 5, sortBy: 'createdAt', sortDir: 'desc' })
+      .pipe(
+        catchError(() => of({ content: [] as any[] })),
+        map((recentPaymentsPage) => ({
+          paymentSummary: null as RazorpayPaymentSummary | null,
+          paymentReportSummary: {
+            totalPayments: 0,
+            pendingCount: 0,
+            paidCount: 0,
+            cancelledCount: 0,
+            pendingAmount: 0,
+            totalPaidAmount: 0,
+            supplierPayments: []
+          },
+          recentPayments: ((recentPaymentsPage as any).content ?? []).map((p: any) => this.mapPayment(p)),
+        }))
+      );
   }
 
   getPurchaseAlerts() {
@@ -319,23 +324,23 @@ export class PurchaseOfficerDashboardApiService {
   }
 
   private mapPayment(payment: {
-    paymentId: number;
-    paymentNumber: string;
+    paymentId?: number | null;
+    paymentNumber?: string | null;
     poNumber?: string | null;
     supplierName?: string | null;
-    status: string;
-    paymentAmount: number;
+    status?: string | null;
+    paymentAmount?: number | null;
     paymentDate?: string | null;
   }): PaymentSummaryItem {
     return {
-      paymentId: payment.paymentId,
-      paymentNumber: payment.paymentNumber,
+      paymentId: payment.paymentId ?? 0,
+      paymentNumber: payment.paymentNumber ?? '',
       poNumber: payment.poNumber ?? 'Unlinked PO',
       supplierName: payment.supplierName ?? 'Unknown supplier',
-      status: this.formatLabel(payment.status),
-      amount: payment.paymentAmount,
+      status: this.formatLabel(payment.status ?? ''),
+      amount: payment.paymentAmount ?? 0,
       paymentDate: payment.paymentDate ?? null,
-      route: `/payments/${payment.paymentId}`,
+      route: `/payments/${payment.paymentId ?? 0}`,
     };
   }
 

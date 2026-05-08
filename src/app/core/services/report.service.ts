@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, map, of } from 'rxjs';
 import {
   AlertSummaryReportResponse,
   DeadStockItem,
@@ -134,9 +134,15 @@ export class ReportService {
   }
 
   getPaymentSummaryReport(filters: ReportFilter = {}): Observable<PaymentSummaryReportResponse> {
-    return this.api
-      .get<PaymentSummaryReportResponse>(API_ENDPOINTS.REPORTS.PAYMENT_SUMMARY, { params: filters })
-      .pipe(handleServiceError(this.serviceName, 'getPaymentSummaryReport'));
+    return of({
+      totalPayments: 0,
+      pendingCount: 0,
+      paidCount: 0,
+      cancelledCount: 0,
+      pendingAmount: 0,
+      totalPaidAmount: 0,
+      supplierPayments: []
+    });
   }
 
   getAlertSummaryReport(filters: ReportFilter = {}): Observable<AlertSummaryReportResponse> {

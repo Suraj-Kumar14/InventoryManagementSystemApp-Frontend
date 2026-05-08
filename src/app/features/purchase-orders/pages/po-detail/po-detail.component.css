@@ -126,3 +126,157 @@ dd {
     align-items: flex-start;
   }
 }
+
+/* ─── Razorpay Payment Section ─────────────────────────────────────────── */
+
+.payment-section {
+  border: 2px solid #e0e7ff;
+  background: linear-gradient(135deg, #fafbff 0%, #f0f4ff 100%);
+}
+
+.payment-section__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+  flex-wrap: wrap;
+}
+
+.payment-section__info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.payment-section__info h2 {
+  margin: 0;
+}
+
+/* Razorpay branded button */
+.btn-razorpay {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #528ff5 0%, #3b82f6 100%);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 0.8rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
+  white-space: nowrap;
+}
+
+.btn-razorpay:hover:not(:disabled) {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+  transform: translateY(-1px);
+}
+
+.btn-razorpay:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
+}
+
+.btn-razorpay:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.razorpay-btn-content,
+.razorpay-btn-processing {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Payment status badges */
+.payment-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.payment-badge--paid {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.payment-badge--pending {
+  background: #fef9c3;
+  color: #a16207;
+  border: 1px solid #fde047;
+}
+
+/* Payment status chip in details */
+.payment-status-chip {
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.chip--paid { background: #dcfce7; color: #15803d; }
+.chip--partially_paid { background: #dbeafe; color: #1d4ed8; }
+.chip--pending_approval { background: #fef9c3; color: #a16207; }
+.chip--approved { background: #e0f2fe; color: #0369a1; }
+.chip--cancelled { background: #fee2e2; color: #b91c1c; }
+
+/* Monospace for IDs */
+.mono-text {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.85rem;
+  background: #f1f5f9;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  letter-spacing: 0.03em;
+}
+
+/* Payment hint text */
+.payment-hint {
+  color: #64748b;
+  font-size: 0.88rem;
+  margin: 0.5rem 0 0;
+}
+
+/* Spinner animation */
+.btn-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  display: inline-block;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Notes and reason text */
+.notes {
+  background: #f8fafc;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  color: #475569;
+  font-size: 0.9rem;
+  margin-top: 1rem;
+}
+
+.reason {
+  color: #475569;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}

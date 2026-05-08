@@ -6,11 +6,13 @@ import { Observable, tap } from 'rxjs';
 export class LoggingInterceptor implements HttpInterceptor {
   intercept(req: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
     const startedAt = performance.now();
+    const isMutating = ['POST', 'PUT', 'PATCH'].includes(req.method);
 
     console.debug('[HTTP] Request', {
       method: req.method,
       url: req.urlWithParams,
       hasAuthorizationHeader: req.headers.has('Authorization'),
+      ...(isMutating && req.body != null ? { body: req.body } : {}),
     });
 
     return next.handle(req).pipe(

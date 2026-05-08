@@ -42,6 +42,61 @@
     </section>
   </div>
 
+  <!-- ─── Razorpay Payment Section ──────────────────────────────────────── -->
+  <section class="detail-card payment-section" *ngIf="order.status === 'APPROVED'">
+    <div class="payment-section__header">
+      <div class="payment-section__info">
+        <h2>Payment</h2>
+        <!-- Already paid badge -->
+        <span *ngIf="isAlreadyPaid" class="payment-badge payment-badge--paid">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Payment Completed
+        </span>
+        <!-- Pending badge -->
+        <span *ngIf="!isAlreadyPaid && latestPayment" class="payment-badge payment-badge--pending">
+          Payment Pending
+        </span>
+      </div>
+
+      <!-- Pay with Razorpay button -->
+      <button
+        *ngIf="!isAlreadyPaid"
+        type="button"
+        class="btn btn-razorpay"
+        [disabled]="paymentProcessing"
+        (click)="payWithRazorpay()">
+        <span *ngIf="!paymentProcessing" class="razorpay-btn-content">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+            <line x1="1" y1="10" x2="23" y2="10"></line>
+          </svg>
+          Pay with Razorpay
+        </span>
+        <span *ngIf="paymentProcessing" class="razorpay-btn-processing">
+          <span class="btn-spinner"></span>
+          Processing...
+        </span>
+      </button>
+    </div>
+
+    <!-- Payment details if available -->
+    <dl class="meta-grid" *ngIf="latestPayment">
+      <div><dt>Payment Number</dt><dd>{{ latestPayment.paymentNumber }}</dd></div>
+      <div><dt>Status</dt><dd>
+        <span class="payment-status-chip" [class]="'chip--' + latestPayment.status?.toLowerCase()">
+          {{ latestPayment.status }}
+        </span>
+      </dd></div>
+      <div><dt>Amount</dt><dd>{{ latestPayment.paymentAmount | currency:'INR':'symbol':'1.0-2' }}</dd></div>
+      <div *ngIf="latestPayment.razorpayPaymentId"><dt>Razorpay Payment ID</dt><dd class="mono-text">{{ latestPayment.razorpayPaymentId }}</dd></div>
+      <div *ngIf="latestPayment.paidAt"><dt>Paid At</dt><dd>{{ latestPayment.paidAt | date:'medium' }}</dd></div>
+    </dl>
+
+    <p class="payment-hint" *ngIf="!latestPayment && !paymentLoading">
+      No payment initiated yet. Click <strong>Pay with Razorpay</strong> to complete payment for this order.
+    </p>
+  </section>
+
   <section class="detail-card">
     <div class="detail-table__header">
       <h2>Line Items</h2>
