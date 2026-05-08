@@ -206,12 +206,12 @@
         </div>
 
         <div class="metric-list" *ngIf="dashboard.overview as overview; else paymentEmpty">
-          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/payments?status=PENDING_APPROVAL')">
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/payments/create')">
             <span>Pending payments</span>
             <strong>{{ overview.pendingPayments }}</strong>
           </button>
-          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/payments?status=APPROVED')">
-            <span>Approved payments</span>
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/purchase-orders?status=PAID')">
+            <span>Paid purchase orders</span>
             <strong>{{ overview.approvedPayments }}</strong>
           </button>
           <article class="metric-row">
@@ -307,6 +307,10 @@
           <a class="shortcut-card" routerLink="/reports/purchase/summary">
             <strong>Purchase Summary</strong>
             <span>Spend, approval backlog, and receipt status</span>
+          </a>
+          <a class="shortcut-card" routerLink="/reports/purchase/orders">
+            <strong>Purchase Order Reports</strong>
+            <span>Order, payment, SKU, supplier, and receiving detail in one table</span>
           </a>
           <a class="shortcut-card" routerLink="/reports/suppliers/performance">
             <strong>Supplier Performance</strong>

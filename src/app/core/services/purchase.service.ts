@@ -29,7 +29,10 @@ export class PurchaseService {
 
   getPurchaseOrders(): Observable<PurchaseOrderResponse[]> {
     return this.api
-      .get<PurchaseOrderResponse[]>(API_ENDPOINTS.PURCHASE_ORDERS.ROOT, { service: 'purchase' })
+      .get<PageResponse<PurchaseOrderResponse>>(API_ENDPOINTS.PURCHASE_ORDERS.ROOT, {
+        params: { page: 0, size: 200, sortBy: 'createdAt', sortDir: 'desc' },
+      })
+      .pipe(map((response) => response.content ?? []))
       .pipe(handleServiceError(this.serviceName, 'getPurchaseOrders'));
   }
 
@@ -65,31 +68,31 @@ export class PurchaseService {
 
   submitPurchaseOrder(id: number): Observable<PurchaseOrderResponse> {
     return this.api
-      .put<PurchaseOrderResponse>(API_ENDPOINTS.PURCHASE_ORDERS.SUBMIT(id), {}, { service: 'purchase' })
+      .post<PurchaseOrderResponse>(API_ENDPOINTS.PURCHASE_ORDERS.SUBMIT(id), {})
       .pipe(handleServiceError(this.serviceName, 'submitPurchaseOrder'));
   }
 
   approvePurchaseOrder(id: number): Observable<PurchaseOrderResponse> {
     return this.api
-      .put<PurchaseOrderResponse>(API_ENDPOINTS.PURCHASE_ORDERS.APPROVE(id), {}, { service: 'purchase' })
+      .post<PurchaseOrderResponse>(API_ENDPOINTS.PURCHASE_ORDERS.APPROVE(id), {})
       .pipe(handleServiceError(this.serviceName, 'approvePurchaseOrder'));
   }
 
   rejectPurchaseOrder(id: number, reason: string): Observable<PurchaseOrderResponse> {
     return this.api
-      .put<PurchaseOrderResponse>(API_ENDPOINTS.PURCHASE_ORDERS.REJECT(id), { reason }, { service: 'purchase' })
+      .post<PurchaseOrderResponse>(API_ENDPOINTS.PURCHASE_ORDERS.REJECT(id), { rejectionReason: reason })
       .pipe(handleServiceError(this.serviceName, 'rejectPurchaseOrder'));
   }
 
   cancelPurchaseOrder(id: number, reason: string): Observable<PurchaseOrderResponse> {
     return this.api
-      .put<PurchaseOrderResponse>(API_ENDPOINTS.PURCHASE_ORDERS.CANCEL(id), { reason }, { service: 'purchase' })
+      .post<PurchaseOrderResponse>(API_ENDPOINTS.PURCHASE_ORDERS.CANCEL(id), { cancellationReason: reason })
       .pipe(handleServiceError(this.serviceName, 'cancelPurchaseOrder'));
   }
 
   receiveGoods(id: number, payload: GoodsReceiptRequest[]): Observable<PurchaseOrderResponse> {
     return this.api
-      .post<PurchaseOrderResponse>(API_ENDPOINTS.PURCHASE_ORDERS.RECEIVE_GOODS(id), payload, { service: 'purchase' })
+      .post<PurchaseOrderResponse>(API_ENDPOINTS.PURCHASE_ORDERS.RECEIVE(id), payload, { service: 'purchase' })
       .pipe(handleServiceError(this.serviceName, 'receiveGoods'));
   }
 

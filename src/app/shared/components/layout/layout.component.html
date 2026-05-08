@@ -1,8 +1,18 @@
 <div class="app-shell">
-  <app-navbar (toggleSidebar)="sidebarCollapsed.set(!sidebarCollapsed())"></app-navbar>
+  <app-navbar (toggleSidebar)="toggleSidebar()"></app-navbar>
   <app-toast-container></app-toast-container>
   <div class="app-body">
-    <app-sidebar [isCollapsed]="sidebarCollapsed()"></app-sidebar>
+    <button
+      *ngIf="isMobile() && sidebarOpen()"
+      type="button"
+      class="app-overlay"
+      aria-label="Close sidebar"
+      (click)="closeSidebar()"></button>
+    <app-sidebar
+      [isCollapsed]="sidebarCollapsed()"
+      [isMobile]="isMobile()"
+      [isOpen]="sidebarOpen()"
+      (navigate)="closeSidebar()"></app-sidebar>
     <main class="main-shell">
       <div class="page-content">
         <div class="main-content-inner">

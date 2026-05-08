@@ -52,15 +52,7 @@ export class AdminDashboardApiService {
 
   /** Payment summary fallback — payment data is now exclusively from Razorpay. */
   getPaymentSummary(): Observable<PaymentSummaryReportResponse> {
-    return of<PaymentSummaryReportResponse>({
-      totalPayments: 0,
-      pendingCount: 0,
-      paidCount: 0,
-      cancelledCount: 0,
-      pendingAmount: 0,
-      totalPaidAmount: 0,
-      supplierPayments: [],
-    });
+    return this.reportService.getPaymentSummaryReport();
   }
 
   getMovementSummary() {

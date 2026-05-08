@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, map, of } from 'rxjs';
+import { Observable, forkJoin, map, of } from 'rxjs';
 import { PageResponse } from '../http/backend.models';
 import { ApiService } from '../http/api.service';
 import { handleServiceError } from '../http/http.utils';
@@ -91,27 +91,29 @@ export class PaymentService {
 
   /** Fetches the latest paid payment for each PO ID in the array. */
   getLatestPaymentsForPurchaseOrders(poIds: number[]): Observable<PaymentStatusLookup> {
-    if (poIds.length === 0) return of({});
-    const lookup: PaymentStatusLookup = {};
-    return new Observable((observer) => {
-      let completed = 0;
-      poIds.forEach((poId) => {
-        this.getPaymentsByPurchaseOrder(poId, 0, 1).subscribe({
-          next: (page) => {
-            const payments = page.content ?? [];
-            const paid = payments.find((p) => p.status === 'PAID' || p.status === 'PARTIALLY_PAID');
-            if (paid) lookup[poId] = paid;
-            else if (payments[0]) lookup[poId] = payments[0];
-          },
-          error: () => {},
-          complete: () => {
-            if (++completed === poIds.length) {
-              observer.next(lookup);
-              observer.complete();
-            }
-          },
-        });
-      });
-    });
+    const uniquePoIds = [...new Set(poIds.filter((poId) => Number.isFinite(poId)))];
+    if (uniquePoIds.length === 0) {
+      return of({});
+    }
+
+    return forkJoin(
+      uniquePoIds.map((poId) =>
+        this.getPaymentsByPurchaseOrder(poId, 0, 5).pipe(
+          map((page) => ({ poId, payments: page.content ?? [] }))
+        )
+      )
+    ).pipe(
+      map((results) =>
+        results.reduce<PaymentStatusLookup>((lookup, { poId, payments }) => {
+          const paid = payments.find((payment) => payment.status === 'PAID' || payment.status === 'PARTIALLY_PAID');
+          if (paid) {
+            lookup[poId] = paid;
+          } else if (payments[0]) {
+            lookup[poId] = payments[0];
+          }
+          return lookup;
+        }, {})
+      )
+    );
   }
 }

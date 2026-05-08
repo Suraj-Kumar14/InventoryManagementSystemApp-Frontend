@@ -26,6 +26,18 @@ export class PoApprovalsComponent implements OnInit {
     this.loadPurchaseOrders();
   }
 
+  paymentReadyLabel(order: PurchaseOrderResponse): string {
+    if (order.paymentCompleted) {
+      return 'Payment Completed';
+    }
+
+    if (order.paymentStatus) {
+      return order.paymentStatus.replace(/_/g, ' ');
+    }
+
+    return order.status === 'PENDING_APPROVAL' ? 'Ready for Approval' : 'Payment Pending';
+  }
+
   approve(order: PurchaseOrderResponse): void {
     const approvalRemarks = window.prompt('Approval remarks (optional):') ?? '';
     this.actionLoadingId = order.purchaseOrderId ?? order.poId;

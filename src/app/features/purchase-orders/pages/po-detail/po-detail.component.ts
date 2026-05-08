@@ -1,6 +1,8 @@
 import { CommonModule, CurrencyPipe } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { environment } from '../../../../../environments/environment';
+import { AuthService } from '../../../../core/auth/services/auth.service';
 import { PurchaseOrderResponse } from '../../../../core/http/backend.models';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { PaymentService } from '../../../../core/services/payment.service';
@@ -8,6 +10,7 @@ import { PaymentResponse } from '../../../payments/models/payment.model';
 import { PoStatusBadgeComponent } from '../../components/po-status-badge/po-status-badge.component';
 import { PoTimelineComponent } from '../../components/po-timeline/po-timeline.component';
 import { PurchaseOrderApiService } from '../../services/purchase-order-api.service';
+import { UserRole } from '../../../../shared/config/app-config';
 
 // Razorpay global declaration (loaded via index.html script tag)
 declare var Razorpay: any;
@@ -20,6 +23,7 @@ declare var Razorpay: any;
   styleUrls: ['./po-detail.component.css'],
 })
 export class PoDetailComponent implements OnInit {
+  private readonly authService = inject(AuthService);
   private readonly purchaseApi = inject(PurchaseOrderApiService);
   private readonly paymentService = inject(PaymentService);
   private readonly route = inject(ActivatedRoute);
@@ -34,6 +38,11 @@ export class PoDetailComponent implements OnInit {
   latestPayment: PaymentResponse | null = null;
   paymentLoading = false;
   paymentProcessing = false;
+
+  readonly canManageDraft = this.authService.hasRole([UserRole.ADMIN, UserRole.OFFICER]);
+  readonly canApprove = this.authService.hasRole([UserRole.ADMIN, UserRole.MANAGER]);
+  readonly canRequestPayment = this.authService.hasRole([UserRole.OFFICER]);
+  readonly canReceive = this.authService.hasRole([UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF]);
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
@@ -59,8 +68,20 @@ export class PoDetailComponent implements OnInit {
     return this.purchaseOrder?.poId ?? 0;
   }
 
-  get isApproved(): boolean {
-    return this.purchaseOrder?.status === 'APPROVED';
+  get isPaymentPending(): boolean {
+    return ['PENDING_PAYMENT', 'PAYMENT_INITIATED'].includes(this.purchaseOrder?.status ?? '');
+  }
+
+  get isApprovalPending(): boolean {
+    return this.purchaseOrder?.status === 'PENDING_APPROVAL';
+  }
+
+  get isApprovedAwaitingPaymentRequest(): boolean {
+    return this.purchaseOrder?.status === 'APPROVED' && !this.isAlreadyPaid;
+  }
+
+  get isPaid(): boolean {
+    return this.purchaseOrder?.status === 'PAID' || this.isAlreadyPaid;
   }
 
   get isAlreadyPaid(): boolean {
@@ -68,7 +89,28 @@ export class PoDetailComponent implements OnInit {
   }
 
   get canPayWithRazorpay(): boolean {
-    return this.isApproved && !this.isAlreadyPaid && !this.paymentProcessing;
+    return this.canRequestPayment && this.isPaymentPending && !this.isAlreadyPaid && !this.paymentProcessing;
+  }
+
+  get canApprovePurchaseOrder(): boolean {
+    return this.canApprove && this.purchaseOrder?.status === 'PENDING_APPROVAL';
+  }
+
+  get showReceiveGoodsAction(): boolean {
+    return this.canReceive && (this.purchaseOrder?.status === 'PAID' || this.purchaseOrder?.status === 'PARTIALLY_RECEIVED');
+  }
+
+  get showSubmitForApprovalAction(): boolean {
+    return this.canManageDraft && this.purchaseOrder?.status === 'DRAFT' && !this.paymentProcessing;
+  }
+
+  get showSubmitForPaymentAction(): boolean {
+    return this.canRequestPayment && this.purchaseOrder?.status === 'APPROVED' && !this.isAlreadyPaid && !this.paymentProcessing;
+  }
+
+  get showPaymentSection(): boolean {
+    const status = this.purchaseOrder?.status ?? '';
+    return ['PENDING_APPROVAL', 'APPROVED', 'PENDING_PAYMENT', 'PAYMENT_INITIATED', 'PAID', 'PARTIALLY_RECEIVED', 'RECEIVED', 'FULLY_RECEIVED'].includes(status) || this.isAlreadyPaid;
   }
 
   // ─── Payment Status ──────────────────────────────────────────────────────
@@ -92,36 +134,21 @@ export class PoDetailComponent implements OnInit {
 
   payWithRazorpay(): void {
     if (!this.purchaseOrder) {
-      this.notifications.error('Purchase order not loaded. Please refresh the page.');
       return;
     }
+
+    if (this.purchaseOrder.status !== 'PENDING_PAYMENT' && this.purchaseOrder.status !== 'PAYMENT_INITIATED') {
+      this.debugLog('payment_blocked', { poId: this.poId, status: this.purchaseOrder.status, reason: 'status_not_payable' });
+      this.notifications.warning(this.paymentBlockedMessage(this.purchaseOrder.status));
+      return;
+    }
+
     if (!this.canPayWithRazorpay) {
+      this.debugLog('payment_blocked', { poId: this.poId, status: this.purchaseOrder.status, reason: 'role_or_processing' });
       return;
     }
 
-    // Always derive the ID from the guaranteed non-null poId field.
-    const purchaseOrderId: number = this.purchaseOrder.poId;
-
-    if (!purchaseOrderId || purchaseOrderId <= 0) {
-      this.notifications.error('Invalid purchase order ID. Please refresh the page and try again.');
-      return;
-    }
-
-    const payload = { purchaseOrderId };
-    console.log('[Razorpay Initiate Payload]', payload);
-
-    this.paymentProcessing = true;
-    this.paymentService.initiateRazorpayPayment(payload).subscribe({
-      next: (orderData) => {
-        this.openRazorpayCheckout(orderData);
-      },
-      error: (err) => {
-        this.paymentProcessing = false;
-        const msg =
-          err?.error?.message || err?.message || 'Failed to initiate payment. Please try again.';
-        this.notifications.error(msg);
-      },
-    });
+    this.startRazorpayPayment(this.purchaseOrder);
   }
 
 
@@ -195,9 +222,11 @@ export class PoDetailComponent implements OnInit {
           this.notifications.success(
             `Payment successful! Payment ID: ${razorpayPaymentId}`
           );
-          // Reload PO to reflect any status changes
           this.purchaseApi.getPurchaseOrderById(this.poId).subscribe({
-            next: (order) => (this.purchaseOrder = order),
+            next: (order) => {
+              this.purchaseOrder = order;
+              this.loadPaymentStatus(this.poId);
+            },
           });
         },
         error: (err) => {
@@ -211,20 +240,116 @@ export class PoDetailComponent implements OnInit {
 
   // ─── PO Actions ──────────────────────────────────────────────────────────
 
-  submitPurchaseOrder(): void {
+  submitForPayment(order: PurchaseOrderResponse | null): void {
+    this.debugLog('submit_for_payment_clicked', { poId: order?.purchaseOrderId ?? order?.poId, status: order?.status, order });
+
+    if (!order) {
+      this.notifications.error('Purchase order not loaded. Please refresh the page.');
+      return;
+    }
+
+    const poId = order.poId ?? order.purchaseOrderId;
+    if (!poId || poId <= 0) {
+      this.notifications.error('Invalid purchase order ID');
+      return;
+    }
+
+    if (this.paymentProcessing) {
+      return;
+    }
+
+    if (order.status !== 'APPROVED') {
+      const message = this.paymentBlockedMessage(order.status);
+      this.debugLog('submit_for_payment_blocked', { poId, status: order.status, reason: message });
+      this.notifications.warning(message);
+      return;
+    }
+
+    this.paymentProcessing = true;
+    this.purchaseApi.submitPurchaseOrderForPayment(poId).subscribe({
+      next: (updatedOrder) => {
+        this.paymentProcessing = false;
+        this.purchaseOrder = updatedOrder;
+        this.notifications.success('Purchase order is ready for Razorpay payment.');
+        this.loadPaymentStatus(poId);
+      },
+      error: (error) => {
+        this.paymentProcessing = false;
+        const message =
+          error?.error?.message || 'Payment is available only after approval.';
+        this.debugLog('submit_for_payment_failed', { poId, status: order.status, error });
+        this.notifications.error(message);
+      },
+    });
+  }
+
+  submitForApproval(): void {
     if (!this.purchaseOrder) {
       return;
     }
+
+    if (this.purchaseOrder.status !== 'DRAFT') {
+      this.debugLog('submit_for_approval_blocked', { poId: this.poId, status: this.purchaseOrder.status });
+      this.notifications.warning('Only draft purchase orders can be submitted for approval.');
+      return;
+    }
+
+    this.paymentProcessing = true;
     this.purchaseApi.submitPurchaseOrder(this.poId, {}).subscribe({
       next: (order) => {
+        this.paymentProcessing = false;
         this.purchaseOrder = order;
-        this.notifications.success('Purchase order submitted for approval');
+        this.notifications.success('Purchase order submitted for approval.');
+      },
+      error: (error) => {
+        this.paymentProcessing = false;
+        this.debugLog('submit_for_approval_failed', { poId: this.poId, error });
+        this.notifications.error(error?.error?.message || 'Unable to submit purchase order for approval.');
+      },
+    });
+  }
+
+  private startRazorpayPayment(order: PurchaseOrderResponse): void {
+    const purchaseOrderId = order.poId ?? order.purchaseOrderId;
+
+    if (!purchaseOrderId || purchaseOrderId <= 0) {
+      this.paymentProcessing = false;
+      this.notifications.error('Invalid purchase order ID');
+      return;
+    }
+
+    if (!['PENDING_PAYMENT', 'PAYMENT_INITIATED'].includes(order.status)) {
+      this.debugLog('payment_initiation_blocked', { purchaseOrderId, status: order.status });
+      this.notifications.warning(this.paymentBlockedMessage(order.status));
+      return;
+    }
+
+    const payload = { purchaseOrderId };
+    this.debugLog('payment_initiation_requested', { purchaseOrderId, status: order.status, payload });
+
+    this.paymentProcessing = true;
+    this.paymentService.initiateRazorpayPayment(payload).subscribe({
+      next: (response) => {
+        this.openRazorpayCheckout(response);
+      },
+      error: (error) => {
+        this.paymentProcessing = false;
+        const message =
+          error?.status === 0 || error?.status === 502 || error?.status === 503
+            ? 'Payment service is currently unavailable'
+            : error?.error?.message || 'Unable to initiate Razorpay payment';
+        console.error('[SubmitForPayment] failed', error);
+        this.notifications.error(message);
       },
     });
   }
 
   approvePurchaseOrder(): void {
     if (!this.purchaseOrder) {
+      return;
+    }
+    if (!this.canApprovePurchaseOrder) {
+      this.notifications.warning('This purchase order is waiting for approval.');
       return;
     }
     const approvalRemarks = window.prompt('Approval remarks (optional):') ?? '';
@@ -266,5 +391,31 @@ export class PoDetailComponent implements OnInit {
         this.notifications.success('Purchase order cancelled successfully');
       },
     });
+  }
+
+  paymentBlockedMessage(status?: string | null): string {
+    switch (status) {
+      case 'DRAFT':
+        return 'Draft purchase orders must be submitted for approval before payment.';
+      case 'PENDING_APPROVAL':
+        return 'This purchase order is waiting for approval.';
+      case 'APPROVED':
+        return 'Payment is available only after approval and payment request.';
+      case 'PAID':
+        return 'Payment already completed.';
+      case 'CANCELLED':
+      case 'REJECTED':
+      case 'RECEIVED':
+      case 'FULLY_RECEIVED':
+        return 'Payment is not available for this purchase order.';
+      default:
+        return 'Payment is available only after approval.';
+    }
+  }
+
+  private debugLog(action: string, details: Record<string, unknown>): void {
+    if (!environment.production) {
+      console.debug(`[PO Detail] ${action}`, details);
+    }
   }
 }

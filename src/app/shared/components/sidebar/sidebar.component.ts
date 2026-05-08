@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, inject } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/auth/services/auth.service';
 import { UserRole } from '../../config/app-config';
@@ -20,6 +20,9 @@ interface MenuItem {
 })
 export class SidebarComponent {
   @Input() isCollapsed = false;
+  @Input() isMobile = false;
+  @Input() isOpen = false;
+  @Output() navigate = new EventEmitter<void>();
   private authService = inject(AuthService);
 
   private readonly menuItems: MenuItem[] = [
@@ -85,22 +88,10 @@ export class SidebarComponent {
       iconClass: 'bi bi-box-arrow-in-down',
     },
     {
-      label: 'Create Purchase Order',
-      route: '/purchase-orders/create',
-      roles: [UserRole.OFFICER],
-      iconClass: 'bi bi-plus-square',
-    },
-    {
       label: 'Suppliers',
       route: '/suppliers',
       roles: [UserRole.OFFICER, UserRole.ADMIN],
       iconClass: 'bi bi-truck',
-    },
-    {
-      label: 'Supplier Performance',
-      route: '/suppliers/analytics',
-      roles: [UserRole.OFFICER],
-      iconClass: 'bi bi-clipboard-data',
     },
     {
       label: 'Stock Availability',

@@ -8,6 +8,7 @@ import { PurchaseService } from '../../../core/services/purchase.service';
 import { ReportService } from '../../../core/services/report.service';
 import { API_ENDPOINTS } from '../../../shared/config/app-config';
 import { AlertApiService } from '../../alerts/services/alert-api.service';
+import { PurchaseOrderApiService } from '../../purchase-orders/services/purchase-order-api.service';
 import { SupplierApiService } from '../../suppliers/services/supplier-api.service';
 import {
   PaymentSummaryItem,
@@ -28,6 +29,7 @@ export class PurchaseOfficerDashboardApiService {
   private readonly supplierApiService = inject(SupplierApiService);
   private readonly paymentService = inject(PaymentService);
   private readonly alertApiService = inject(AlertApiService);
+  private readonly purchaseOrderApi = inject(PurchaseOrderApiService);
 
   getPurchaseOfficerDashboard() {
     return this.reportService.getMyDashboard();
@@ -37,7 +39,7 @@ export class PurchaseOfficerDashboardApiService {
     return forkJoin({
       orders: this.purchaseService.getPurchaseOrders(),
       overdue: this.purchaseService.getOverduePurchaseOrders(),
-      summary: this.reportService.getPurchaseSummaryReport(),
+      summary: this.purchaseOrderApi.getPurchaseOfficerSummary(),
     }).pipe(
       map(({ orders, overdue, summary }) => {
         const sortedOrders = [...orders].sort((left, right) =>
@@ -113,23 +115,30 @@ export class PurchaseOfficerDashboardApiService {
   }
 
   getPaymentSummary() {
-    return this.paymentService.getPayments({ page: 0, size: 5, sortBy: 'createdAt', sortDir: 'desc' })
-      .pipe(
-        catchError(() => of({ content: [] as any[] })),
-        map((recentPaymentsPage) => ({
-          paymentSummary: null as RazorpayPaymentSummary | null,
-          paymentReportSummary: {
+    return forkJoin({
+      paymentReportSummary: this.reportService.getPaymentSummaryReport().pipe(
+        catchError(() =>
+          of({
             totalPayments: 0,
             pendingCount: 0,
             paidCount: 0,
             cancelledCount: 0,
             pendingAmount: 0,
             totalPaidAmount: 0,
-            supplierPayments: []
-          },
-          recentPayments: ((recentPaymentsPage as any).content ?? []).map((p: any) => this.mapPayment(p)),
-        }))
-      );
+            supplierPayments: [],
+          })
+        )
+      ),
+      recentPaymentsPage: this.paymentService.getPayments({ page: 0, size: 5, sortBy: 'createdAt', sortDir: 'desc' }).pipe(
+        catchError(() => of({ content: [] as any[] }))
+      ),
+    }).pipe(
+      map(({ paymentReportSummary, recentPaymentsPage }) => ({
+        paymentSummary: null as RazorpayPaymentSummary | null,
+        paymentReportSummary,
+        recentPayments: (recentPaymentsPage.content ?? []).map((payment) => this.mapPayment(payment)),
+      }))
+    );
   }
 
   getPurchaseAlerts() {

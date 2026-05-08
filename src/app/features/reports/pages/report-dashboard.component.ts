@@ -106,15 +106,24 @@ import { ReportKpiCardComponent } from '../components/report-kpi-card.component'
         box-shadow: 0 22px 60px rgba(15, 23, 42, 0.08);
       }
       .hero {
-        padding: 1.5rem;
+        position: relative;
+        padding: 1.5rem 1.5rem 1.5rem 1.8rem;
         display: flex;
         justify-content: space-between;
         gap: 1rem;
         align-items: flex-start;
+        overflow: hidden;
+      }
+      .hero::before {
+        content: '';
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 6px;
+        background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 55%, #0f4aa8 100%);
       }
       .eyebrow {
         margin: 0 0 0.4rem;
-        color: #0f766e;
+        color: #2563eb;
         font-size: 0.78rem;
         text-transform: uppercase;
         letter-spacing: 0.08em;
@@ -136,10 +145,11 @@ import { ReportKpiCardComponent } from '../components/report-kpi-card.component'
       .hero-actions > button {
         border: none;
         border-radius: 999px;
-        background: #0f172a;
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
         color: #fff;
         padding: 0.8rem 1rem;
         cursor: pointer;
+        box-shadow: 0 10px 24px rgba(37, 99, 235, 0.18);
       }
       .grid {
         margin-top: 1.1rem;
@@ -189,6 +199,7 @@ import { ReportKpiCardComponent } from '../components/report-kpi-card.component'
       @media (max-width: 700px) {
         .hero {
           flex-direction: column;
+          padding: 1.2rem 1.2rem 1.2rem 1.4rem;
         }
         .list-item {
           flex-direction: column;

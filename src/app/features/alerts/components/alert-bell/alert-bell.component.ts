@@ -94,7 +94,7 @@ export class AlertBellComponent implements OnInit, OnDestroy {
   markingAll = false;
 
   ngOnInit(): void {
-    this.pollSubscription = timer(0, 60000).subscribe(() => this.refresh());
+    this.pollSubscription = timer(0, 60000).subscribe(() => this.refreshUnreadCount());
   }
 
   ngOnDestroy(): void {
@@ -109,7 +109,7 @@ export class AlertBellComponent implements OnInit, OnDestroy {
   toggleDropdown(): void {
     this.dropdownOpen = !this.dropdownOpen;
     if (this.dropdownOpen) {
-      this.refresh();
+      this.refreshDropdown();
     }
   }
 
@@ -117,7 +117,7 @@ export class AlertBellComponent implements OnInit, OnDestroy {
     this.alertApi.markAsRead(alert.alertId).subscribe({
       next: () => {
         this.dropdownOpen = false;
-        this.refresh();
+        this.refreshDropdown();
         this.router.navigate([alert.actionUrl || `/alerts/${alert.alertId}`]);
       },
       error: () => this.notification.error('Unable to open this alert right now. Please try again.'),
@@ -130,13 +130,24 @@ export class AlertBellComponent implements OnInit, OnDestroy {
       next: () => {
         this.markingAll = false;
         this.notification.success('All alerts marked as read');
-        this.refresh();
+        this.refreshDropdown();
       },
       error: () => (this.markingAll = false),
     });
   }
 
-  private refresh(): void {
+  private refreshUnreadCount(): void {
+    this.alertApi.getUnreadCount().subscribe({
+      next: (count) => {
+        this.unreadCount = count;
+      },
+      error: () => {
+        this.unreadCount = 0;
+      },
+    });
+  }
+
+  private refreshDropdown(): void {
     this.loading = true;
     forkJoin({
       count: this.alertApi.getUnreadCount(),

@@ -90,6 +90,12 @@ export const reportsRoutes: Routes = [
     data: { roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.OFFICER], kind: 'purchase-summary', title: 'Purchase Summary', subtitle: 'Review approval status, received value, and procurement backlog.', exportable: true },
   },
   {
+    path: 'purchase/orders',
+    component: ReportDataPageComponent,
+    canActivate: [roleGuard],
+    data: { roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.OFFICER], kind: 'purchase-orders', title: 'Purchase Order Reports', subtitle: 'Inspect order, payment, supplier, and product-level procurement details through the gateway-backed purchase API.' },
+  },
+  {
     path: 'suppliers/performance',
     component: ReportDataPageComponent,
     canActivate: [roleGuard],

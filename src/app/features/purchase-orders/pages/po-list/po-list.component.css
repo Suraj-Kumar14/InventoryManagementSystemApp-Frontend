@@ -116,6 +116,7 @@ select {
 
 .data-table {
   width: 100%;
+  min-width: 860px;
   border-collapse: collapse;
 }
 
@@ -197,5 +198,25 @@ select {
   .pagination {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .hero__actions,
+  .actions {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero,
+  .panel {
+    padding: 1rem;
+  }
+
+  .filters-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .btn {
+    width: 100%;
   }
 }

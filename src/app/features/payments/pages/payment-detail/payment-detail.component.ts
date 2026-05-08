@@ -55,10 +55,31 @@ import { PaymentResponse } from '../../models/payment.model';
     <div *ngIf="loading && !payment" class="loading-state">Loading payment details...</div>
   `,
   styles: [`
-    .page-shell{display:grid;gap:1rem;padding:1.5rem}
-    .hero{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding:1.4rem;border-radius:1.3rem;background:linear-gradient(150deg,#0f172a,#1d4ed8);color:#fff}
-    .eyebrow{margin:0;font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:#bfdbfe}
-    .hero h1{margin:.35rem 0}.hero p{margin:0;color:#dbeafe}
+    .page-shell{display:grid;gap:1rem;padding:clamp(1rem,2vw,1.5rem)}
+    .hero{
+      position:relative;
+      display:flex;
+      justify-content:space-between;
+      gap:1rem;
+      flex-wrap:wrap;
+      padding:1.4rem 1.4rem 1.4rem 1.7rem;
+      border-radius:24px;
+      background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);
+      color:#102748;
+      border:1px solid #dbe4f0;
+      box-shadow:0 18px 40px rgba(15,23,42,.08);
+      overflow:hidden
+    }
+    .hero::before{
+      content:'';
+      position:absolute;
+      inset:0 auto 0 0;
+      width:6px;
+      background:linear-gradient(180deg,#2563eb 0%,#1d4ed8 55%,#0f4aa8 100%)
+    }
+    .eyebrow{margin:0;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:#2563eb;font-weight:700}
+    .hero h1{margin:.35rem 0;color:#102748}
+    .hero p{margin:0;color:#64748b}
     .hero-badges{display:flex;gap:.5rem;align-items:start;flex-wrap:wrap}
     .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem}
     .stats article,.card{background:#fff;border:1px solid #e2e8f0;border-radius:1.1rem;padding:1rem 1.1rem;box-shadow:0 10px 24px rgba(15,23,42,.06)}
@@ -69,7 +90,13 @@ import { PaymentResponse } from '../../models/payment.model';
     .action-list a{text-decoration:none;background:#f1f5f9;border-radius:.9rem;padding:.75rem .9rem;color:#0f172a}
     .mono{font-family:monospace;font-size:.85rem;background:#f1f5f9;padding:.1rem .4rem;border-radius:4px}
     .state,.loading-state{padding:2rem;color:#64748b;text-align:center}
-    @media(max-width:900px){.detail-grid{grid-template-columns:1fr}}
+    @media(max-width:900px){
+      .detail-grid{grid-template-columns:1fr}
+      .hero{padding:1.2rem 1.2rem 1.2rem 1.4rem}
+    }
+    @media(max-width:700px){
+      .hero{flex-direction:column;align-items:stretch}
+    }
   `],
 })
 export class PaymentDetailComponent {

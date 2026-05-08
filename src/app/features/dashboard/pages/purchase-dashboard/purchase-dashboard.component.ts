@@ -64,7 +64,7 @@ export class PurchaseDashboardComponent implements OnInit {
         value: overview.pendingPayments,
         subtitle: 'Awaiting payment progression',
         icon: 'bi bi-credit-card-2-front',
-        route: '/payments?status=PENDING_APPROVAL',
+        route: '/payments/create',
       });
     }
 

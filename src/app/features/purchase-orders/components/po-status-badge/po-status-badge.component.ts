@@ -14,13 +14,20 @@ export class PoStatusBadgeComponent {
 
   get badgeClass(): string {
     switch (this.status) {
+      case 'PENDING_PAYMENT':
+        return 'badge badge--payment';
+      case 'PAYMENT_INITIATED':
+        return 'badge badge--payment-started';
       case 'APPROVED':
         return 'badge badge--approved';
+      case 'PAID':
+        return 'badge badge--paid';
       case 'PENDING_APPROVAL':
         return 'badge badge--pending';
       case 'PARTIALLY_RECEIVED':
         return 'badge badge--partial';
       case 'RECEIVED':
+      case 'FULLY_RECEIVED':
         return 'badge badge--received';
       case 'REJECTED':
         return 'badge badge--rejected';

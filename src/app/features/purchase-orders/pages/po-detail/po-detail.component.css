@@ -85,7 +85,12 @@ dd {
 
 .detail-table {
   width: 100%;
+  min-width: 720px;
   border-collapse: collapse;
+}
+
+.detail-table-wrap {
+  overflow-x: auto;
 }
 
 .detail-table th,
@@ -125,6 +130,15 @@ dd {
     flex-direction: column;
     align-items: flex-start;
   }
+
+  .detail-actions {
+    width: 100%;
+  }
+
+  .detail-actions .btn {
+    flex: 1 1 220px;
+    text-align: center;
+  }
 }
 
 /* ─── Razorpay Payment Section ─────────────────────────────────────────── */
@@ -151,6 +165,16 @@ dd {
 
 .payment-section__info h2 {
   margin: 0;
+}
+
+.payment-stage-copy,
+.approval-hint {
+  margin: 0 0 1rem;
+  color: #475569;
+}
+
+.approval-hint {
+  font-weight: 600;
 }
 
 /* Razorpay branded button */
@@ -219,6 +243,12 @@ dd {
   border: 1px solid #fde047;
 }
 
+.payment-badge--ready {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
 /* Payment status chip in details */
 .payment-status-chip {
   padding: 0.2rem 0.7rem;
@@ -228,6 +258,7 @@ dd {
 }
 
 .chip--paid { background: #dcfce7; color: #15803d; }
+.chip--pending { background: #fff7ed; color: #c2410c; }
 .chip--partially_paid { background: #dbeafe; color: #1d4ed8; }
 .chip--pending_approval { background: #fef9c3; color: #a16207; }
 .chip--approved { background: #e0f2fe; color: #0369a1; }
@@ -279,4 +310,41 @@ dd {
   color: #475569;
   font-size: 0.9rem;
   margin-top: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .detail-page {
+    gap: 1rem;
+  }
+
+  .detail-card,
+  .loading-card {
+    padding: 1rem;
+  }
+
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .payment-section__header,
+  .payment-section__info {
+    align-items: flex-start;
+  }
+
+  .btn-razorpay {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 560px) {
+  .detail-actions .btn {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .payment-status-chip,
+  .payment-badge {
+    max-width: 100%;
+  }
 }

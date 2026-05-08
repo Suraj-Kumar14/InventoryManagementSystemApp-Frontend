@@ -46,6 +46,11 @@ describe('PoReceiveComponent', () => {
   };
 
   beforeEach(async () => {
+    routerStub.navigate.mockReset();
+    notificationStub.success.mockReset();
+    notificationStub.error.mockReset();
+    notificationStub.warning.mockReset();
+
     purchaseApiStub = {
       getPurchaseOrderById: vi.fn().mockReturnValue(of(order)),
       receivePurchaseOrder: vi.fn().mockReturnValue(of({ ...order, status: 'PARTIALLY_RECEIVED' })),
@@ -95,6 +100,44 @@ describe('PoReceiveComponent', () => {
     component.submit();
 
     expect(purchaseApiStub.receivePurchaseOrder).toHaveBeenCalled();
+  });
+
+  it('should not submit when status is not receivable', () => {
+    component.purchaseOrder = { ...order, status: 'DRAFT' };
+
+    component.submit();
+
+    expect(notificationStub.warning).toHaveBeenCalled();
+    expect(purchaseApiStub.receivePurchaseOrder).not.toHaveBeenCalled();
+  });
+
+  it('should not load when route id is invalid', async () => {
+    await TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [PoReceiveComponent],
+      providers: [
+        provideRouter([]),
+        { provide: Router, useValue: routerStub },
+        { provide: PurchaseOrderApiService, useValue: purchaseApiStub },
+        { provide: NotificationService, useValue: notificationStub },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              paramMap: {
+                get: () => 'abc',
+              },
+            },
+          },
+        },
+      ],
+    }).compileComponents();
+
+    const invalidFixture = TestBed.createComponent(PoReceiveComponent);
+    invalidFixture.detectChanges();
+
+    expect(notificationStub.error).toHaveBeenCalled();
+    expect(purchaseApiStub.getPurchaseOrderById).not.toHaveBeenCalled();
   });
 
   it('should show loading state while submitting', async () => {

@@ -15,6 +15,7 @@ import {
   PageResponse,
   PaymentSummaryReportResponse,
   ProductValuationItem,
+  PurchaseOrderReportRowResponse,
   PurchaseSummaryReportResponse,
   ReportExportFormat,
   ReportFilter,
@@ -136,23 +137,33 @@ interface ReportColumn {
         box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
       }
       .header {
+        position: relative;
         display: flex;
         justify-content: space-between;
         gap: 1rem;
         align-items: flex-start;
-        padding: 1.4rem;
+        padding: 1.4rem 1.4rem 1.4rem 1.7rem;
         margin-bottom: 1rem;
+        overflow: hidden;
+      }
+      .header::before {
+        content: '';
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 6px;
+        background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 55%, #0f4aa8 100%);
       }
       .header h1 {
         margin: 0;
+        color: #102748;
       }
       .header p {
         margin: 0.4rem 0 0;
-        color: #475569;
+        color: #64748b;
       }
       .eyebrow {
         margin: 0 0 0.3rem;
-        color: #0f766e;
+        color: #2563eb;
         text-transform: uppercase;
         letter-spacing: 0.08em;
         font-size: 0.78rem;
@@ -166,10 +177,11 @@ interface ReportColumn {
       button {
         border: none;
         border-radius: 999px;
-        background: #0f172a;
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
         color: #fff;
         padding: 0.8rem 1rem;
         cursor: pointer;
+        box-shadow: 0 10px 24px rgba(37, 99, 235, 0.18);
       }
       button:disabled {
         opacity: 0.65;
@@ -218,6 +230,7 @@ interface ReportColumn {
       @media (max-width: 700px) {
         .header {
           flex-direction: column;
+          padding: 1.2rem 1.2rem 1.2rem 1.4rem;
         }
         .pager {
           flex-direction: column;
@@ -293,7 +306,9 @@ export class ReportDataPageComponent implements OnInit {
           ? this.reportService.exportStockMovements(this.filters, format)
           : this.kind === 'purchase-summary'
             ? this.reportService.exportPurchaseSummary(this.filters, format)
-            : this.reportService.exportSupplierPerformance(this.filters, format);
+            : this.kind === 'supplier-performance'
+              ? this.reportService.exportSupplierPerformance(this.filters, format)
+              : this.reportService.exportPurchaseSummary(this.filters, format);
 
     stream.pipe(finalize(() => (this.exportLoading = null))).subscribe({
       next: (blob) => {
@@ -375,6 +390,8 @@ export class ReportDataPageComponent implements OnInit {
         return this.reportService.getDeadStockReport(this.filters);
       case 'purchase-summary':
         return this.reportService.getPurchaseSummaryReport(this.filters);
+      case 'purchase-orders':
+        return this.reportService.getPurchaseOrderReports(this.filters);
       case 'supplier-performance':
         return this.reportService.getSupplierPerformanceReport(this.filters);
       case 'payment-summary':
@@ -482,6 +499,27 @@ export class ReportDataPageComponent implements OnInit {
         break;
       case 'purchase-summary':
         this.applyPurchaseSummary(data as PurchaseSummaryReportResponse);
+        break;
+      case 'purchase-orders':
+        this.applyPage(data as PageResponse<PurchaseOrderReportRowResponse>, [
+          { key: 'poNumber', label: 'PO Number' },
+          { key: 'poStatus', label: 'PO Status' },
+          { key: 'paymentStatus', label: 'Payment Status' },
+          { key: 'paymentNumber', label: 'Payment #' },
+          { key: 'razorpayPaymentId', label: 'Razorpay Payment ID' },
+          { key: 'supplierName', label: 'Supplier' },
+          { key: 'productSku', label: 'SKU' },
+          { key: 'productName', label: 'Product' },
+          { key: 'category', label: 'Category' },
+          { key: 'quantity', label: 'Qty', type: 'number' },
+          { key: 'receivedQuantity', label: 'Received', type: 'number' },
+          { key: 'remainingQuantity', label: 'Remaining', type: 'number' },
+          { key: 'unitCost', label: 'Unit Cost', type: 'currency' },
+          { key: 'totalAmount', label: 'Total Amount', type: 'currency' },
+          { key: 'orderDate', label: 'Order Date', type: 'date' },
+          { key: 'expectedDate', label: 'Expected Date', type: 'date' },
+          { key: 'approvedByName', label: 'Approved By' },
+        ]);
         break;
       case 'supplier-performance':
         this.applyPage(data as PageResponse<SupplierPerformanceReportResponse>, [

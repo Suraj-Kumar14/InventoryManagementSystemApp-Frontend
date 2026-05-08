@@ -1,4 +1,5 @@
 import { HttpParams } from '@angular/common/http';
+import { isDevMode } from '@angular/core';
 import { MonoTypeOperatorFunction, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
@@ -31,7 +32,9 @@ export function handleServiceError<T>(
   operation: string
 ): MonoTypeOperatorFunction<T> {
   return catchError((error) => {
-    console.error(`[${serviceName}] ${operation} failed`, error);
+    if (isDevMode()) {
+      console.error(`[${serviceName}] ${operation} failed`, error);
+    }
     return throwError(() => error);
   });
 }

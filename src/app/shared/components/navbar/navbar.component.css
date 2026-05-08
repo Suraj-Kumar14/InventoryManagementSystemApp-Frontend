@@ -36,6 +36,7 @@
 .navbar-right {
   display: flex;
   align-items: center;
+  min-width: 0;
 }
 
 .navbar-left {
@@ -44,6 +45,8 @@
 
 .navbar-right {
   gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .navbar-toggle-btn {
@@ -77,6 +80,7 @@
   font-weight: 800;
   letter-spacing: -0.04em;
   color: var(--color-primary-navy);
+  white-space: nowrap;
 }
 
 .navbar-user-info {
@@ -161,4 +165,39 @@
 
 .navbar-dropdown-item--danger:hover {
   background: var(--color-danger-soft);
+}
+
+@media (max-width: 768px) {
+  .navbar-inner {
+    min-height: 64px;
+    gap: 0.75rem;
+  }
+
+  .navbar-right {
+    gap: 0.65rem;
+  }
+
+  .navbar-brand {
+    font-size: 1.1rem;
+  }
+
+  .navbar-toggle-btn,
+  .navbar-avatar-btn {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+@media (max-width: 560px) {
+  .navbar-inner {
+    padding: 0 0.75rem;
+  }
+
+  .navbar-brand {
+    font-size: 1rem;
+  }
+
+  .navbar-right {
+    gap: 0.5rem;
+  }
 }

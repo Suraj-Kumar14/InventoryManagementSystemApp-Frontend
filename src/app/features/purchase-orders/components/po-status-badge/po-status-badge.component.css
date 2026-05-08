@@ -14,6 +14,16 @@
   color: #3949ab;
 }
 
+.badge--payment {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.badge--payment-started {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
 .badge--pending {
   background: #fff3e0;
   color: #b45309;
@@ -22,6 +32,11 @@
 .badge--approved {
   background: #e0f2fe;
   color: #0369a1;
+}
+
+.badge--paid {
+  background: #dcfce7;
+  color: #166534;
 }
 
 .badge--partial {

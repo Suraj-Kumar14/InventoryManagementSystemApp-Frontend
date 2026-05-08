@@ -71,14 +71,45 @@ import { PaymentResponse } from '../../models/payment.model';
     </section>
   `,
   styles: [`
-    .page-shell { display:grid; gap:1.4rem; padding:1.5rem; }
-    .hero { display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap; padding:1.5rem; border-radius:1.4rem; background:linear-gradient(145deg, #0f172a, #1d4ed8); color:#fff; }
-    .eyebrow { margin:0; text-transform:uppercase; letter-spacing:0.1em; font-size:0.75rem; color:#bae6fd; }
-    .hero h1 { margin:0.35rem 0; font-size:2rem; }
-    .subtitle { margin:0; color:#dbeafe; }
+    .page-shell { display:grid; gap:1.4rem; padding:clamp(1rem,2vw,1.5rem); }
+    .hero {
+      position:relative;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:1rem;
+      flex-wrap:wrap;
+      padding:1.5rem 1.5rem 1.5rem 1.8rem;
+      border-radius:24px;
+      background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);
+      color:#102748;
+      border:1px solid #dbe4f0;
+      box-shadow:0 18px 40px rgba(15,23,42,.08);
+      overflow:hidden;
+    }
+    .hero::before {
+      content:'';
+      position:absolute;
+      inset:0 auto 0 0;
+      width:6px;
+      background:linear-gradient(180deg,#2563eb 0%,#1d4ed8 55%,#0f4aa8 100%);
+    }
+    .eyebrow { margin:0; text-transform:uppercase; letter-spacing:0.12em; font-size:0.75rem; color:#2563eb; font-weight:700; }
+    .hero h1 { margin:0.35rem 0; font-size:clamp(1.55rem,4vw,2rem); color:#102748; }
+    .subtitle { margin:0; color:#64748b; max-width:42rem; }
     .hero-actions { display:flex; gap:0.75rem; }
-    .btn-pay { text-decoration:none; background:#f97316; color:#fff; border-radius:999px; padding:0.8rem 1.4rem; font-weight:700; font-size:0.9rem; white-space:nowrap; }
-    .btn-pay:hover { opacity:0.9; }
+    .btn-pay {
+      text-decoration:none;
+      background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%);
+      color:#fff;
+      border-radius:999px;
+      padding:0.85rem 1.4rem;
+      font-weight:700;
+      font-size:0.92rem;
+      white-space:nowrap;
+      box-shadow:0 10px 24px rgba(37,99,235,.18);
+    }
+    .btn-pay:hover { opacity:0.94; transform:translateY(-1px); }
     .table-card { background:#fff; border-radius:1.2rem; border:1px solid #e2e8f0; box-shadow:0 14px 32px rgba(15,23,42,0.08); overflow:auto; }
     table { width:100%; border-collapse:collapse; }
     th, td { padding:1rem; border-bottom:1px solid #e2e8f0; text-align:left; vertical-align:top; }
@@ -91,6 +122,23 @@ import { PaymentResponse } from '../../models/payment.model';
     .pagination { display:flex; justify-content:center; align-items:center; gap:1rem; padding:1rem; }
     .pagination button { border:none; background:#e2e8f0; border-radius:999px; padding:0.5rem 1rem; cursor:pointer; }
     .pagination button:disabled { opacity:0.4; cursor:not-allowed; }
+    @media (max-width: 900px) {
+      .hero { align-items:flex-start; }
+    }
+    @media (max-width: 700px) {
+      .hero {
+        flex-direction:column;
+        align-items:stretch;
+        padding:1.2rem 1.2rem 1.2rem 1.4rem;
+      }
+      .hero-actions,
+      .btn-pay {
+        width:100%;
+      }
+      .btn-pay {
+        text-align:center;
+      }
+    }
   `],
 })
 export class PaymentListComponent implements OnInit {

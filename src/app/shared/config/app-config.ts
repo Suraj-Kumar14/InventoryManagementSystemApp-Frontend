@@ -155,6 +155,7 @@ export const API_ENDPOINTS = {
     ROOT: '/api/v1/purchase-orders',
     SEARCH: '/api/v1/purchase-orders/search',
     SUMMARY: '/api/v1/purchase-orders/summary',
+    PURCHASE_OFFICER_SUMMARY: '/api/v1/purchase-orders/purchase-officer/summary',
     ANALYTICS: '/api/v1/purchase-orders/analytics',
     OVERDUE: '/api/v1/purchase-orders/overdue',
     PENDING_APPROVAL: '/api/v1/purchase-orders/pending-approval',
@@ -166,12 +167,13 @@ export const API_ENDPOINTS = {
     BY_CREATED_BY: (userId: number) => `/api/v1/purchase-orders/created-by/${userId}`,
     DATE_RANGE: '/api/v1/purchase-orders/date-range',
     SUBMIT: (id: number) => `/api/v1/purchase-orders/${id}/submit`,
+    SUBMIT_FOR_PAYMENT: (id: number) => `/api/v1/purchase-orders/${id}/submit-for-payment`,
     APPROVE: (id: number) => `/api/v1/purchase-orders/${id}/approve`,
     REJECT: (id: number) => `/api/v1/purchase-orders/${id}/reject`,
     CANCEL: (id: number) => `/api/v1/purchase-orders/${id}/cancel`,
     RECEIVE: (id: number) => `/api/v1/purchase-orders/${id}/receive`,
-    RECEIVE_GOODS: (id: number) => `/api/v1/purchase-orders/${id}/receive`,
     HISTORY: (id: number) => `/api/v1/purchase-orders/${id}/history`,
+    REPORTS: '/api/v1/purchase-orders/reports',
   },
   MOVEMENTS: {
     ROOT: '/api/v1/movements',
@@ -222,6 +224,7 @@ export const API_ENDPOINTS = {
     SUPPLIER_PERFORMANCE: '/api/v1/reports/purchase/supplier-performance',
     SUPPLIER_PERFORMANCE_BY_ID: (supplierId: number) =>
       `/api/v1/reports/purchase/supplier-performance/${supplierId}`,
+    PAYMENT_SUMMARY: '/api/v1/reports/payments/summary',
     ALERT_SUMMARY: '/api/v1/reports/alerts/summary',
     EXECUTIVE_DASHBOARD: '/api/v1/reports/dashboard/executive',
     MY_DASHBOARD: '/api/v1/reports/dashboard/my',
@@ -236,6 +239,7 @@ export const API_ENDPOINTS = {
   },
   PAYMENTS: {
     ROOT: '/api/v1/payments',
+    SUMMARY: '/api/v1/payments/summary',
     DETAIL: (id: number) => `/api/v1/payments/${id}`,
     BY_PURCHASE_ORDER: (poId: number) => `/api/v1/payments/purchase-order/${poId}`,
     PAID_AMOUNT: (poId: number) => `/api/v1/payments/purchase-order/${poId}/paid-amount`,

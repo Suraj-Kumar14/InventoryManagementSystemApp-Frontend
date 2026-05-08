@@ -103,10 +103,46 @@ import { AlertApiService } from '../../services/alert-api.service';
   `,
   styles: [`
     .page-shell { display:grid; gap:1.25rem; }
-    .page-header { display:flex; justify-content:space-between; gap:1rem; align-items:flex-start; padding:1.5rem; border-radius:24px; background:linear-gradient(135deg,#0f172a,#1d4ed8); color:#fff; }
-    .page-header h1 { margin:0.2rem 0 0.45rem; font-size:1.85rem; }
-    .page-header p { margin:0; color:#dbeafe; max-width:60ch; }
-    .eyebrow { text-transform:uppercase; letter-spacing:0.16em; font-size:0.72rem !important; color:#bfdbfe !important; }
+    .page-header {
+      position:relative;
+      display:flex;
+      justify-content:space-between;
+      gap:1rem;
+      align-items:flex-start;
+      padding:1.5rem;
+      border-radius:24px;
+      background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);
+      color:#0f172a;
+      border:1px solid #dbe4f0;
+      box-shadow:0 18px 40px rgba(15,23,42,.08);
+      overflow:hidden;
+    }
+    .page-header::before {
+      content:'';
+      position:absolute;
+      inset:0 auto 0 0;
+      width:6px;
+      background:linear-gradient(180deg,#2563eb 0%,#1d4ed8 55%,#0f4aa8 100%);
+    }
+    .page-header h1 {
+      margin:0.2rem 0 0.45rem;
+      font-size:clamp(1.45rem,3.5vw,1.85rem);
+      color:#102748;
+      line-height:1.2;
+    }
+    .page-header p {
+      margin:0;
+      color:#64748b;
+      max-width:60ch;
+    }
+    .eyebrow {
+      text-transform:uppercase;
+      letter-spacing:0.16em;
+      font-size:0.72rem !important;
+      font-weight:700;
+      color:#2563eb !important;
+      margin:0 0 0.35rem;
+    }
     .quick-filters { display:flex; gap:0.75rem; flex-wrap:wrap; }
     .quick-filters__chip { border:none; border-radius:999px; padding:0.7rem 1rem; background:#e2e8f0; color:#334155; cursor:pointer; font-weight:600; }
     .quick-filters__chip--active { background:#0f172a; color:#fff; }
@@ -124,10 +160,19 @@ import { AlertApiService } from '../../services/alert-api.service';
     .alert-row__actions { align-content:flex-start; min-width:220px; justify-content:flex-end; }
     .btn-primary,.btn-secondary { border:none; border-radius:14px; padding:0.8rem 1rem; cursor:pointer; font-weight:600; text-decoration:none; }
     .btn-primary { background:#2563eb; color:#fff; }
-    .btn-secondary { background:#eff6ff; color:#1d4ed8; }
+    .btn-secondary { background:linear-gradient(135deg,#2563eb 0%,#1d4ed8 100%); color:#fff; box-shadow:0 10px 24px rgba(37,99,235,.18); }
     .btn-compact { padding:0.65rem 0.85rem; }
     .pagination-bar { display:flex; justify-content:flex-end; align-items:center; gap:0.85rem; color:#475569; }
-    @media (max-width: 900px) { .alert-row { flex-direction:column; } .alert-row__actions { min-width:auto; justify-content:flex-start; } .page-header { flex-direction:column; } }
+    @media (max-width: 900px) {
+      .alert-row { flex-direction:column; }
+      .alert-row__actions { min-width:auto; justify-content:flex-start; }
+      .page-header { flex-direction:column; padding:1.2rem 1.2rem 1.2rem 1.35rem; }
+    }
+    @media (max-width: 600px) {
+      .page-header h1 { font-size:1.35rem; }
+      .page-header p { max-width:none; }
+      .page-header .btn-secondary { width:100%; }
+    }
   `],
 })
 export class AlertCenterComponent implements OnInit {

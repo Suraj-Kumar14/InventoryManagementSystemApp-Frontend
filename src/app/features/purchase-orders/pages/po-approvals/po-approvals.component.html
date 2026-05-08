@@ -20,6 +20,7 @@
             <app-po-status-badge [status]="order.status"></app-po-status-badge>
           </div>
           <p>{{ order.supplierName || ('Supplier #' + order.supplierId) }} | {{ order.warehouseName || ('Warehouse #' + order.warehouseId) }}</p>
+          <p><strong>Payment:</strong> {{ paymentReadyLabel(order) }}</p>
           <p>Expected {{ order.expectedDeliveryDate || order.expectedDate | date:'mediumDate' }}</p>
           <p>Total {{ order.totalAmount | currency:'INR':'symbol':'1.0-2' }}</p>
         </div>

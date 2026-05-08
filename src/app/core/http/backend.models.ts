@@ -534,6 +534,8 @@ export interface PurchaseOrderResponse {
   createdAt?: string;
   updatedAt?: string;
   isOverdue?: boolean;
+  paymentStatus?: string | null;
+  paymentCompleted?: boolean;
   lineItems: PurchaseOrderLineItemResponse[];
   history?: PurchaseOrderHistoryResponse[];
 }
@@ -1158,6 +1160,33 @@ export interface PurchaseSummaryReportResponse {
   totalPurchaseValue: number;
   receivedPurchaseValue: number;
   pendingPurchaseValue: number;
+}
+
+export interface PurchaseOrderReportRowResponse {
+  poId: number;
+  poNumber: string;
+  poStatus: string;
+  paymentStatus?: string | null;
+  supplierId: number;
+  supplierName?: string | null;
+  warehouseId: number;
+  warehouseName?: string | null;
+  orderDate?: string | null;
+  expectedDate?: string | null;
+  approvedByName?: string | null;
+  productId: number;
+  productSku?: string | null;
+  productName?: string | null;
+  category?: string | null;
+  quantity: number;
+  receivedQuantity: number;
+  remainingQuantity: number;
+  unitCost: number;
+  totalAmount: number;
+  paymentAmount?: number | null;
+  paymentNumber?: string | null;
+  razorpayOrderId?: string | null;
+  razorpayPaymentId?: string | null;
 }
 
 export interface SupplierPerformanceReportResponse {

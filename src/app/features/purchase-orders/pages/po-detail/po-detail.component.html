@@ -8,8 +8,8 @@
     <div class="detail-actions">
       <app-po-status-badge [status]="order.status" [overdue]="!!order.isOverdue"></app-po-status-badge>
       <a routerLink="/purchase-orders" class="btn btn-secondary">Back</a>
-      <a *ngIf="['DRAFT', 'PENDING_APPROVAL'].includes(order.status)" [routerLink]="['/purchase-orders', order.purchaseOrderId ?? order.poId, 'edit']" class="btn btn-secondary">Edit</a>
-      <a *ngIf="['APPROVED', 'PARTIALLY_RECEIVED'].includes(order.status)" [routerLink]="['/purchase-orders', order.purchaseOrderId ?? order.poId, 'receive']" class="btn btn-primary">Receive Goods</a>
+      <a *ngIf="order.status === 'DRAFT' && canManageDraft" [routerLink]="['/purchase-orders', order.purchaseOrderId ?? order.poId, 'edit']" class="btn btn-secondary">Edit</a>
+      <a *ngIf="showReceiveGoodsAction" [routerLink]="['/purchase-orders', order.purchaseOrderId ?? order.poId, 'receive']" class="btn btn-primary">Receive Goods</a>
     </div>
   </header>
 
@@ -43,24 +43,24 @@
   </div>
 
   <!-- ─── Razorpay Payment Section ──────────────────────────────────────── -->
-  <section class="detail-card payment-section" *ngIf="order.status === 'APPROVED'">
+  <section class="detail-card payment-section" *ngIf="showPaymentSection">
     <div class="payment-section__header">
       <div class="payment-section__info">
-        <h2>Payment</h2>
-        <!-- Already paid badge -->
-        <span *ngIf="isAlreadyPaid" class="payment-badge payment-badge--paid">
+        <h2>Razorpay Payment</h2>
+        <span *ngIf="isPaid" class="payment-badge payment-badge--paid">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
           Payment Completed
         </span>
-        <!-- Pending badge -->
-        <span *ngIf="!isAlreadyPaid && latestPayment" class="payment-badge payment-badge--pending">
+        <span *ngIf="!isPaid && latestPayment" class="payment-badge payment-badge--pending">
           Payment Pending
+        </span>
+        <span *ngIf="order.status === 'APPROVED' && !isPaid" class="payment-badge payment-badge--ready">
+          Approval Completed
         </span>
       </div>
 
-      <!-- Pay with Razorpay button -->
       <button
-        *ngIf="!isAlreadyPaid"
+        *ngIf="canPayWithRazorpay"
         type="button"
         class="btn btn-razorpay"
         [disabled]="paymentProcessing"
@@ -79,7 +79,25 @@
       </button>
     </div>
 
-    <!-- Payment details if available -->
+    <p class="payment-stage-copy" *ngIf="order.status === 'DRAFT'">
+      Draft purchase orders must be submitted for approval before payment becomes available.
+    </p>
+    <p class="payment-stage-copy" *ngIf="order.status === 'PENDING_PAYMENT'">
+      This purchase order is ready for Razorpay payment. Complete payment before goods can be received.
+    </p>
+    <p class="payment-stage-copy" *ngIf="order.status === 'PAYMENT_INITIATED'">
+      Razorpay checkout has been started. Complete and verify the payment before goods can be received.
+    </p>
+    <p class="payment-stage-copy" *ngIf="order.status === 'PENDING_APPROVAL'">
+      This purchase order is waiting for approval. Payment will become available only after approval.
+    </p>
+    <p class="payment-stage-copy" *ngIf="order.status === 'APPROVED' && !isPaid">
+      Approval is complete. Submit this purchase order for payment to move it into the payable queue.
+    </p>
+    <p class="payment-stage-copy" *ngIf="order.status === 'PAID' || isPaid">
+      Payment verification is complete. Receive Goods is now available to authorized warehouse and inventory roles.
+    </p>
+
     <dl class="meta-grid" *ngIf="latestPayment">
       <div><dt>Payment Number</dt><dd>{{ latestPayment.paymentNumber }}</dd></div>
       <div><dt>Status</dt><dd>
@@ -92,8 +110,8 @@
       <div *ngIf="latestPayment.paidAt"><dt>Paid At</dt><dd>{{ latestPayment.paidAt | date:'medium' }}</dd></div>
     </dl>
 
-    <p class="payment-hint" *ngIf="!latestPayment && !paymentLoading">
-      No payment initiated yet. Click <strong>Pay with Razorpay</strong> to complete payment for this order.
+    <p class="payment-hint" *ngIf="!latestPayment && !paymentLoading && order.status === 'PENDING_PAYMENT'">
+      No payment has been initiated yet. Use <strong>Pay with Razorpay</strong> to complete the mandatory payment step for this order.
     </p>
   </section>
 
@@ -101,34 +119,50 @@
     <div class="detail-table__header">
       <h2>Line Items</h2>
       <div class="detail-actions">
-        <button *ngIf="order.status === 'DRAFT'" type="button" class="btn btn-secondary" (click)="submitPurchaseOrder()">Submit</button>
-        <button *ngIf="order.status === 'PENDING_APPROVAL'" type="button" class="btn btn-primary" (click)="approvePurchaseOrder()">Approve</button>
-        <button *ngIf="order.status === 'PENDING_APPROVAL'" type="button" class="btn btn-danger" (click)="rejectPurchaseOrder()">Reject</button>
-        <button *ngIf="['DRAFT', 'PENDING_APPROVAL', 'APPROVED'].includes(order.status)" type="button" class="btn btn-danger" (click)="cancelPurchaseOrder()">Cancel</button>
+        <button *ngIf="showSubmitForApprovalAction" type="button" class="btn btn-secondary" [disabled]="paymentProcessing" (click)="submitForApproval()">
+          {{ paymentProcessing ? 'Submitting...' : 'Submit for Approval' }}
+        </button>
+        <button *ngIf="showSubmitForPaymentAction" type="button" class="btn btn-primary" [disabled]="paymentProcessing" (click)="submitForPayment(order)">
+          {{ paymentProcessing ? 'Requesting...' : 'Submit for Payment' }}
+        </button>
+        <button *ngIf="order.status === 'PENDING_APPROVAL' && canApprove" type="button" class="btn btn-primary" (click)="approvePurchaseOrder()" [disabled]="!canApprovePurchaseOrder">Approve</button>
+        <button *ngIf="order.status === 'PENDING_APPROVAL' && canApprove" type="button" class="btn btn-danger" (click)="rejectPurchaseOrder()">Reject</button>
+        <button *ngIf="['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'PENDING_PAYMENT', 'PAYMENT_INITIATED'].includes(order.status)" type="button" class="btn btn-danger" (click)="cancelPurchaseOrder()">Cancel</button>
       </div>
     </div>
-    <table class="detail-table">
-      <thead>
-        <tr>
-          <th>Product</th>
-          <th>Ordered</th>
-          <th>Received</th>
-          <th>Pending</th>
-          <th>Unit Cost</th>
-          <th>Line Total</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let item of order.lineItems">
-          <td>{{ item.productName || ('Product #' + item.productId) }} <span *ngIf="item.productSku">({{ item.productSku }})</span></td>
-          <td>{{ item.orderedQuantity || item.quantity }}</td>
-          <td>{{ item.receivedQuantity ?? item.receivedQty }}</td>
-          <td>{{ item.pendingQuantity }}</td>
-          <td>{{ item.unitCost | currency:'INR':'symbol':'1.0-2' }}</td>
-          <td>{{ (item.lineTotal ?? item.totalCost) | currency:'INR':'symbol':'1.0-2' }}</td>
-        </tr>
-      </tbody>
-    </table>
+    <p class="approval-hint" *ngIf="order.status === 'PENDING_APPROVAL' && !canApprove">
+      This purchase order is waiting for approval from Admin or Inventory Manager.
+    </p>
+    <p class="approval-hint" *ngIf="order.status === 'APPROVED' && !isPaid">
+      Payment must be requested and completed before goods can be received.
+    </p>
+    <p class="approval-hint" *ngIf="order.status === 'PAID'">
+      Payment completed. Authorized warehouse and inventory roles can now receive goods.
+    </p>
+    <div class="detail-table-wrap">
+      <table class="detail-table">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Ordered</th>
+            <th>Received</th>
+            <th>Pending</th>
+            <th>Unit Cost</th>
+            <th>Line Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of order.lineItems">
+            <td>{{ item.productName || ('Product #' + item.productId) }} <span *ngIf="item.productSku">({{ item.productSku }})</span></td>
+            <td>{{ item.orderedQuantity || item.quantity }}</td>
+            <td>{{ item.receivedQuantity ?? item.receivedQty }}</td>
+            <td>{{ item.pendingQuantity }}</td>
+            <td>{{ item.unitCost | currency:'INR':'symbol':'1.0-2' }}</td>
+            <td>{{ (item.lineTotal ?? item.totalCost) | currency:'INR':'symbol':'1.0-2' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </section>
 
   <app-po-timeline [history]="order.history || []"></app-po-timeline>

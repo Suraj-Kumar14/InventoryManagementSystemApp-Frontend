@@ -1,4 +1,4 @@
-<aside class="sidebar" [class.sidebar--collapsed]="isCollapsed">
+<aside class="sidebar" [class.sidebar--collapsed]="isCollapsed" [class.sidebar--mobile]="isMobile" [class.sidebar--open]="isOpen">
   <nav class="sidebar-nav">
     <ng-container *ngFor="let item of getMenuItems()">
       <a
@@ -6,6 +6,7 @@
         routerLinkActive="sidebar-link--active"
         class="sidebar-link"
         [title]="item.label"
+        (click)="navigate.emit()"
       >
         <span class="sidebar-link__icon" aria-hidden="true">
           <i [class]="item.iconClass"></i>
@@ -19,6 +20,7 @@
       routerLinkActive="sidebar-link--active"
       class="sidebar-link sidebar-link--settings"
       title="Settings"
+      (click)="navigate.emit()"
     >
       <span class="sidebar-link__icon" aria-hidden="true">
         <i class="bi bi-gear"></i>

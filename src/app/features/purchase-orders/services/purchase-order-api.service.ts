@@ -97,6 +97,14 @@ export class PurchaseOrderApiService {
       .pipe(handleServiceError(this.serviceName, 'submitPurchaseOrder'));
   }
 
+  submitPurchaseOrderForPayment(id: number): Observable<PurchaseOrderResponse> {
+    return this.api
+      .post<PurchaseOrderResponse>(API_ENDPOINTS.PURCHASE_ORDERS.SUBMIT_FOR_PAYMENT(id), {}, {
+        headers: { 'X-Skip-Global-Error': 'true' },
+      })
+      .pipe(handleServiceError(this.serviceName, 'submitPurchaseOrderForPayment'));
+  }
+
   approvePurchaseOrder(id: number, request: ApprovePurchaseOrderRequest = {}): Observable<PurchaseOrderResponse> {
     return this.api
       .post<PurchaseOrderResponse>(API_ENDPOINTS.PURCHASE_ORDERS.APPROVE(id), request)
@@ -131,6 +139,14 @@ export class PurchaseOrderApiService {
     return this.api
       .get<PurchaseOrderSummaryResponse>(API_ENDPOINTS.PURCHASE_ORDERS.SUMMARY)
       .pipe(handleServiceError(this.serviceName, 'getPurchaseOrderSummary'));
+  }
+
+  getPurchaseOfficerSummary(): Observable<PurchaseOrderSummaryResponse> {
+    return this.api
+      .get<PurchaseOrderSummaryResponse>(API_ENDPOINTS.PURCHASE_ORDERS.PURCHASE_OFFICER_SUMMARY, {
+        headers: { 'X-Skip-Global-Error': 'true' },
+      })
+      .pipe(handleServiceError(this.serviceName, 'getPurchaseOfficerSummary'));
   }
 
   getPurchaseAnalytics(fromDate?: string | null, toDate?: string | null): Observable<PurchaseAnalyticsResponse> {

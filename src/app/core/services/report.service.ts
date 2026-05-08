@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, map, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import {
   AlertSummaryReportResponse,
   DeadStockItem,
@@ -17,6 +18,7 @@ import {
   PaymentSummaryReportResponse,
   POSummary,
   ProductValuationItem,
+  PurchaseOrderReportRowResponse,
   PurchaseSummaryReportResponse,
   ReportExportFormat,
   ReportFilter,
@@ -42,6 +44,17 @@ export interface DateRangeQuery {
 export class ReportService {
   private readonly api = inject(ApiService);
   private readonly serviceName = 'ReportService';
+  private readonly emptyPage = <T>(): PageResponse<T> => ({
+    content: [],
+    totalElements: 0,
+    totalPages: 0,
+    number: 0,
+    size: 0,
+    numberOfElements: 0,
+    first: true,
+    last: true,
+    empty: true,
+  });
 
   getInventoryValuation(filters: ReportFilter = {}): Observable<InventoryValuationReportResponse> {
     return this.api
@@ -113,16 +126,32 @@ export class ReportService {
 
   getPurchaseSummaryReport(filters: ReportFilter = {}): Observable<PurchaseSummaryReportResponse> {
     return this.api
-      .get<PurchaseSummaryReportResponse>(API_ENDPOINTS.REPORTS.PURCHASE_SUMMARY, { params: filters })
+      .get<PurchaseSummaryReportResponse>(API_ENDPOINTS.REPORTS.PURCHASE_SUMMARY, {
+        params: filters,
+        headers: { 'X-Skip-Global-Error': 'true' },
+      })
       .pipe(handleServiceError(this.serviceName, 'getPurchaseSummaryReport'));
+  }
+
+  getPurchaseOrderReports(filters: ReportFilter = {}): Observable<PageResponse<PurchaseOrderReportRowResponse>> {
+    return this.api
+      .get<PageResponse<PurchaseOrderReportRowResponse>>(API_ENDPOINTS.PURCHASE_ORDERS.REPORTS, {
+        params: filters,
+        headers: { 'X-Skip-Global-Error': 'true' },
+      })
+      .pipe(handleServiceError(this.serviceName, 'getPurchaseOrderReports'));
   }
 
   getSupplierPerformanceReport(filters: ReportFilter = {}): Observable<PageResponse<SupplierPerformanceReportResponse>> {
     return this.api
       .get<PageResponse<SupplierPerformanceReportResponse>>(API_ENDPOINTS.REPORTS.SUPPLIER_PERFORMANCE, {
         params: filters,
+        headers: { 'X-Skip-Global-Error': 'true' },
       })
-      .pipe(handleServiceError(this.serviceName, 'getSupplierPerformanceReport'));
+      .pipe(
+        handleServiceError(this.serviceName, 'getSupplierPerformanceReport'),
+        catchError(() => of(this.emptyPage<SupplierPerformanceReportResponse>()))
+      );
   }
 
   getSupplierPerformance(supplierId: number, filters: ReportFilter = {}): Observable<SupplierPerformanceReportResponse> {
@@ -134,15 +163,25 @@ export class ReportService {
   }
 
   getPaymentSummaryReport(filters: ReportFilter = {}): Observable<PaymentSummaryReportResponse> {
-    return of({
-      totalPayments: 0,
-      pendingCount: 0,
-      paidCount: 0,
-      cancelledCount: 0,
-      pendingAmount: 0,
-      totalPaidAmount: 0,
-      supplierPayments: []
-    });
+    return this.api
+      .get<PaymentSummaryReportResponse>(API_ENDPOINTS.REPORTS.PAYMENT_SUMMARY, {
+        params: filters,
+        headers: { 'X-Skip-Global-Error': 'true' },
+      })
+      .pipe(
+        handleServiceError(this.serviceName, 'getPaymentSummaryReport'),
+        catchError(() =>
+          of({
+            totalPayments: 0,
+            paidCount: 0,
+            pendingCount: 0,
+            cancelledCount: 0,
+            totalPaidAmount: 0,
+            pendingAmount: 0,
+            supplierPayments: [],
+          })
+        )
+      );
   }
 
   getAlertSummaryReport(filters: ReportFilter = {}): Observable<AlertSummaryReportResponse> {
@@ -153,13 +192,17 @@ export class ReportService {
 
   getExecutiveDashboard(): Observable<ExecutiveDashboardReportResponse> {
     return this.api
-      .get<ExecutiveDashboardReportResponse>(API_ENDPOINTS.REPORTS.EXECUTIVE_DASHBOARD)
+      .get<ExecutiveDashboardReportResponse>(API_ENDPOINTS.REPORTS.EXECUTIVE_DASHBOARD, {
+        headers: { 'X-Skip-Global-Error': 'true' },
+      })
       .pipe(handleServiceError(this.serviceName, 'getExecutiveDashboard'));
   }
 
   getMyDashboard(): Observable<ExecutiveDashboardReportResponse> {
     return this.api
-      .get<ExecutiveDashboardReportResponse>(API_ENDPOINTS.REPORTS.MY_DASHBOARD)
+      .get<ExecutiveDashboardReportResponse>(API_ENDPOINTS.REPORTS.MY_DASHBOARD, {
+        headers: { 'X-Skip-Global-Error': 'true' },
+      })
       .pipe(handleServiceError(this.serviceName, 'getMyDashboard'));
   }
 

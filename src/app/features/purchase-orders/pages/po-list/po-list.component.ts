@@ -48,8 +48,11 @@ export class PoListComponent implements OnInit {
   readonly roles = UserRole;
   readonly statuses: PurchaseOrderStatus[] = [
     'DRAFT',
+    'PENDING_PAYMENT',
+    'PAYMENT_INITIATED',
     'PENDING_APPROVAL',
     'APPROVED',
+    'PAID',
     'PARTIALLY_RECEIVED',
     'RECEIVED',
     'CANCELLED',
@@ -146,7 +149,7 @@ export class PoListComponent implements OnInit {
       return;
     }
     const remarks = window.prompt('Remarks for submission (optional):') ?? '';
-    this.runAction(order, 'Submitting...', () => this.purchaseApi.submitPurchaseOrder(orderId, { remarks }), 'Purchase order submitted for approval');
+    this.runAction(order, 'Submitting...', () => this.purchaseApi.submitPurchaseOrder(orderId, { remarks }), 'Purchase order submitted for approval.');
   }
 
   approvePurchaseOrder(order: PurchaseOrderResponse): void {
@@ -187,7 +190,7 @@ export class PoListComponent implements OnInit {
   }
 
   canCancel(order: PurchaseOrderResponse): boolean {
-    return ['DRAFT', 'PENDING_APPROVAL', 'APPROVED'].includes(order.status);
+    return ['DRAFT', 'PENDING_PAYMENT', 'PAYMENT_INITIATED', 'PENDING_APPROVAL', 'APPROVED'].includes(order.status);
   }
 
   canShowApprove(order: PurchaseOrderResponse): boolean {
@@ -195,7 +198,7 @@ export class PoListComponent implements OnInit {
   }
 
   canShowReceive(order: PurchaseOrderResponse): boolean {
-    return this.canReceive && ['APPROVED', 'PARTIALLY_RECEIVED'].includes(order.status);
+    return this.canReceive && ['PAID', 'PARTIALLY_RECEIVED'].includes(order.status);
   }
 
   isActionLoading(orderId: number): boolean {

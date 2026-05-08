@@ -33,7 +33,11 @@
       </div>
     </div>
 
-    <button type="submit" class="btn btn-primary" [disabled]="submitting">
+    <p *ngIf="purchaseOrder && !canSubmitReceipt" class="field-hint">
+      Receive goods is available only for valid purchase orders in APPROVED or PARTIALLY_RECEIVED status.
+    </p>
+
+    <button type="submit" class="btn btn-primary" [disabled]="!canSubmitReceipt">
       {{ submitting ? 'Receiving...' : 'Receive Goods' }}
     </button>
   </form>
