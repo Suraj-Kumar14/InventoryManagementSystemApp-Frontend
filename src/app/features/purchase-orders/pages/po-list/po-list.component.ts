@@ -358,7 +358,11 @@ export class PoListComponent implements OnInit {
   }
 
   getOrderId(order: PurchaseOrderResponse): number {
-    return order.purchaseOrderId ?? order.poId;
+    const orderId = order.poId ?? order.purchaseOrderId;
+    if (!Number.isInteger(orderId) || orderId <= 0) {
+      throw new Error('Invalid purchase order ID');
+    }
+    return orderId;
   }
 
   private applyDashboardQueryParams(): void {

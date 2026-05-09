@@ -77,13 +77,19 @@ export class PaymentService {
 
   initiateRazorpayPayment(request: RazorpayInitiateRequest): Observable<RazorpayOrderResponse> {
     return this.api
-      .post<RazorpayOrderResponse>(API_ENDPOINTS.PAYMENTS.RAZORPAY_INITIATE, request, { service: 'payment' })
+      .post<RazorpayOrderResponse>(API_ENDPOINTS.PAYMENTS.RAZORPAY_INITIATE, request, {
+        service: 'payment',
+        headers: { 'X-Skip-Global-Error': 'true' },
+      })
       .pipe(handleServiceError(this.serviceName, 'initiateRazorpayPayment'));
   }
 
   verifyRazorpayPayment(request: RazorpayVerifyRequest): Observable<PaymentResponse> {
     return this.api
-      .post<PaymentResponse>(API_ENDPOINTS.PAYMENTS.RAZORPAY_VERIFY, request, { service: 'payment' })
+      .post<PaymentResponse>(API_ENDPOINTS.PAYMENTS.RAZORPAY_VERIFY, request, {
+        service: 'payment',
+        headers: { 'X-Skip-Global-Error': 'true' },
+      })
       .pipe(handleServiceError(this.serviceName, 'verifyRazorpayPayment'));
   }
 

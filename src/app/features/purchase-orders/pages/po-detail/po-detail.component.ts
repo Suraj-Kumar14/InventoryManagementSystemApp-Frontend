@@ -45,15 +45,24 @@ export class PoDetailComponent implements OnInit {
   readonly canReceive = this.authService.hasRole([UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF]);
 
   ngOnInit(): void {
-    const id = Number(this.route.snapshot.paramMap.get('id'));
-    this.purchaseApi.getPurchaseOrderById(id).subscribe({
+    const routePoId = Number(this.route.snapshot.paramMap.get('id'));
+    if (!Number.isInteger(routePoId) || routePoId <= 0) {
+      this.notifications.error('Invalid purchase order route.');
+      this.loading = false;
+      return;
+    }
+
+    this.purchaseApi.getPurchaseOrderById(routePoId).subscribe({
       next: (order) => {
         // Defer to next microtask to prevent NG0100
         // (ExpressionChangedAfterItHasBeenCheckedError)
         Promise.resolve().then(() => {
           this.purchaseOrder = order;
           this.loading = false;
-          this.loadPaymentStatus(id);
+          const resolvedPoId = this.getPoId(order);
+          if (resolvedPoId) {
+            this.loadPaymentStatus(resolvedPoId);
+          }
         });
       },
       error: () => {
@@ -62,10 +71,8 @@ export class PoDetailComponent implements OnInit {
     });
   }
 
-  get poId(): number {
-    // poId is always the non-null primary key returned by the backend.
-    // purchaseOrderId is optional and may be undefined — do NOT use it as the sole source.
-    return this.purchaseOrder?.poId ?? 0;
+  get poId(): number | null {
+    return this.getPoId(this.purchaseOrder);
   }
 
   get isPaymentPending(): boolean {
@@ -222,10 +229,18 @@ export class PoDetailComponent implements OnInit {
           this.notifications.success(
             `Payment successful! Payment ID: ${razorpayPaymentId}`
           );
-          this.purchaseApi.getPurchaseOrderById(this.poId).subscribe({
+          const poId = this.poId;
+          if (!poId) {
+            this.notifications.error('Invalid purchase order ID. Please refresh the page.');
+            return;
+          }
+          this.purchaseApi.getPurchaseOrderById(poId).subscribe({
             next: (order) => {
               this.purchaseOrder = order;
-              this.loadPaymentStatus(this.poId);
+              const refreshedPoId = this.getPoId(order);
+              if (refreshedPoId) {
+                this.loadPaymentStatus(refreshedPoId);
+              }
             },
           });
         },
@@ -284,18 +299,26 @@ export class PoDetailComponent implements OnInit {
   }
 
   submitForApproval(): void {
+    const poId = this.getPoId(this.purchaseOrder);
+    this.debugLog('submit_for_approval_clicked', { po: this.purchaseOrder, resolvedPoId: poId });
+
     if (!this.purchaseOrder) {
       return;
     }
 
+    if (!poId) {
+      this.notifications.error('Invalid purchase order ID. Please refresh the page.');
+      return;
+    }
+
     if (this.purchaseOrder.status !== 'DRAFT') {
-      this.debugLog('submit_for_approval_blocked', { poId: this.poId, status: this.purchaseOrder.status });
+      this.debugLog('submit_for_approval_blocked', { poId, status: this.purchaseOrder.status });
       this.notifications.warning('Only draft purchase orders can be submitted for approval.');
       return;
     }
 
     this.paymentProcessing = true;
-    this.purchaseApi.submitPurchaseOrder(this.poId, {}).subscribe({
+    this.purchaseApi.submitPurchaseOrder(poId, {}).subscribe({
       next: (order) => {
         this.paymentProcessing = false;
         this.purchaseOrder = order;
@@ -303,7 +326,7 @@ export class PoDetailComponent implements OnInit {
       },
       error: (error) => {
         this.paymentProcessing = false;
-        this.debugLog('submit_for_approval_failed', { poId: this.poId, error });
+        this.debugLog('submit_for_approval_failed', { poId, error });
         this.notifications.error(error?.error?.message || 'Unable to submit purchase order for approval.');
       },
     });
@@ -352,8 +375,13 @@ export class PoDetailComponent implements OnInit {
       this.notifications.warning('This purchase order is waiting for approval.');
       return;
     }
+    const poId = this.poId;
+    if (!poId) {
+      this.notifications.error('Invalid purchase order ID. Please refresh the page.');
+      return;
+    }
     const approvalRemarks = window.prompt('Approval remarks (optional):') ?? '';
-    this.purchaseApi.approvePurchaseOrder(this.poId, { approvalRemarks }).subscribe({
+    this.purchaseApi.approvePurchaseOrder(poId, { approvalRemarks }).subscribe({
       next: (order) => {
         this.purchaseOrder = order;
         this.notifications.success('Purchase order approved successfully');
@@ -369,7 +397,12 @@ export class PoDetailComponent implements OnInit {
     if (!rejectionReason) {
       return;
     }
-    this.purchaseApi.rejectPurchaseOrder(this.poId, { rejectionReason }).subscribe({
+    const poId = this.poId;
+    if (!poId) {
+      this.notifications.error('Invalid purchase order ID. Please refresh the page.');
+      return;
+    }
+    this.purchaseApi.rejectPurchaseOrder(poId, { rejectionReason }).subscribe({
       next: (order) => {
         this.purchaseOrder = order;
         this.notifications.success('Purchase order rejected successfully');
@@ -385,7 +418,12 @@ export class PoDetailComponent implements OnInit {
     if (!cancellationReason) {
       return;
     }
-    this.purchaseApi.cancelPurchaseOrder(this.poId, { cancellationReason }).subscribe({
+    const poId = this.poId;
+    if (!poId) {
+      this.notifications.error('Invalid purchase order ID. Please refresh the page.');
+      return;
+    }
+    this.purchaseApi.cancelPurchaseOrder(poId, { cancellationReason }).subscribe({
       next: (order) => {
         this.purchaseOrder = order;
         this.notifications.success('Purchase order cancelled successfully');
@@ -417,5 +455,10 @@ export class PoDetailComponent implements OnInit {
     if (!environment.production) {
       console.debug(`[PO Detail] ${action}`, details);
     }
+  }
+
+  private getPoId(po: PurchaseOrderResponse | null | undefined): number | null {
+    const poId = po?.poId ?? po?.purchaseOrderId;
+    return typeof poId === 'number' && Number.isInteger(poId) && poId > 0 ? poId : null;
   }
 }

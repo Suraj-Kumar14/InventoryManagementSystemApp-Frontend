@@ -27,6 +27,12 @@ export class PurchaseOrderApiService {
   private readonly api = inject(ApiService);
   private readonly serviceName = 'PurchaseOrderApiService';
 
+  private assertValidPoId(id: number): void {
+    if (!Number.isInteger(id) || id <= 0) {
+      throw new Error('Invalid purchase order ID');
+    }
+  }
+
   createPurchaseOrder(request: CreatePurchaseOrderRequest): Observable<PurchaseOrderResponse> {
     return this.api
       .post<PurchaseOrderResponse>(API_ENDPOINTS.PURCHASE_ORDERS.ROOT, request, {
@@ -36,6 +42,7 @@ export class PurchaseOrderApiService {
   }
 
   updatePurchaseOrder(id: number, request: UpdatePurchaseOrderRequest): Observable<PurchaseOrderResponse> {
+    this.assertValidPoId(id);
     return this.api
       .put<PurchaseOrderResponse>(API_ENDPOINTS.PURCHASE_ORDERS.DETAIL(id), request, {
         headers: { 'X-Skip-Global-Error': 'true' },
@@ -78,6 +85,7 @@ export class PurchaseOrderApiService {
   }
 
   getPurchaseOrderById(id: number): Observable<PurchaseOrderResponse> {
+    this.assertValidPoId(id);
     return this.api
       .get<PurchaseOrderResponse>(API_ENDPOINTS.PURCHASE_ORDERS.DETAIL(id))
       .pipe(handleServiceError(this.serviceName, 'getPurchaseOrderById'));
@@ -90,6 +98,7 @@ export class PurchaseOrderApiService {
   }
 
   submitPurchaseOrder(id: number, request: SubmitPurchaseOrderRequest = {}): Observable<PurchaseOrderResponse> {
+    this.assertValidPoId(id);
     return this.api
       .post<PurchaseOrderResponse>(API_ENDPOINTS.PURCHASE_ORDERS.SUBMIT(id), request, {
         headers: { 'X-Skip-Global-Error': 'true' },
@@ -98,6 +107,7 @@ export class PurchaseOrderApiService {
   }
 
   submitPurchaseOrderForPayment(id: number): Observable<PurchaseOrderResponse> {
+    this.assertValidPoId(id);
     return this.api
       .post<PurchaseOrderResponse>(API_ENDPOINTS.PURCHASE_ORDERS.SUBMIT_FOR_PAYMENT(id), {}, {
         headers: { 'X-Skip-Global-Error': 'true' },
@@ -106,30 +116,35 @@ export class PurchaseOrderApiService {
   }
 
   approvePurchaseOrder(id: number, request: ApprovePurchaseOrderRequest = {}): Observable<PurchaseOrderResponse> {
+    this.assertValidPoId(id);
     return this.api
       .post<PurchaseOrderResponse>(API_ENDPOINTS.PURCHASE_ORDERS.APPROVE(id), request)
       .pipe(handleServiceError(this.serviceName, 'approvePurchaseOrder'));
   }
 
   rejectPurchaseOrder(id: number, request: RejectPurchaseOrderRequest): Observable<PurchaseOrderResponse> {
+    this.assertValidPoId(id);
     return this.api
       .post<PurchaseOrderResponse>(API_ENDPOINTS.PURCHASE_ORDERS.REJECT(id), request)
       .pipe(handleServiceError(this.serviceName, 'rejectPurchaseOrder'));
   }
 
   cancelPurchaseOrder(id: number, request: CancelPurchaseOrderRequest): Observable<PurchaseOrderResponse> {
+    this.assertValidPoId(id);
     return this.api
       .post<PurchaseOrderResponse>(API_ENDPOINTS.PURCHASE_ORDERS.CANCEL(id), request)
       .pipe(handleServiceError(this.serviceName, 'cancelPurchaseOrder'));
   }
 
   receivePurchaseOrder(id: number, request: ReceivePurchaseOrderRequest): Observable<PurchaseOrderResponse> {
+    this.assertValidPoId(id);
     return this.api
       .post<PurchaseOrderResponse>(API_ENDPOINTS.PURCHASE_ORDERS.RECEIVE(id), request)
       .pipe(handleServiceError(this.serviceName, 'receivePurchaseOrder'));
   }
 
   getPurchaseOrderHistory(id: number): Observable<PurchaseOrderHistoryResponse[]> {
+    this.assertValidPoId(id);
     return this.api
       .get<PurchaseOrderHistoryResponse[]>(API_ENDPOINTS.PURCHASE_ORDERS.HISTORY(id))
       .pipe(handleServiceError(this.serviceName, 'getPurchaseOrderHistory'));
