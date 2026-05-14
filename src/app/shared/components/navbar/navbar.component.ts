@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output, inject } from '@angular/core';
+import { Component, ElementRef, EventEmitter, HostListener, Output, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/auth/services/auth.service';
@@ -15,6 +15,7 @@ import { ROLE_LABELS, UserRole } from '../../config/app-config';
 export class NavbarComponent {
   authService = inject(AuthService);
   private router = inject(Router);
+  @ViewChild('userMenuContainer', { static: true }) private userMenuContainer?: ElementRef<HTMLElement>;
 
   @Output() toggleSidebar = new EventEmitter<void>();
   showUserMenu = false;
@@ -31,10 +32,38 @@ export class NavbarComponent {
     return ROLE_LABELS[role as UserRole] || role;
   }
 
+  toggleUserMenu(event: MouseEvent): void {
+    event.stopPropagation();
+    this.showUserMenu = !this.showUserMenu;
+  }
+
+  keepMenuOpen(event: MouseEvent): void {
+    event.stopPropagation();
+  }
+
   logout(): void {
     this.authService.logout().subscribe({
       next: () => this.router.navigate(['/login']),
       error: () => this.router.navigate(['/login']),
     });
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as Node | null;
+    const container = this.userMenuContainer?.nativeElement;
+
+    if (!this.showUserMenu || !container || !target) {
+      return;
+    }
+
+    if (!container.contains(target)) {
+      this.showUserMenu = false;
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscapeKey(): void {
+    this.showUserMenu = false;
   }
 }

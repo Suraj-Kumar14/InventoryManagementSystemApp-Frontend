@@ -21,12 +21,12 @@
         </p>
       </div>
 
-      <div class="navbar-avatar-wrapper">
-        <button class="navbar-avatar-btn" (click)="showUserMenu = !showUserMenu">
+      <div #userMenuContainer class="navbar-avatar-wrapper" (click)="keepMenuOpen($event)">
+        <button class="navbar-avatar-btn" type="button" (click)="toggleUserMenu($event)">
           {{ getInitials(getDisplayName((authService.currentUser$ | async)?.name, (authService.currentUser$ | async)?.email)) }}
         </button>
 
-        <div *ngIf="showUserMenu" class="navbar-dropdown">
+        <div *ngIf="showUserMenu" class="navbar-dropdown" (click)="keepMenuOpen($event)">
           <a routerLink="/settings/profile" class="navbar-dropdown-item navbar-dropdown-item--top">
             Profile Settings
           </a>
