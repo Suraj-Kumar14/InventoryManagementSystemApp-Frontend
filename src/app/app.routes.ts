@@ -78,7 +78,7 @@ export const routes: Routes = [
       { path: 'manage-role', redirectTo: 'users', pathMatch: 'full' },
       { path: 'deactivate-users', redirectTo: 'users', pathMatch: 'full' },
       { path: 'warehouses', loadChildren: () => import('./features/admin/warehouses/warehouses.routes').then((m) => m.warehousesRoutes) },
-      { path: 'logs', loadChildren: () => import('./features/admin/logs/logs.routes').then((m) => m.logsRoutes) },
+      { path: 'logs', redirectTo: 'users', pathMatch: 'full' },
     ],
   },
   {

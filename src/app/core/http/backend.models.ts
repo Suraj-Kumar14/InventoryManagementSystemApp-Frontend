@@ -7,9 +7,11 @@ export interface ValidationErrors {
 export interface BackendErrorResponse {
   message?: string;
   error?: string;
+  errorCode?: string;
   status?: number;
   timestamp?: string;
   path?: string;
+  fieldErrors?: Record<string, string>;
 }
 
 export interface UserProfile {
@@ -168,7 +170,6 @@ export interface SupplierResponse {
 export type SupplierStatus = 'ACTIVE' | 'INACTIVE' | 'BLACKLISTED' | 'PENDING_REVIEW';
 
 export interface CreateSupplierRequest {
-  supplierCode?: string | null;
   name: string;
   contactPerson?: string | null;
   email?: string | null;
@@ -798,19 +799,36 @@ export type StockMovementResponse = MovementResponse;
 export type AlertType =
   | 'LOW_STOCK'
   | 'OVERSTOCK'
+  | 'STOCK_UPDATED'
+  | 'PO_CREATED'
+  | 'PO_SUBMITTED'
   | 'PO_APPROVAL_PENDING'
   | 'PO_APPROVED'
   | 'PO_REJECTED'
+  | 'PO_CANCELLED'
   | 'PO_OVERDUE_RECEIPT'
   | 'PO_RECEIVED'
+  | 'GRN_STARTED'
+  | 'GRN_PARTIAL'
+  | 'GRN_COMPLETED'
   | 'SUPPLIER_DEACTIVATED'
   | 'SUPPLIER_BLACKLISTED'
   | 'MOVEMENT_ANOMALY'
   | 'STOCK_TRANSFER'
+  | 'WAREHOUSE_TRANSFER_INITIATED'
+  | 'WAREHOUSE_TRANSFER_COMPLETED'
   | 'SYSTEM_BROADCAST'
+  | 'UNAUTHORIZED_ACCESS'
+  | 'SYSTEM_ERROR'
   | 'REPORT_READY'
   | 'PAYMENT_PENDING'
+  | 'PAYMENT_INITIATED'
   | 'PAYMENT_COMPLETED'
+  | 'PAYMENT_SUCCESSFUL'
+  | 'PAYMENT_FAILED'
+  | 'PAYMENT_CANCELLED'
+  | 'PAYMENT_LIMIT_EXCEEDED'
+  | 'SPLIT_PAYMENT_RECOMMENDED'
   | 'GENERAL';
 
 export type AlertSeverity = 'INFO' | 'WARNING' | 'CRITICAL';
@@ -825,6 +843,8 @@ export interface CreateAlertRequest {
   channel: AlertChannel;
   title: string;
   message: string;
+  userMessage?: string | null;
+  technicalDetails?: string | null;
   relatedProductId?: number | null;
   relatedWarehouseId?: number | null;
   relatedPurchaseOrderId?: number | null;
@@ -888,6 +908,7 @@ export interface AlertResponse {
   channel: AlertChannel;
   title: string;
   message: string;
+  userMessage?: string | null;
   relatedProductId?: number | null;
   relatedWarehouseId?: number | null;
   relatedPurchaseOrderId?: number | null;
@@ -1030,29 +1051,30 @@ export interface WarehouseValuationItem {
   warehouseId: number;
   warehouseName: string;
   totalQuantity: number;
-  totalValue: number;
+  stockValue: number;
 }
 
 export interface ProductValuationItem {
   productId: number;
-  sku?: string | null;
   productName: string;
-  category?: string | null;
+  sku?: string | null;
   warehouseId: number;
   warehouseName?: string | null;
   quantity: number;
-  unitCost: number;
-  totalValue: number;
+  costPrice: number;
+  stockValue: number;
+  category?: string | null;
 }
 
 export interface InventoryValuationReportResponse {
+  asOfDate: string;
   totalInventoryValue: number;
   totalQuantity: number;
   totalProducts: number;
   totalWarehouses: number;
-  valuationByWarehouse: WarehouseValuationItem[];
-  valuationByCategory: Record<string, number>;
-  valuationByProduct: ProductValuationItem[];
+  warehouseBreakdown: WarehouseValuationItem[];
+  productBreakdown: ProductValuationItem[];
+  warnings: string[];
 }
 
 export interface InventoryReportSummaryResponse {
@@ -1068,25 +1090,28 @@ export interface InventoryReportSummaryResponse {
 
 export interface LowStockReportItem {
   productId: number;
-  sku?: string | null;
   productName: string;
+  sku?: string | null;
   warehouseId: number;
   warehouseName?: string | null;
   availableQuantity: number;
   reorderLevel: number;
-  shortageQuantity: number;
+  maxStockLevel: number;
   severity: string;
+  recommendedAction: string;
 }
 
 export interface OverstockReportItem {
   productId: number;
-  sku?: string | null;
   productName: string;
+  sku?: string | null;
   warehouseId: number;
   warehouseName?: string | null;
-  quantity: number;
+  availableQuantity: number;
+  reorderLevel: number;
   maxStockLevel: number;
-  excessQuantity: number;
+  severity: string;
+  recommendedAction: string;
 }
 
 export interface StockMovementReportItem {
@@ -1108,85 +1133,200 @@ export interface StockMovementReportItem {
   movementDate: string;
 }
 
-export interface InventoryTurnoverReportResponse {
+export interface InventoryTurnoverItemResponse {
   productId: number;
-  sku?: string | null;
   productName?: string | null;
-  openingStock: number;
-  closingStock: number;
-  averageInventory: number;
-  stockOutQuantity: number;
-  turnoverRatio: number;
+  sku?: string | null;
+  cogs: number;
+  averageInventoryValue: number;
+  turnoverRate: number;
+}
+
+export interface InventoryTurnoverReportResponse {
+  from: string;
+  to: string;
+  warehouseId?: number | null;
+  cogs: number;
+  averageInventoryValue: number;
+  turnoverRate: number;
+  note: string;
+  productTurnover: InventoryTurnoverItemResponse[];
 }
 
 export interface TopMovingProductReportResponse {
   productId: number;
-  sku?: string | null;
   productName?: string | null;
-  totalMovementQuantity: number;
+  sku?: string | null;
+  unitsIn: number;
+  unitsOut: number;
+  totalMoved: number;
   movementCount: number;
   totalMovementValue: number;
 }
 
 export interface SlowMovingProductResponse {
   productId: number;
-  sku?: string | null;
   productName?: string | null;
+  sku?: string | null;
+  totalMoved: number;
   lastMovementDate?: string | null;
   daysSinceLastMovement: number;
   currentQuantity: number;
-  stockValue: number;
 }
 
 export interface DeadStockReportResponse {
   productId: number;
-  sku?: string | null;
   productName?: string | null;
+  sku?: string | null;
   warehouseId: number;
   warehouseName?: string | null;
-  currentQuantity: number;
+  quantity: number;
   stockValue: number;
   lastMovementDate?: string | null;
   daysWithoutMovement: number;
 }
 
+export interface ProductMovementSummaryResponse {
+  productId: number;
+  productName?: string | null;
+  sku?: string | null;
+  warehouseId: number;
+  warehouseName?: string | null;
+  unitsIn: number;
+  unitsOut: number;
+  totalMoved: number;
+  movementCount: number;
+  movementValue: number;
+}
+
+export interface PurchaseSpendBreakdownItem {
+  id?: number | null;
+  name: string;
+  poCount: number;
+  totalSpend: number;
+}
+
 export interface PurchaseSummaryReportResponse {
+  from: string;
+  to: string;
   totalPurchaseOrders: number;
+  totalSpend: number;
+  statusBreakdown: Record<string, number>;
+  supplierBreakdown: PurchaseSpendBreakdownItem[];
+  warehouseBreakdown: PurchaseSpendBreakdownItem[];
   pendingApprovalCount: number;
   approvedCount: number;
-  receivedCount: number;
-  cancelledCount: number;
+  partiallyReceivedCount: number;
+  fullyReceivedCount: number;
   overdueCount: number;
-  totalPurchaseValue: number;
-  receivedPurchaseValue: number;
-  pendingPurchaseValue: number;
+  cancelledCount: number;
+  rejectedCount: number;
+}
+
+export interface GeneratedInventoryReportResponse {
+  valuation: InventoryValuationReportResponse;
+  stockValueByWarehouse: WarehouseValuationItem[];
+  turnover: InventoryTurnoverReportResponse;
+  lowStock: LowStockReportItem[];
+  movementVelocity: ProductMovementSummaryResponse[];
+  topMovingProducts: TopMovingProductReportResponse[];
+  slowMovingProducts: SlowMovingProductResponse[];
+  deadStock: DeadStockReportResponse[];
+  poSummary: PurchaseSummaryReportResponse;
+  warnings: string[];
 }
 
 export interface PurchaseOrderReportRowResponse {
-  poId: number;
+  purchaseOrderId: number;
   poNumber: string;
-  poStatus: string;
+  purchaseOrderStatus: string;
   paymentStatus?: string | null;
-  supplierId: number;
-  supplierName?: string | null;
-  warehouseId: number;
-  warehouseName?: string | null;
-  orderDate?: string | null;
-  expectedDate?: string | null;
-  approvedByName?: string | null;
-  productId: number;
-  productSku?: string | null;
-  productName?: string | null;
-  category?: string | null;
-  quantity: number;
-  receivedQuantity: number;
-  remainingQuantity: number;
-  unitCost: number;
-  totalAmount: number;
-  paymentAmount?: number | null;
   paymentNumber?: string | null;
   razorpayOrderId?: string | null;
   razorpayPaymentId?: string | null;
+  paymentAmount?: number | null;
+  paidAt?: string | null;
+  supplierId?: number | null;
+  supplierName?: string | null;
+  warehouseId?: number | null;
+  warehouseName?: string | null;
+  productId?: number | null;
+  productSku?: string | null;
+  productName?: string | null;
+  productCategory?: string | null;
+  unitPrice?: number | null;
+  orderedQuantity?: number;
+  receivedQuantity?: number;
+  remainingQuantity?: number;
+  lineTotal?: number | null;
+  purchaseOrderTotalAmount?: number | null;
+  orderDate?: string | null;
+  expectedDate?: string | null;
+  approvedBy?: number | null;
+  approvedAt?: string | null;
+  createdAt?: string | null;
+}
+
+export interface PurchaseOrderDetailItemResponse {
+  productId: number;
+  productName?: string | null;
+  sku?: string | null;
+  orderedQuantity: number;
+  receivedQuantity: number;
+  pendingQuantity: number;
+  unitPrice: number;
+  lineTotal: number;
+}
+
+export interface PurchaseOrderTimelineItemResponse {
+  status: string;
+  changedAt?: string | null;
+  changedBy?: number | null;
+  changedByName?: string | null;
+  remarks?: string | null;
+}
+
+export interface PaymentLineItemResponse {
+  paymentId: number;
+  paymentNumber: string;
+  paymentAmount: number;
+  paymentMethod: string;
+  razorpayOrderId?: string | null;
+  razorpayPaymentId?: string | null;
+  status: string;
+  paymentDate?: string | null;
+  paidAt?: string | null;
+  paidBy?: number | null;
+}
+
+export interface PurchaseOrderPaymentSummaryResponse {
+  totalPaid: number;
+  remainingAmount: number;
+  payments: PaymentLineItemResponse[];
+}
+
+export interface PurchaseOrderDetailReportResponse {
+  purchaseOrderId: number;
+  poNumber: string;
+  supplierName?: string | null;
+  warehouseName?: string | null;
+  status: string;
+  createdBy?: number | null;
+  createdByName?: string | null;
+  approvedBy?: number | null;
+  approvedByName?: string | null;
+  createdAt?: string | null;
+  approvedAt?: string | null;
+  expectedDeliveryDate?: string | null;
+  overdue: boolean;
+  totalAmount: number;
+  paymentStatus?: string | null;
+  items: PurchaseOrderDetailItemResponse[];
+  timeline: PurchaseOrderTimelineItemResponse[];
+  paymentSummary: PurchaseOrderPaymentSummaryResponse;
+  cancellationReason?: string | null;
+  rejectionReason?: string | null;
+  receivedAt?: string | null;
 }
 
 export interface SupplierPerformanceReportResponse {
@@ -1200,21 +1340,65 @@ export interface SupplierPerformanceReportResponse {
   rating: number;
 }
 
-export interface SupplierPaymentItem {
-  supplierId: number;
+export interface PaymentSupplierBreakdownItem {
+  supplierId?: number | null;
   supplierName: string;
-  paidAmount: number;
-  pendingAmount: number;
+  totalPaid: number;
+  paymentCount: number;
 }
 
 export interface PaymentSummaryReportResponse {
   totalPayments: number;
-  paidCount: number;
-  pendingCount: number;
-  cancelledCount: number;
   totalPaidAmount: number;
   pendingAmount: number;
-  supplierPayments: SupplierPaymentItem[];
+  razorpayAmount: number;
+  statusBreakdown: Record<string, number>;
+  methodBreakdown: Record<string, number>;
+  supplierBreakdown: PaymentSupplierBreakdownItem[];
+  warnings: string[];
+}
+
+export interface PaymentBillingRowResponse {
+  paymentId: number;
+  paymentNumber: string;
+  poNumber?: string | null;
+  supplierName?: string | null;
+  paymentAmount: number;
+  paymentMethod: string;
+  razorpayPaymentId?: string | null;
+  paymentDate?: string | null;
+  paidAt?: string | null;
+  status: string;
+  paidBy?: number | null;
+  approvedBy?: number | null;
+}
+
+export interface CancelledPurchaseOrderRowResponse {
+  purchaseOrderId: number;
+  poNumber: string;
+  supplierName?: string | null;
+  warehouseName?: string | null;
+  totalAmount: number;
+  actionedBy?: number | null;
+  actionedByName?: string | null;
+  actionedAt?: string | null;
+  reason?: string | null;
+}
+
+export interface CancelledPurchaseOrderReportResponse {
+  cancelledCount: number;
+  cancelledValue: number;
+  supplierBreakdown: PurchaseSpendBreakdownItem[];
+  warehouseBreakdown: PurchaseSpendBreakdownItem[];
+  cancelledOrders: CancelledPurchaseOrderRowResponse[];
+}
+
+export interface RejectedPurchaseOrderReportResponse {
+  rejectedCount: number;
+  rejectedValue: number;
+  supplierBreakdown: PurchaseSpendBreakdownItem[];
+  warehouseBreakdown: PurchaseSpendBreakdownItem[];
+  rejectedOrders: CancelledPurchaseOrderRowResponse[];
 }
 
 export interface AlertSummaryReportResponse {
@@ -1241,38 +1425,45 @@ export interface DashboardAlertItem {
 
 export interface ExecutiveDashboardReportResponse {
   totalProducts: number;
+  activeProducts: number;
   totalWarehouses: number;
-  totalInventoryValue: number;
-  lowStockCount: number;
-  overstockCount: number;
-  pendingPurchaseApprovals: number;
+  inventoryValue: number;
+  lowStockItems: number;
+  overstockItems: number;
+  pendingPoApprovals: number;
   overduePurchaseOrders: number;
   totalPurchaseValue: number;
   totalPaidAmount: number;
+  payablePurchaseOrders: number;
+  cancelledPurchaseOrders: number;
+  activeUsers?: number | null;
   criticalAlerts: number;
   stockMovementToday: number;
   topMovingProducts: TopMovingProductReportResponse[];
   recentAlerts: DashboardAlertItem[];
   valuationTrend: TrendPointResponse[];
   purchaseTrend: TrendPointResponse[];
+  warnings: string[];
   unavailableSections: string[];
 }
 
 export interface InventorySnapshotResponse {
   snapshotId: number;
   snapshotDate: string;
-  productId: number;
-  productSku?: string | null;
-  productName?: string | null;
   warehouseId: number;
-  warehouseCode?: string | null;
   warehouseName?: string | null;
+  productId: number;
+  productName?: string | null;
+  sku?: string | null;
   quantity: number;
-  reservedQuantity: number;
-  availableQuantity: number;
-  unitCost: number;
-  totalValue: number;
+  costPrice: number;
+  stockValue: number;
   createdAt?: string;
+  warehouseCode?: string | null;
+  reservedQuantity?: number;
+  availableQuantity?: number;
+  unitCost?: number;
+  totalValue?: number;
 }
 
 export interface PaymentOrderRequest {
@@ -1313,3 +1504,5 @@ export interface PaymentResponse {
   createdAt?: string;
   updatedAt?: string;
 }
+
+
