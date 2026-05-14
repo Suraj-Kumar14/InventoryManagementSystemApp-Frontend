@@ -7,6 +7,7 @@ import { NotificationService } from '../../../../core/services/notification.serv
 import { AlertApiService } from '../../services/alert-api.service';
 import { AlertStateService } from '../../services/alert-state.service';
 import { getAlertDisplayMessage, truncateAlertMessage } from '../../utils/alert-display.util';
+import { filterVisibleAlerts, resolveAlertWorkflowRoute } from '../../utils/alert-visibility.util';
 import { AlertSeverityBadgeComponent } from '../alert-severity-badge/alert-severity-badge.component';
 
 @Component({
@@ -100,7 +101,7 @@ export class AlertBellComponent implements OnInit, OnDestroy {
     this.alertState.startPolling();
     this.subscriptions.add(this.alertState.unreadCount$.subscribe((count) => (this.unreadCount = count)));
     this.subscriptions.add(this.alertState.recentUnreadAlerts$.subscribe((alerts) => {
-      this.recentAlerts = alerts;
+      this.recentAlerts = filterVisibleAlerts(alerts);
       this.loading = false;
     }));
     this.alertState.refresh();
@@ -128,7 +129,7 @@ export class AlertBellComponent implements OnInit, OnDestroy {
       next: () => {
         this.dropdownOpen = false;
         this.alertState.refresh();
-        this.router.navigate([alert.actionUrl || `/alerts/${alert.alertId}`]);
+        void this.router.navigateByUrl(resolveAlertWorkflowRoute(alert) || `/alerts/${alert.alertId}`);
       },
       error: () => this.notification.error('Unable to open this alert right now. Please try again.'),
     });

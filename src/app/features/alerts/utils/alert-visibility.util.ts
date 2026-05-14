@@ -5,6 +5,7 @@ export const USER_VISIBLE_ALERT_TYPES: AlertType[] = [
   'OVERSTOCK',
   'PO_APPROVAL_PENDING',
   'PO_OVERDUE_RECEIPT',
+  'OVERDUE_RECEIPT',
   'PAYMENT_PENDING',
   'PAYMENT_COMPLETED',
 ];
@@ -31,6 +32,7 @@ export function resolveAlertWorkflowRoute(alert: Pick<AlertResponse, 'type' | 'a
       return productId ? `/products/${productId}` : '/reports/inventory/low-stock';
     case 'PO_APPROVAL_PENDING':
       return purchaseOrderId ? `/purchase-orders/${purchaseOrderId}` : '/purchase-orders/approvals';
+    case 'OVERDUE_RECEIPT':
     case 'PO_OVERDUE_RECEIPT':
       return purchaseOrderId ? `/purchase-orders/${purchaseOrderId}` : '/purchase-orders/overdue';
     case 'PAYMENT_PENDING':

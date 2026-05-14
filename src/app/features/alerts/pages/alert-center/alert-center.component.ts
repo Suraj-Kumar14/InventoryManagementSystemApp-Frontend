@@ -11,6 +11,7 @@ import { AlertTypeBadgeComponent } from '../../components/alert-type-badge/alert
 import { AlertApiService } from '../../services/alert-api.service';
 import { AlertStateService } from '../../services/alert-state.service';
 import { canAcknowledgeAlert, canDismissAlert, getAlertDisplayMessage, truncateAlertMessage } from '../../utils/alert-display.util';
+import { filterVisibleAlerts, resolveAlertWorkflowRoute } from '../../utils/alert-visibility.util';
 
 const DEFAULT_ALERT_SUMMARY: AlertSummaryResponse = {
   totalAlerts: 0,
@@ -96,7 +97,7 @@ const DEFAULT_ALERT_SUMMARY: AlertSummaryResponse = {
           </div>
           <div class="alert-row__actions">
             <a [routerLink]="['/alerts', alert.alertId]" class="btn-secondary btn-compact">View</a>
-            <a *ngIf="alert.actionUrl" [routerLink]="alert.actionUrl" class="btn-secondary btn-compact">Open Workflow</a>
+            <a *ngIf="workflowRoute(alert) as route" [routerLink]="route" class="btn-secondary btn-compact">Open Workflow</a>
             <button type="button" class="btn-secondary btn-compact" (click)="markRead(alert)" [disabled]="actionId === alert.alertId || alert.isRead">
               {{ actionId === alert.alertId && pendingAction === 'read' ? 'Marking...' : 'Mark Read' }}
             </button>
@@ -199,41 +200,7 @@ export class AlertCenterComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly alertState = inject(AlertStateService);
 
-  readonly types: AlertType[] = [
-    'LOW_STOCK',
-    'OVERSTOCK',
-    'STOCK_UPDATED',
-    'PO_CREATED',
-    'PO_SUBMITTED',
-    'PO_APPROVAL_PENDING',
-    'PO_APPROVED',
-    'PO_REJECTED',
-    'PO_CANCELLED',
-    'PO_OVERDUE_RECEIPT',
-    'PO_RECEIVED',
-    'GRN_STARTED',
-    'GRN_PARTIAL',
-    'GRN_COMPLETED',
-    'SUPPLIER_DEACTIVATED',
-    'SUPPLIER_BLACKLISTED',
-    'MOVEMENT_ANOMALY',
-    'STOCK_TRANSFER',
-    'WAREHOUSE_TRANSFER_INITIATED',
-    'WAREHOUSE_TRANSFER_COMPLETED',
-    'SYSTEM_BROADCAST',
-    'UNAUTHORIZED_ACCESS',
-    'SYSTEM_ERROR',
-    'REPORT_READY',
-    'PAYMENT_PENDING',
-    'PAYMENT_INITIATED',
-    'PAYMENT_COMPLETED',
-    'PAYMENT_SUCCESSFUL',
-    'PAYMENT_FAILED',
-    'PAYMENT_CANCELLED',
-    'PAYMENT_LIMIT_EXCEEDED',
-    'SPLIT_PAYMENT_RECOMMENDED',
-    'GENERAL',
-  ];
+  readonly types: AlertType[] = ['LOW_STOCK', 'OVERSTOCK', 'PO_APPROVAL_PENDING', 'PO_OVERDUE_RECEIPT', 'OVERDUE_RECEIPT', 'PAYMENT_PENDING', 'PAYMENT_COMPLETED'];
   readonly statuses: AlertStatus[] = ['NEW', 'READ', 'ACKNOWLEDGED', 'DISMISSED', 'RESOLVED', 'EXPIRED'];
   readonly quickFilters = [
     { key: 'all', label: 'All' },
@@ -386,7 +353,7 @@ export class AlertCenterComponent implements OnInit {
     this.loading = true;
     this.alertApi.searchAlerts(params).pipe(finalize(() => (this.loading = false))).subscribe({
       next: (page) => {
-        this.alerts = page.content;
+        this.alerts = dedupeAlerts(filterVisibleAlerts(page.content ?? []));
         this.totalPages = page.totalPages;
       },
       error: () => {
@@ -441,4 +408,16 @@ export class AlertCenterComponent implements OnInit {
       replaceUrl: true,
     });
   }
+
+  workflowRoute(alert: AlertResponse): string | null {
+    return resolveAlertWorkflowRoute(alert);
+  }
+}
+
+function dedupeAlerts(alerts: AlertResponse[]): AlertResponse[] {
+  const byId = new Map<number, AlertResponse>();
+  for (const alert of alerts) {
+    byId.set(alert.alertId, alert);
+  }
+  return [...byId.values()];
 }

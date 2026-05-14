@@ -5,6 +5,7 @@ import { AlertResponse } from '../../../core/http/backend.models';
 import { NotificationService } from '../../../core/services/notification.service';
 import { AlertApiService } from './alert-api.service';
 import { getAlertDisplayMessage, truncateAlertMessage } from '../utils/alert-display.util';
+import { filterVisibleAlerts } from '../utils/alert-visibility.util';
 
 @Injectable({ providedIn: 'root' })
 export class AlertStateService {
@@ -49,7 +50,7 @@ export class AlertStateService {
         })
       )
       .subscribe(({ count, page }) => {
-        const nextAlerts = page.content ?? [];
+        const nextAlerts = dedupeAlerts(filterVisibleAlerts(page.content ?? []));
         this.publishToastNotifications(nextAlerts);
         this.unreadCountSubject.next(count);
         this.recentUnreadSubject.next(nextAlerts);
@@ -90,4 +91,12 @@ export class AlertStateService {
       this.notifications.info(message, alert.title);
     }
   }
+}
+
+function dedupeAlerts(alerts: AlertResponse[]): AlertResponse[] {
+  const byId = new Map<number, AlertResponse>();
+  for (const alert of alerts) {
+    byId.set(alert.alertId, alert);
+  }
+  return [...byId.values()];
 }
