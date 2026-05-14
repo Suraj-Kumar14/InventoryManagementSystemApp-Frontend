@@ -1,10 +1,12 @@
 import { CommonModule, DatePipe } from '@angular/common';
 import { Component, HostListener, OnDestroy, OnInit, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { Subscription, forkJoin, timer } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { AlertResponse } from '../../../../core/http/backend.models';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { AlertApiService } from '../../services/alert-api.service';
+import { AlertStateService } from '../../services/alert-state.service';
+import { getAlertDisplayMessage, truncateAlertMessage } from '../../utils/alert-display.util';
 import { AlertSeverityBadgeComponent } from '../alert-severity-badge/alert-severity-badge.component';
 
 @Component({
@@ -44,7 +46,7 @@ import { AlertSeverityBadgeComponent } from '../alert-severity-badge/alert-sever
             <span class="alert-bell__date">{{ alert.createdAt | date:'MMM d, h:mm a' }}</span>
           </div>
           <strong>{{ alert.title }}</strong>
-          <p>{{ alert.message }}</p>
+          <p>{{ previewMessage(alert) }}</p>
         </button>
 
         <a routerLink="/alerts" class="alert-bell__footer-link" (click)="dropdownOpen = false">View all alerts</a>
@@ -83,9 +85,10 @@ import { AlertSeverityBadgeComponent } from '../alert-severity-badge/alert-sever
 })
 export class AlertBellComponent implements OnInit, OnDestroy {
   private readonly alertApi = inject(AlertApiService);
+  private readonly alertState = inject(AlertStateService);
   private readonly router = inject(Router);
   private readonly notification = inject(NotificationService);
-  private pollSubscription?: Subscription;
+  private readonly subscriptions = new Subscription();
 
   unreadCount = 0;
   recentAlerts: AlertResponse[] = [];
@@ -94,11 +97,17 @@ export class AlertBellComponent implements OnInit, OnDestroy {
   markingAll = false;
 
   ngOnInit(): void {
-    this.pollSubscription = timer(0, 60000).subscribe(() => this.refreshUnreadCount());
+    this.alertState.startPolling();
+    this.subscriptions.add(this.alertState.unreadCount$.subscribe((count) => (this.unreadCount = count)));
+    this.subscriptions.add(this.alertState.recentUnreadAlerts$.subscribe((alerts) => {
+      this.recentAlerts = alerts;
+      this.loading = false;
+    }));
+    this.alertState.refresh();
   }
 
   ngOnDestroy(): void {
-    this.pollSubscription?.unsubscribe();
+    this.subscriptions.unsubscribe();
   }
 
   @HostListener('document:click')
@@ -109,7 +118,8 @@ export class AlertBellComponent implements OnInit, OnDestroy {
   toggleDropdown(): void {
     this.dropdownOpen = !this.dropdownOpen;
     if (this.dropdownOpen) {
-      this.refreshDropdown();
+      this.loading = true;
+      this.alertState.refresh();
     }
   }
 
@@ -117,7 +127,7 @@ export class AlertBellComponent implements OnInit, OnDestroy {
     this.alertApi.markAsRead(alert.alertId).subscribe({
       next: () => {
         this.dropdownOpen = false;
-        this.refreshDropdown();
+        this.alertState.refresh();
         this.router.navigate([alert.actionUrl || `/alerts/${alert.alertId}`]);
       },
       error: () => this.notification.error('Unable to open this alert right now. Please try again.'),
@@ -130,39 +140,13 @@ export class AlertBellComponent implements OnInit, OnDestroy {
       next: () => {
         this.markingAll = false;
         this.notification.success('All alerts marked as read');
-        this.refreshDropdown();
+        this.alertState.refresh();
       },
       error: () => (this.markingAll = false),
     });
   }
 
-  private refreshUnreadCount(): void {
-    this.alertApi.getUnreadCount().subscribe({
-      next: (count) => {
-        this.unreadCount = count;
-      },
-      error: () => {
-        this.unreadCount = 0;
-      },
-    });
-  }
-
-  private refreshDropdown(): void {
-    this.loading = true;
-    forkJoin({
-      count: this.alertApi.getUnreadCount(),
-      page: this.alertApi.getMyAlerts({ page: 0, size: 5, isRead: false, sortBy: 'createdAt', sortDir: 'desc' }),
-    }).subscribe({
-      next: ({ count, page }) => {
-        this.unreadCount = count;
-        this.recentAlerts = page.content;
-        this.loading = false;
-      },
-      error: () => {
-        this.unreadCount = 0;
-        this.recentAlerts = [];
-        this.loading = false;
-      },
-    });
+  previewMessage(alert: AlertResponse): string {
+    return truncateAlertMessage(getAlertDisplayMessage(alert), 110);
   }
 }

@@ -3,10 +3,26 @@ import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
+import { AuthService } from '../../../../core/auth/services/auth.service';
+import { AlertResponse, CreateBroadcastAlertRequest } from '../../../../core/http/backend.models';
 import { NotificationService } from '../../../../core/services/notification.service';
-import { UserRole } from '../../../../shared/config/app-config';
-import { CreateBroadcastAlertRequest } from '../../../../core/http/backend.models';
 import { AlertApiService } from '../../services/alert-api.service';
+import { AlertStateService } from '../../services/alert-state.service';
+
+type BroadcastRole = 'ALL' | 'ADMIN' | 'INVENTORY_MANAGER' | 'PURCHASE_OFFICER' | 'WAREHOUSE_STAFF';
+
+interface BroadcastRoleOption {
+  value: BroadcastRole;
+  label: string;
+}
+
+const BROADCAST_ROLE_OPTIONS: BroadcastRoleOption[] = [
+  { value: 'ALL', label: 'All Roles' },
+  { value: 'ADMIN', label: 'Administrator' },
+  { value: 'INVENTORY_MANAGER', label: 'Inventory Manager' },
+  { value: 'PURCHASE_OFFICER', label: 'Purchase Officer' },
+  { value: 'WAREHOUSE_STAFF', label: 'Warehouse Staff' },
+];
 
 @Component({
   selector: 'app-broadcast-alert',
@@ -22,7 +38,7 @@ import { AlertApiService } from '../../services/alert-api.service';
         <label>
           Recipient Roles
           <select formControlName="recipientRoles" multiple>
-            <option *ngFor="let role of roles" [value]="role">{{ role }}</option>
+            <option *ngFor="let role of roles" [value]="role.value">{{ role.label }}</option>
           </select>
         </label>
         <label>
@@ -66,15 +82,17 @@ import { AlertApiService } from '../../services/alert-api.service';
   `],
 })
 export class BroadcastAlertComponent {
-  readonly roles = [UserRole.ADMIN, UserRole.MANAGER, UserRole.OFFICER, UserRole.STAFF];
+  readonly roles = BROADCAST_ROLE_OPTIONS;
   private readonly fb = inject(FormBuilder);
   private readonly alertApi = inject(AlertApiService);
   private readonly notification = inject(NotificationService);
+  private readonly authService = inject(AuthService);
+  private readonly alertState = inject(AlertStateService);
   readonly router = inject(Router);
 
   saving = false;
   readonly form = this.fb.nonNullable.group({
-    recipientRoles: [['MANAGER'], Validators.required],
+    recipientRoles: [['INVENTORY_MANAGER' as BroadcastRole], Validators.required],
     severity: ['INFO', Validators.required],
     title: ['', Validators.required],
     message: ['', Validators.required],
@@ -84,8 +102,9 @@ export class BroadcastAlertComponent {
   submit(): void {
     if (this.form.invalid) return;
     const raw = this.form.getRawValue();
+    const recipientRoles = this.normalizeRecipientRoles(raw.recipientRoles);
     const payload: CreateBroadcastAlertRequest = {
-      recipientRoles: [...raw.recipientRoles],
+      recipientRoles,
       severity: raw.severity as CreateBroadcastAlertRequest['severity'],
       title: raw.title,
       message: raw.message,
@@ -93,10 +112,54 @@ export class BroadcastAlertComponent {
     };
     this.saving = true;
     this.alertApi.createBroadcastAlert(payload).pipe(finalize(() => (this.saving = false))).subscribe({
-      next: () => {
+      next: (createdAlerts) => {
+        if (!createdAlerts.length) {
+          this.notification.warning('Broadcast request completed, but no alerts were created.');
+          return;
+        }
+
+        if (this.shouldRefreshCurrentUser(recipientRoles, createdAlerts)) {
+          this.alertState.refresh();
+        }
         this.notification.success('Broadcast alert sent successfully');
         this.router.navigate(['/alerts']);
       },
     });
+  }
+
+  private normalizeRecipientRoles(roles: readonly BroadcastRole[]): BroadcastRole[] {
+    const uniqueRoles = new Set<BroadcastRole>();
+    for (const role of roles) {
+      uniqueRoles.add(role);
+    }
+    return [...uniqueRoles];
+  }
+
+  private shouldRefreshCurrentUser(roles: readonly BroadcastRole[], createdAlerts: readonly AlertResponse[]): boolean {
+    const currentRole = this.authService.getUserRole();
+    if (!currentRole) {
+      return false;
+    }
+
+    if (roles.includes('ALL')) {
+      return createdAlerts.length > 0;
+    }
+
+    return roles.includes(this.toAlertRole(currentRole));
+  }
+
+  private toAlertRole(role: string): BroadcastRole {
+    switch (role) {
+      case 'ADMIN':
+        return 'ADMIN';
+      case 'MANAGER':
+      case 'INVENTORY_MANAGER':
+        return 'INVENTORY_MANAGER';
+      case 'OFFICER':
+      case 'PURCHASE_OFFICER':
+        return 'PURCHASE_OFFICER';
+      default:
+        return 'WAREHOUSE_STAFF';
+    }
   }
 }

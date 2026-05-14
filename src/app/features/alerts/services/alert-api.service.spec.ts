@@ -61,10 +61,16 @@ describe('AlertApiService', () => {
   });
 
   it('should call broadcast API', () => {
-    service.createBroadcastAlert({ recipientRoles: ['MANAGER'], severity: 'WARNING', title: 'Broadcast', message: 'Check stock' }).subscribe();
+    service.createBroadcastAlert({
+      recipientRoles: ['INVENTORY_MANAGER'],
+      severity: 'WARNING',
+      title: 'Broadcast',
+      message: 'Check stock',
+    }).subscribe();
 
     const request = httpMock.expectOne('http://localhost:8080/api/v1/alerts/broadcast');
     expect(request.request.method).toBe('POST');
+    expect(request.request.body.recipientRoles).toEqual(['INVENTORY_MANAGER']);
     request.flush([]);
   });
 

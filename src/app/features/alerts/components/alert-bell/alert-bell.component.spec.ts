@@ -4,6 +4,7 @@ import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { AlertApiService } from '../../services/alert-api.service';
+import { AlertStateService } from '../../services/alert-state.service';
 import { AlertBellComponent } from './alert-bell.component';
 
 @Component({ standalone: true, template: '' })
@@ -21,6 +22,27 @@ describe('AlertBellComponent', () => {
   const notification = {
     success: vi.fn(),
     error: vi.fn(),
+  };
+  const alertState = {
+    unreadCount$: of(3),
+    recentUnreadAlerts$: of([
+      {
+        alertId: 10,
+        alertNumber: 'ALT-20260501-000010',
+        type: 'LOW_STOCK',
+        severity: 'WARNING',
+        status: 'NEW',
+        channel: 'IN_APP',
+        title: 'Low stock',
+        message: 'Restock item',
+        isRead: false,
+        isAcknowledged: false,
+        isDismissed: false,
+        createdAt: '2026-05-01T10:00:00',
+      },
+    ]),
+    startPolling: vi.fn(),
+    refresh: vi.fn(),
   };
 
   beforeEach(async () => {
@@ -74,6 +96,7 @@ describe('AlertBellComponent', () => {
       providers: [
         provideRouter([{ path: 'alerts/:id', component: DummyComponent }]),
         { provide: AlertApiService, useValue: alertApi },
+        { provide: AlertStateService, useValue: alertState },
         { provide: NotificationService, useValue: notification },
       ],
     }).compileComponents();

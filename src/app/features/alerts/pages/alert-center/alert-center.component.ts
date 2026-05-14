@@ -9,6 +9,22 @@ import { AlertSummaryCardsComponent } from '../../components/alert-summary-cards
 import { AlertSeverityBadgeComponent } from '../../components/alert-severity-badge/alert-severity-badge.component';
 import { AlertTypeBadgeComponent } from '../../components/alert-type-badge/alert-type-badge.component';
 import { AlertApiService } from '../../services/alert-api.service';
+import { AlertStateService } from '../../services/alert-state.service';
+import { canAcknowledgeAlert, canDismissAlert, getAlertDisplayMessage, truncateAlertMessage } from '../../utils/alert-display.util';
+
+const DEFAULT_ALERT_SUMMARY: AlertSummaryResponse = {
+  totalAlerts: 0,
+  unreadCount: 0,
+  acknowledgedCount: 0,
+  dismissedCount: 0,
+  criticalCount: 0,
+  warningCount: 0,
+  infoCount: 0,
+  lowStockCount: 0,
+  overstockCount: 0,
+  pendingPoApprovalCount: 0,
+  overduePoCount: 0,
+};
 
 @Component({
   selector: 'app-alert-center',
@@ -71,7 +87,7 @@ import { AlertApiService } from '../../services/alert-api.service';
               <span class="alert-row__number">{{ alert.alertNumber }}</span>
             </div>
             <h3>{{ alert.title }}</h3>
-            <p>{{ alert.message }}</p>
+            <p>{{ previewMessage(alert) }}</p>
             <div class="alert-row__submeta">
               <span>{{ alert.createdAt | date:'medium' }}</span>
               <span>{{ alert.status }}</span>
@@ -84,10 +100,10 @@ import { AlertApiService } from '../../services/alert-api.service';
             <button type="button" class="btn-secondary btn-compact" (click)="markRead(alert)" [disabled]="actionId === alert.alertId || alert.isRead">
               {{ actionId === alert.alertId && pendingAction === 'read' ? 'Marking...' : 'Mark Read' }}
             </button>
-            <button type="button" class="btn-secondary btn-compact" (click)="acknowledge(alert)" [disabled]="actionId === alert.alertId || alert.isAcknowledged">
+            <button *ngIf="canAcknowledge(alert)" type="button" class="btn-secondary btn-compact" (click)="acknowledge(alert)" [disabled]="actionId === alert.alertId">
               {{ actionId === alert.alertId && pendingAction === 'ack' ? 'Acknowledging...' : 'Acknowledge' }}
             </button>
-            <button type="button" class="btn-secondary btn-compact" (click)="dismiss(alert)" [disabled]="actionId === alert.alertId || alert.isDismissed">
+            <button *ngIf="canDismiss(alert)" type="button" class="btn-secondary btn-compact" (click)="dismiss(alert)" [disabled]="actionId === alert.alertId">
               {{ actionId === alert.alertId && pendingAction === 'dismiss' ? 'Dismissing...' : 'Dismiss' }}
             </button>
           </div>
@@ -181,8 +197,43 @@ export class AlertCenterComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly alertState = inject(AlertStateService);
 
-  readonly types: AlertType[] = ['LOW_STOCK', 'OVERSTOCK', 'PO_APPROVAL_PENDING', 'PO_OVERDUE_RECEIPT', 'SUPPLIER_BLACKLISTED', 'MOVEMENT_ANOMALY', 'SYSTEM_BROADCAST', 'GENERAL'];
+  readonly types: AlertType[] = [
+    'LOW_STOCK',
+    'OVERSTOCK',
+    'STOCK_UPDATED',
+    'PO_CREATED',
+    'PO_SUBMITTED',
+    'PO_APPROVAL_PENDING',
+    'PO_APPROVED',
+    'PO_REJECTED',
+    'PO_CANCELLED',
+    'PO_OVERDUE_RECEIPT',
+    'PO_RECEIVED',
+    'GRN_STARTED',
+    'GRN_PARTIAL',
+    'GRN_COMPLETED',
+    'SUPPLIER_DEACTIVATED',
+    'SUPPLIER_BLACKLISTED',
+    'MOVEMENT_ANOMALY',
+    'STOCK_TRANSFER',
+    'WAREHOUSE_TRANSFER_INITIATED',
+    'WAREHOUSE_TRANSFER_COMPLETED',
+    'SYSTEM_BROADCAST',
+    'UNAUTHORIZED_ACCESS',
+    'SYSTEM_ERROR',
+    'REPORT_READY',
+    'PAYMENT_PENDING',
+    'PAYMENT_INITIATED',
+    'PAYMENT_COMPLETED',
+    'PAYMENT_SUCCESSFUL',
+    'PAYMENT_FAILED',
+    'PAYMENT_CANCELLED',
+    'PAYMENT_LIMIT_EXCEEDED',
+    'SPLIT_PAYMENT_RECOMMENDED',
+    'GENERAL',
+  ];
   readonly statuses: AlertStatus[] = ['NEW', 'READ', 'ACKNOWLEDGED', 'DISMISSED', 'RESOLVED', 'EXPIRED'];
   readonly quickFilters = [
     { key: 'all', label: 'All' },
@@ -201,7 +252,7 @@ export class AlertCenterComponent implements OnInit {
   });
 
   alerts: AlertResponse[] = [];
-  summary: AlertSummaryResponse | null = null;
+  summary: AlertSummaryResponse = DEFAULT_ALERT_SUMMARY;
   loading = false;
   markAllLoading = false;
   actionId: number | null = null;
@@ -212,6 +263,7 @@ export class AlertCenterComponent implements OnInit {
   totalPages = 0;
 
   ngOnInit(): void {
+    this.alertState.startPolling();
     this.applyDashboardQueryParams();
     this.loadSummary();
     this.loadAlerts();
@@ -233,6 +285,7 @@ export class AlertCenterComponent implements OnInit {
     this.alertApi.markAllAsRead().pipe(finalize(() => (this.markAllLoading = false))).subscribe({
       next: () => {
         this.notification.success('All alerts marked as read');
+        this.alertState.refresh();
         this.loadSummary();
         this.loadAlerts();
       },
@@ -251,6 +304,18 @@ export class AlertCenterComponent implements OnInit {
     this.handleAction(alert, 'dismiss', () => this.alertApi.dismissAlert(alert.alertId), 'Alert dismissed successfully');
   }
 
+  canAcknowledge(alert: AlertResponse): boolean {
+    return canAcknowledgeAlert(alert);
+  }
+
+  canDismiss(alert: AlertResponse): boolean {
+    return canDismissAlert(alert);
+  }
+
+  previewMessage(alert: AlertResponse): string {
+    return truncateAlertMessage(getAlertDisplayMessage(alert), 180);
+  }
+
   applyQuickFilter(filter: typeof this.quickFilters[number]['key']): void {
     this.activeQuickFilter = filter;
     this.pageIndex = 0;
@@ -258,6 +323,7 @@ export class AlertCenterComponent implements OnInit {
     switch (filter) {
       case 'unread':
         this.filters.patchValue({ severity: '', status: '', type: '' }, { emitEvent: false });
+        this.syncQueryParams();
         this.runSearch(this.buildParams({ isRead: false }));
         return;
       case 'critical':
@@ -291,7 +357,14 @@ export class AlertCenterComponent implements OnInit {
   }
 
   private loadSummary(): void {
-    this.alertApi.getMyAlertSummary().subscribe({ next: (summary) => (this.summary = summary) });
+    this.alertApi.getMyAlertSummary().subscribe({
+      next: (summary) => queueMicrotask(() => {
+        this.summary = summary ?? DEFAULT_ALERT_SUMMARY;
+      }),
+      error: () => queueMicrotask(() => {
+        this.summary = DEFAULT_ALERT_SUMMARY;
+      }),
+    });
   }
 
   private buildParams(overrides: Partial<AlertSearchRequest> = {}): Partial<AlertSearchRequest> {
@@ -332,6 +405,7 @@ export class AlertCenterComponent implements OnInit {
     })).subscribe({
       next: () => {
         this.notification.success(successMessage);
+        this.alertState.refresh();
         this.loadSummary();
         this.loadAlerts();
       },
