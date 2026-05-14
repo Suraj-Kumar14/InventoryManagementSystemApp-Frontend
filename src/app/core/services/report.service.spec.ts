@@ -21,27 +21,75 @@ describe('ReportService', () => {
     httpMock.verify();
   });
 
-  it('should call inventory valuation API', () => {
-    service.getInventoryValuation({ period: 'LAST_30_DAYS' }).subscribe();
+  it('should call total value API', () => {
+    service.getTotalValue({ warehouseId: 11, toDate: '2026-05-13' }).subscribe();
 
-    const request = httpMock.expectOne('http://localhost:8080/api/v1/reports/inventory/valuation?period=LAST_30_DAYS');
+    const request = httpMock.expectOne(
+      'http://localhost:8080/api/v1/reports/totalValue?warehouseId=11&asOfDate=2026-05-13'
+    );
     expect(request.request.method).toBe('GET');
     request.flush({
+      asOfDate: '2026-05-13',
       totalInventoryValue: 1000,
       totalQuantity: 10,
       totalProducts: 2,
       totalWarehouses: 1,
-      valuationByWarehouse: [],
-      valuationByCategory: {},
-      valuationByProduct: [],
+      warehouseBreakdown: [],
+      productBreakdown: [],
+      warnings: [],
     });
   });
 
-  it('should call snapshot run API', () => {
-    service.runInventorySnapshot().subscribe();
+  it('should call consolidated generate report API', () => {
+    service.generateInventoryReport({ period: 'LAST_30_DAYS', page: 0, size: 10 }, 5, 90).subscribe();
 
-    const request = httpMock.expectOne('http://localhost:8080/api/v1/reports/snapshots/run');
-    expect(request.request.method).toBe('POST');
-    request.flush({});
+    const request = httpMock.expectOne(
+      'http://localhost:8080/api/v1/reports/generateReport?page=0&size=10&period=LAST_30_DAYS&threshold=5&deadStockDays=90'
+    );
+    expect(request.request.method).toBe('GET');
+    request.flush({
+      valuation: {
+        asOfDate: '2026-05-13',
+        totalInventoryValue: 1000,
+        totalQuantity: 10,
+        totalProducts: 2,
+        totalWarehouses: 1,
+        warehouseBreakdown: [],
+        productBreakdown: [],
+        warnings: [],
+      },
+      stockValueByWarehouse: [],
+      turnover: {
+        from: '2026-05-01',
+        to: '2026-05-13',
+        cogs: 100,
+        averageInventoryValue: 500,
+        turnoverRate: 0.2,
+        note: 'COGS is estimated from STOCK_OUT movements.',
+        productTurnover: [],
+      },
+      lowStock: [],
+      movementVelocity: [],
+      topMovingProducts: [],
+      slowMovingProducts: [],
+      deadStock: [],
+      poSummary: {
+        from: '2026-05-01',
+        to: '2026-05-13',
+        totalPurchaseOrders: 1,
+        totalSpend: 1000,
+        statusBreakdown: {},
+        supplierBreakdown: [],
+        warehouseBreakdown: [],
+        pendingApprovalCount: 0,
+        approvedCount: 0,
+        partiallyReceivedCount: 0,
+        fullyReceivedCount: 0,
+        overdueCount: 0,
+        cancelledCount: 0,
+        rejectedCount: 0,
+      },
+      warnings: [],
+    });
   });
 });

@@ -35,6 +35,14 @@ import { ReportFilter, ReportPeriod } from '../../../core/http/backend.models';
         <span>Supplier ID</span>
         <input type="number" formControlName="supplierId" />
       </label>
+      <label *ngIf="showThreshold">
+        <span>Slow Mover Threshold</span>
+        <input type="number" formControlName="threshold" min="1" />
+      </label>
+      <label *ngIf="showDeadStockDays">
+        <span>Dead Stock Days</span>
+        <input type="number" formControlName="deadStockDays" min="1" />
+      </label>
       <div class="actions">
         <button type="submit" [disabled]="loading">{{ loading ? 'Applying...' : 'Apply Filters' }}</button>
         <button type="button" class="secondary" [disabled]="loading" (click)="reset()">Reset</button>
@@ -99,8 +107,14 @@ export class ReportFilterComponent implements OnChanges {
   @Input() showWarehouse = true;
   @Input() showProduct = true;
   @Input() showSupplier = false;
+  @Input() showThreshold = false;
+  @Input() showDeadStockDays = false;
+  @Input() threshold = 5;
+  @Input() deadStockDays = 90;
   @Input() initialFilters: ReportFilter | null = null;
   @Output() filtersChange = new EventEmitter<ReportFilter>();
+  @Output() thresholdChange = new EventEmitter<number>();
+  @Output() deadStockDaysChange = new EventEmitter<number>();
 
   readonly periods: ReportPeriod[] = ['LAST_7_DAYS', 'LAST_30_DAYS', 'THIS_MONTH', 'LAST_MONTH', 'CUSTOM', 'TODAY'];
   readonly form = this.fb.group({
@@ -110,6 +124,8 @@ export class ReportFilterComponent implements OnChanges {
     warehouseId: this.fb.control<number | null>(null),
     productId: this.fb.control<number | null>(null),
     supplierId: this.fb.control<number | null>(null),
+    threshold: this.fb.control<number>(5),
+    deadStockDays: this.fb.control<number>(90),
   });
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -122,6 +138,8 @@ export class ReportFilterComponent implements OnChanges {
           warehouseId: this.initialFilters.warehouseId ?? null,
           productId: this.initialFilters.productId ?? null,
           supplierId: this.initialFilters.supplierId ?? null,
+          threshold: this.threshold,
+          deadStockDays: this.deadStockDays,
         },
         { emitEvent: false }
       );
@@ -140,6 +158,8 @@ export class ReportFilterComponent implements OnChanges {
       page: 0,
       size: 20,
     });
+    this.thresholdChange.emit(Math.max(1, value.threshold ?? 5));
+    this.deadStockDaysChange.emit(Math.max(1, value.deadStockDays ?? 90));
   }
 
   reset(): void {
@@ -150,6 +170,8 @@ export class ReportFilterComponent implements OnChanges {
       warehouseId: null,
       productId: null,
       supplierId: null,
+      threshold: this.threshold,
+      deadStockDays: this.deadStockDays,
     });
     this.apply();
   }
