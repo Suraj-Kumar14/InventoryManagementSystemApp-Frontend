@@ -49,7 +49,7 @@ export class RegisterComponent implements OnInit {
       next: (response) => {
         this.isLoading = false;
         this.cdr.detectChanges();
-        this.notification.success(response.message || 'OTP sent to your email.');
+        this.notification.success(response.message || 'OTP sent successfully. Please check your email.');
         this.router.navigate(['/verify-otp'], {
           queryParams: { email: this.registerForm.get('email')?.value },
         });
@@ -74,8 +74,8 @@ export class RegisterComponent implements OnInit {
   private mapError(error: unknown): string {
     const message = this.extractMessage(error);
     const lowerMessage = message.toLowerCase();
-    if (lowerMessage.includes('email already exists') || lowerMessage.includes('email is already registered')) {
-      return 'Email is already registered';
+    if (lowerMessage.includes('email already exists') || lowerMessage.includes('email is already registered') || lowerMessage.includes('email already registered')) {
+      return 'Email already registered';
     }
     return message || 'Unable to continue signup right now.';
   }
@@ -94,3 +94,4 @@ export class RegisterComponent implements OnInit {
     return httpError?.message || 'Something went wrong';
   }
 }
+
