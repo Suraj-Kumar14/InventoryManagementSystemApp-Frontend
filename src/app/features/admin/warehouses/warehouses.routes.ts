@@ -1,12 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Routes } from '@angular/router';
-import { finalize } from 'rxjs/operators';
-import { WarehouseRequest, WarehouseResponse } from '../../../core/http/backend.models';
+import { debounceTime, distinctUntilChanged, finalize, Subject, switchMap } from 'rxjs';
+import { WarehouseRequest, WarehouseResponse, UserProfile } from '../../../core/http/backend.models';
 import { AuthService } from '../../../core/auth/services/auth.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { WarehouseService } from '../../../core/services/warehouse.service';
+import { AdminUserService } from '../../../core/services/admin-user.service';
 import { UserRole } from '../../../shared/config/app-config';
 import { roleGuard } from '../../../core/guards/role.guard';
 
@@ -20,16 +22,22 @@ const INDIAN_PHONE_REGEX = /^[6-9][0-9]{9}$/;
 })
 class WarehousesAdminPageComponent implements OnInit {
   private readonly service = inject(WarehouseService);
+  private readonly adminUserService = inject(AdminUserService);
   private readonly fb = inject(FormBuilder);
   private readonly notifications = inject(NotificationService);
   private readonly authService = inject(AuthService);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly searchInput$ = new Subject<string>();
 
   warehouses: WarehouseResponse[] = [];
+  managerOptions: UserProfile[] = [];
   loading = false;
+  loadingManagers = false;
   saving = false;
   editingId: number | null = null;
   actionWarehouseId: number | null = null;
+  searchQuery = '';
   readonly canManage = this.authService.hasRole([UserRole.ADMIN, UserRole.MANAGER]);
 
   form = this.fb.nonNullable.group({
@@ -46,14 +54,27 @@ class WarehousesAdminPageComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.setupSearch();
+    this.loadManagers();
     this.loadWarehouses();
   }
 
-  loadWarehouses(): void {
+  onSearchInput(value: string): void {
+    this.searchQuery = value;
+    this.searchInput$.next(value);
+  }
+
+  clearSearch(): void {
+    this.onSearchInput('');
+  }
+
+  loadWarehouses(query = this.searchQuery): void {
+    const trimmedQuery = query.trim();
     this.loading = true;
     this.cdr.markForCheck();
-    this.service
-      .getWarehouses()
+    const request = trimmedQuery ? this.service.searchWarehouses(trimmedQuery) : this.service.getWarehouses();
+
+    request
       .pipe(finalize(() => {
         this.loading = false;
         this.refreshView();
@@ -133,7 +154,7 @@ class WarehousesAdminPageComponent implements OnInit {
       city: warehouse.city || '',
       state: warehouse.state || '',
       country: warehouse.country || 'India',
-      managerId: warehouse.managerId || 0,
+      managerId: warehouse.managerId ?? null,
       capacity: warehouse.capacity,
       phone: warehouse.phone || '',
     });
@@ -205,6 +226,72 @@ class WarehousesAdminPageComponent implements OnInit {
     return this.actionWarehouseId === this.warehouseId(warehouse);
   }
 
+  managerLabel(warehouse: WarehouseResponse): string {
+    if (!warehouse.managerId) {
+      return '-';
+    }
+
+    const manager = this.managerOptions.find((item) => item.userId === warehouse.managerId);
+    if (!manager) {
+      return `Manager #${warehouse.managerId}`;
+    }
+
+    return `${manager.name} (#${manager.userId})`;
+  }
+
+  private setupSearch(): void {
+    this.searchInput$
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        switchMap((query) => {
+          this.loading = true;
+          this.refreshView();
+          const trimmedQuery = query.trim();
+          return (trimmedQuery ? this.service.searchWarehouses(trimmedQuery) : this.service.getWarehouses()).pipe(
+            finalize(() => {
+              this.loading = false;
+              this.refreshView();
+            })
+          );
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe({
+        next: (warehouses) => {
+          this.warehouses = [...warehouses];
+          this.refreshView();
+        },
+        error: (error) => {
+          this.warehouses = [];
+          this.notifications.error(this.errorMessage(error, 'Failed to search warehouses'), 'Error');
+          this.refreshView();
+        },
+      });
+  }
+
+  private loadManagers(): void {
+    this.loadingManagers = true;
+    this.refreshView();
+    this.adminUserService
+      .getUsers({ page: 0, size: 100, role: UserRole.MANAGER, status: 'ACTIVE' })
+      .pipe(finalize(() => {
+        this.loadingManagers = false;
+        this.refreshView();
+      }))
+      .subscribe({
+        next: (page) => {
+          this.managerOptions = page.content.filter((user) => user.isActive !== false);
+          this.refreshView();
+        },
+        error: () => {
+          this.managerOptions = [];
+          this.notifications.error('Unable to load active managers right now.', 'Error');
+          this.refreshView();
+        },
+      });
+  }
+
   private findWarehouse(id: number): WarehouseResponse | undefined {
     return this.warehouses.find((warehouse) => this.warehouseId(warehouse) === id);
   }
@@ -231,3 +318,6 @@ export const warehousesRoutes: Routes = [
     data: { roles: [UserRole.ADMIN, UserRole.MANAGER] },
   },
 ];
+
+
+

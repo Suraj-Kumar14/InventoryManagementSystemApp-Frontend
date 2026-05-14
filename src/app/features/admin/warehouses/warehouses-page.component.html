@@ -4,6 +4,23 @@
     <p class="page-header__subtitle">Create, update, activate, and deactivate warehouse locations through the API Gateway.</p>
   </div>
 
+  <div class="table-card warehouse-search-card">
+    <label class="field warehouse-search-field">
+      <span>Search warehouse by name or location</span>
+      <div class="warehouse-search-input-group">
+        <input
+          #searchInput
+          type="search"
+          [value]="searchQuery"
+          (input)="onSearchInput(searchInput.value)"
+          placeholder="Search warehouse by name or location"
+          class="page-input"
+        />
+        <button type="button" class="btn-secondary" (click)="clearSearch()" [disabled]="loading || !searchQuery.trim()">Clear</button>
+      </div>
+    </label>
+  </div>
+
   <form *ngIf="canManage" [formGroup]="form" (ngSubmit)="save()" class="form-card warehouse-form">
     <label class="field">
       <span>Warehouse Name</span>
@@ -54,8 +71,14 @@
     </label>
 
     <label class="field">
-      <span>Manager ID</span>
-      <input formControlName="managerId" type="number" placeholder="2" class="page-input" />
+      <span>Warehouse Manager</span>
+      <select formControlName="managerId" class="page-input">
+        <option [ngValue]="null">Select active manager</option>
+        <option *ngFor="let manager of managerOptions" [ngValue]="manager.userId">
+          {{ manager.name }} ({{ manager.email }})
+        </option>
+      </select>
+      <small *ngIf="loadingManagers">Loading active managers...</small>
     </label>
 
     <label class="field">
@@ -73,7 +96,9 @@
   </form>
 
   <div *ngIf="loading" class="page-loading">Loading warehouses...</div>
-  <div *ngIf="!loading && warehouses.length === 0" class="page-empty">No warehouses returned by the backend.</div>
+  <div *ngIf="!loading && warehouses.length === 0" class="page-empty">
+    {{ searchQuery.trim() ? 'No warehouses matched your search.' : 'No warehouses returned by the backend.' }}
+  </div>
 
   <div *ngIf="!loading && warehouses.length > 0" class="table-card">
     <div class="table-wrapper">
@@ -89,7 +114,7 @@
             <th>Capacity</th>
             <th>Used</th>
             <th>Utilization</th>
-            <th>Manager ID</th>
+            <th>Manager</th>
             <th>Phone</th>
             <th>Status</th>
             <th>Actions</th>
@@ -106,7 +131,7 @@
             <td>{{ warehouse.capacity }}</td>
             <td>{{ warehouse.usedCapacity ?? 0 }}</td>
             <td>{{ warehouse.utilizationPercentage ?? 0 }}%</td>
-            <td>{{ warehouse.managerId ?? '-' }}</td>
+            <td>{{ managerLabel(warehouse) }}</td>
             <td>{{ warehouse.phone || '-' }}</td>
             <td>
               <span class="status-badge" [class.status-badge--active]="isWarehouseActive(warehouse)" [class.status-badge--inactive]="!isWarehouseActive(warehouse)">

@@ -39,6 +39,24 @@ export class WarehouseService {
       );
   }
 
+  searchWarehouses(query: string): Observable<WarehouseResponse[]> {
+    return this.api
+      .get<PageResponse<WarehouseResponse> | WarehouseResponse[]>(API_ENDPOINTS.WAREHOUSES.SEARCH, {
+        service: 'warehouse',
+        params: {
+          query: query.trim(),
+          page: 0,
+          size: 100,
+          sortBy: 'warehouseName',
+          sortDir: 'asc',
+        },
+      })
+      .pipe(
+        map((response) => this.normalizeWarehouseList(response)),
+        handleServiceError(this.serviceName, 'searchWarehouses')
+      );
+  }
+
   getWarehouseCount(): Observable<number> {
     return this.api
       .get<unknown>(API_ENDPOINTS.WAREHOUSES.ROOT, {
