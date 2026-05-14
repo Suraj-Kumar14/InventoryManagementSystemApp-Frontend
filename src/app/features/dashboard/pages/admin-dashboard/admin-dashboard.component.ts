@@ -60,15 +60,31 @@ export class AdminDashboardComponent implements OnInit {
     return [
       { title: 'Total Products', value: executive.totalProducts, subtitle: 'Catalog breadth', icon: 'bi bi-box-seam', route: '/products' },
       { title: 'Total Warehouses', value: executive.totalWarehouses, subtitle: 'Configured storage nodes', icon: 'bi bi-building', route: '/warehouses' },
-      { title: 'Inventory Value', value: this.formatCurrency(executive.totalInventoryValue), subtitle: 'Current stock valuation', icon: 'bi bi-cash-stack', route: '/reports/inventory/valuation' },
-      { title: 'Low Stock Items', value: executive.lowStockCount, subtitle: 'Needs replenishment', icon: 'bi bi-exclamation-triangle', route: '/reports/inventory/low-stock', severity: 'warning' },
-      { title: 'Overstock Items', value: executive.overstockCount, subtitle: 'Above max level', icon: 'bi bi-boxes', route: '/reports/inventory/overstock' },
-      { title: 'Pending PO Approvals', value: executive.pendingPurchaseApprovals, subtitle: 'Waiting for action', icon: 'bi bi-hourglass-split', route: '/purchase-orders/approvals' },
+      { title: 'Inventory Value', value: this.formatCurrency(executive.inventoryValue), subtitle: 'Current stock valuation', icon: 'bi bi-cash-stack', route: '/reports/inventory/valuation' },
+      { title: 'Low Stock Items', value: executive.lowStockItems ?? 0, subtitle: 'Needs replenishment', icon: 'bi bi-exclamation-triangle', route: '/reports/inventory/low-stock', severity: 'warning' },
+      { title: 'Overstock Items', value: executive.overstockItems ?? 0, subtitle: 'Above max level', icon: 'bi bi-boxes', route: '/reports/inventory/overstock' },
+      { title: 'Pending PO Approvals', value: executive.pendingPoApprovals, subtitle: 'Waiting for action', icon: 'bi bi-hourglass-split', route: '/purchase-orders/approvals' },
       { title: 'Overdue Purchase Orders', value: executive.overduePurchaseOrders, subtitle: 'Delayed inbound supply', icon: 'bi bi-calendar-x', route: '/purchase-orders?overdueOnly=true', severity: 'warning' },
       { title: 'Total Purchase Value', value: this.formatCurrency(executive.totalPurchaseValue), subtitle: 'Procurement spend window', icon: 'bi bi-receipt', route: '/reports/purchase/summary' },
       { title: 'Total Paid Amount', value: this.formatCurrency(executive.totalPaidAmount), subtitle: 'Released payments', icon: 'bi bi-credit-card-2-front', route: '/payments?status=PAID' },
       { title: 'Active Users', value: activeUsers, subtitle: 'Currently enabled accounts', icon: 'bi bi-people-fill', route: '/admin/users?status=ACTIVE' },
     ];
+  }
+
+  get inventoryValue(): number {
+    return this.view?.executive?.inventoryValue ?? 0;
+  }
+
+  get lowStockItems(): number {
+    return this.view?.executive?.lowStockItems ?? 0;
+  }
+
+  get overstockItems(): number {
+    return this.view?.executive?.overstockItems ?? 0;
+  }
+
+  get pendingPoApprovals(): number {
+    return this.view?.executive?.pendingPoApprovals ?? 0;
   }
 
   get userRoleBreakdown() {

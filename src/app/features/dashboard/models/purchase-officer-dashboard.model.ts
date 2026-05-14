@@ -2,6 +2,7 @@ import {
   AlertSummaryResponse,
   ExecutiveDashboardReportResponse,
   PaymentSummaryReportResponse,
+  PurchaseOrderSummaryResponse,
   PurchaseSummaryReportResponse,
   SupplierPerformanceReportResponse,
   SupplierSummaryResponse,
@@ -118,7 +119,8 @@ export interface PurchaseOfficerKpiCard {
 export interface PurchaseOfficerDashboardView {
   roleDashboard: ExecutiveDashboardReportResponse | null;
   overview: PurchaseOfficerDashboardResponse | null;
-  purchaseSummary: PurchaseSummaryReportResponse | null;
+  purchaseSummary: PurchaseOrderSummaryResponse | null;
+  purchaseReportSummary?: PurchaseSummaryReportResponse | null;
   recentPurchaseOrders: PurchaseOrderSummaryItem[];
   supplierSummary: SupplierSummaryResponse | null;
   topRatedSuppliers: SupplierSummaryItem[];

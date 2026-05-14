@@ -103,16 +103,11 @@ export class InventoryManagerDashboardApiService {
 
     return forkJoin({
       summary: this.movementApiService.getMovementSummary(today, today),
-      analytics: this.movementApiService.getMovementAnalytics(today, today),
-      recentMovements: this.movementApiService.getMovements({ page: 0, size: 6, sortBy: 'movementDate', sortDir: 'desc' }).pipe(
-        map((page) => page.content ?? [])
-      ),
+      recentMovements: this.movementApiService.getRecentMovements(5),
     }).pipe(
-      map(({ summary, analytics, recentMovements }) => ({
+      map(({ summary, recentMovements }) => ({
         movementSummary: {
           ...summary,
-          totalAdjustmentQuantity: analytics.movementCountByType['ADJUSTMENT'] ?? summary.totalAdjustmentQuantity,
-          totalWriteOffQuantity: analytics.movementCountByType['WRITE_OFF'] ?? summary.totalWriteOffQuantity,
         },
         recentMovements: recentMovements.map((movement) => this.mapRecentMovement(movement)),
       }))
@@ -254,14 +249,14 @@ export class InventoryManagerDashboardApiService {
       activeProducts: productSummary?.activeProducts ?? 0,
       inactiveProducts: productSummary?.inactiveProducts ?? 0,
       totalWarehouses: warehouseCount ?? roleDashboard?.totalWarehouses ?? warehouseSummary?.totalWarehouses ?? 0,
-      totalInventoryValue: roleDashboard?.totalInventoryValue ?? inventorySummary?.totalInventoryValue ?? 0,
+      totalInventoryValue: roleDashboard?.inventoryValue ?? inventorySummary?.totalInventoryValue ?? 0,
       totalStockQuantity: inventorySummary?.totalStockQuantity ?? 0,
       reservedQuantity: inventorySummary?.reservedQuantity ?? 0,
       availableQuantity: inventorySummary?.availableQuantity ?? 0,
-      lowStockCount: roleDashboard?.lowStockCount ?? inventorySummary?.lowStockCount ?? 0,
-      overstockCount: roleDashboard?.overstockCount ?? inventorySummary?.overstockCount ?? 0,
+      lowStockCount: roleDashboard?.lowStockItems ?? inventorySummary?.lowStockCount ?? 0,
+      overstockCount: roleDashboard?.overstockItems ?? inventorySummary?.overstockCount ?? 0,
       outOfStockCount: inventorySummary?.outOfStockCount ?? 0,
-      pendingPurchaseApprovals: roleDashboard?.pendingPurchaseApprovals ?? purchaseSummary?.pendingPurchaseApprovals ?? 0,
+      pendingPurchaseApprovals: roleDashboard?.pendingPoApprovals ?? purchaseSummary?.pendingPurchaseApprovals ?? 0,
       overduePurchaseOrders: roleDashboard?.overduePurchaseOrders ?? purchaseSummary?.overduePurchaseOrders ?? 0,
       approvedAwaitingReceipt: purchaseSummary?.approvedAwaitingReceipt ?? 0,
       stockMovementToday: roleDashboard?.stockMovementToday ?? movementSummary?.movementsToday ?? 0,
@@ -284,7 +279,7 @@ export class InventoryManagerDashboardApiService {
     return {
       movementId: movement.movementId,
       movementNumber: movement.movementNumber,
-      productName: movement.productName ?? 'Unknown product',
+      productName: movement.productName ?? 'Deleted/Unavailable Product',
       warehouseName: movement.warehouseName ?? 'Unknown warehouse',
       movementType: movement.movementType.replaceAll('_', ' '),
       quantity: movement.quantity,
@@ -294,3 +289,5 @@ export class InventoryManagerDashboardApiService {
   }
 
 }
+
+

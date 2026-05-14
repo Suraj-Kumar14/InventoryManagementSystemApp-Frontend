@@ -130,7 +130,7 @@ describe('InventoryDashboardComponent', () => {
     expect(text.match(/Total Products/g)?.length).toBe(1);
     expect(text).toContain('Manage Products');
     expect(text).toContain('Barcode Lookup');
-    expect(text).not.toContain('Item 1');
+    expect(text).toContain('MV-11');
   });
 
   it('should not show admin-only widgets or purchase-officer-only create PO form', () => {

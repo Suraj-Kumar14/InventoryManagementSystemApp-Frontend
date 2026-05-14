@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { ApiService } from '../../../core/http/api.service';
-import { PageResponse, PaymentSummaryReportResponse, PurchaseOrderResponse, SupplierResponse } from '../../../core/http/backend.models';
+import { PageResponse, PaymentSummaryReportResponse, PurchaseOrderResponse, PurchaseOrderSummaryResponse, SupplierResponse } from '../../../core/http/backend.models';
 import { PaymentService } from '../../../core/services/payment.service';
 import { PurchaseService } from '../../../core/services/purchase.service';
 import { ReportService } from '../../../core/services/report.service';
@@ -120,12 +120,13 @@ export class PurchaseOfficerDashboardApiService {
         catchError(() =>
           of({
             totalPayments: 0,
-            pendingCount: 0,
-            paidCount: 0,
-            cancelledCount: 0,
             pendingAmount: 0,
             totalPaidAmount: 0,
-            supplierPayments: [],
+            razorpayAmount: 0,
+            statusBreakdown: {},
+            methodBreakdown: {},
+            supplierBreakdown: [],
+            warnings: [],
           })
         )
       ),
@@ -244,6 +245,7 @@ export class PurchaseOfficerDashboardApiService {
             result.alertResult.alertSummary
           ),
           purchaseSummary: result.purchaseResult.summary,
+          purchaseReportSummary: null,
           recentPurchaseOrders: result.purchaseResult.recentPurchaseOrders,
           supplierSummary: result.supplierResult.summary,
           topRatedSuppliers: result.supplierResult.topRatedSuppliers,
@@ -267,7 +269,7 @@ export class PurchaseOfficerDashboardApiService {
     roleDashboard: PurchaseOfficerDashboardView['roleDashboard'],
     orders: PurchaseOrderResponse[],
     overdue: PurchaseOrderResponse[],
-    purchaseSummary: PurchaseOfficerDashboardView['purchaseSummary'],
+    purchaseSummary: PurchaseOrderSummaryResponse | null,
     supplierSummary: PurchaseOfficerDashboardView['supplierSummary'],
     paymentSummary: PurchaseOfficerDashboardView['paymentSummary'],
     paymentReportSummary: PurchaseOfficerDashboardView['paymentReportSummary'],
@@ -283,16 +285,16 @@ export class PurchaseOfficerDashboardApiService {
       pendingApprovalPurchaseOrders: purchaseSummary?.pendingApprovalCount ?? this.countOrdersByStatus(orders, ['PENDING_APPROVAL']),
       approvedPurchaseOrders: purchaseSummary?.approvedCount ?? this.countOrdersByStatus(orders, ['APPROVED', 'PARTIALLY_RECEIVED']),
       approvedAwaitingReceiptPurchaseOrders: this.countOrdersByStatus(orders, ['APPROVED', 'PARTIALLY_RECEIVED']),
-      receivedPurchaseOrders: purchaseSummary?.receivedCount ?? this.countOrdersByStatus(orders, ['RECEIVED']),
+      receivedPurchaseOrders: purchaseSummary?.receivedCount ?? this.countOrdersByStatus(orders, ['RECEIVED', 'PARTIALLY_RECEIVED']),
       cancelledPurchaseOrders: purchaseSummary?.cancelledCount ?? this.countOrdersByStatus(orders, ['CANCELLED']),
       overduePurchaseOrders: purchaseSummary?.overdueCount ?? overdue.length,
-      totalPurchaseValue: purchaseSummary?.totalPurchaseValue ?? roleDashboard?.totalPurchaseValue ?? 0,
-      pendingPurchaseValue: purchaseSummary?.pendingPurchaseValue ?? 0,
+      totalPurchaseValue: roleDashboard?.totalPurchaseValue ?? this.sumOrderAmounts(orders) ?? 0,
+      pendingPurchaseValue: this.sumOrdersByStatus(orders, ['DRAFT', 'PENDING_APPROVAL']),
       activeSuppliers: supplierSummary?.activeSuppliers ?? 0,
       inactiveSuppliers: supplierSummary?.inactiveSuppliers ?? 0,
       averageSupplierRating: supplierSummary?.averageRating ?? 0,
       averageSupplierLeadTime: supplierSummary?.averageLeadTimeDays ?? 0,
-      pendingPayments: paymentSummary?.pendingApprovalCount ?? paymentReportSummary?.pendingCount ?? 0,
+      pendingPayments: paymentSummary?.pendingApprovalCount ?? (paymentReportSummary && paymentReportSummary.pendingAmount > 0 ? 1 : 0),
       approvedPayments: paymentSummary?.approvedCount ?? 0,
       paidAmount: paymentSummary?.totalPaidAmount ?? paymentReportSummary?.totalPaidAmount ?? roleDashboard?.totalPaidAmount ?? 0,
       pendingPaymentAmount: paymentSummary?.pendingPaymentAmount ?? paymentReportSummary?.pendingAmount ?? 0,
@@ -303,6 +305,16 @@ export class PurchaseOfficerDashboardApiService {
 
   private countOrdersByStatus(orders: PurchaseOrderResponse[], statuses: string[]): number {
     return orders.filter((order) => statuses.includes(order.status)).length;
+  }
+
+  private sumOrderAmounts(orders: PurchaseOrderResponse[]): number {
+    return orders.reduce((sum, order) => sum + (order.totalAmount ?? 0), 0);
+  }
+
+  private sumOrdersByStatus(orders: PurchaseOrderResponse[], statuses: string[]): number {
+    return orders
+      .filter((order) => statuses.includes(order.status))
+      .reduce((sum, order) => sum + (order.totalAmount ?? 0), 0);
   }
 
   private mapPurchaseOrder(order: PurchaseOrderResponse): PurchaseOrderSummaryItem {
@@ -341,15 +353,18 @@ export class PurchaseOfficerDashboardApiService {
     paymentAmount?: number | null;
     paymentDate?: string | null;
   }): PaymentSummaryItem {
+    const paymentId = typeof payment.paymentId === 'number' && Number.isFinite(payment.paymentId) && payment.paymentId > 0
+      ? payment.paymentId
+      : null;
     return {
-      paymentId: payment.paymentId ?? 0,
+      paymentId: paymentId ?? 0,
       paymentNumber: payment.paymentNumber ?? '',
       poNumber: payment.poNumber ?? 'Unlinked PO',
       supplierName: payment.supplierName ?? 'Unknown supplier',
       status: this.formatLabel(payment.status ?? ''),
       amount: payment.paymentAmount ?? 0,
       paymentDate: payment.paymentDate ?? null,
-      route: `/payments/${payment.paymentId ?? 0}`,
+      route: paymentId ? `/payments/${paymentId}` : '/payments',
     };
   }
 

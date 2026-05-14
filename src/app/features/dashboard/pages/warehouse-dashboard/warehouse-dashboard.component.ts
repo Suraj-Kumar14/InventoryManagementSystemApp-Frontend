@@ -9,6 +9,7 @@ import { ButtonComponent } from '../../../../shared/components/button/button.com
 import { SkeletonLoaderComponent } from '../../../../shared/components/skeleton-loader/skeleton-loader.component';
 import { AlertSeverityBadgeComponent } from '../../../alerts/components/alert-severity-badge/alert-severity-badge.component';
 import { AlertTypeBadgeComponent } from '../../../alerts/components/alert-type-badge/alert-type-badge.component';
+import { AlertStateService } from '../../../alerts/services/alert-state.service';
 import { ReportEmptyStateComponent } from '../../../reports/components/report-empty-state.component';
 import { ReportKpiCardComponent } from '../../../reports/components/report-kpi-card.component';
 import {
@@ -53,6 +54,7 @@ export class WarehouseDashboardComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly alertState = inject(AlertStateService);
 
   loading = true;
   refreshing = false;
@@ -172,6 +174,7 @@ export class WarehouseDashboardComponent implements OnInit {
       .subscribe({
         next: () => {
           this.notifications.success('Alert acknowledged successfully');
+          this.alertState.refresh();
           this.load();
         },
         error: () => this.notifications.error('Unable to load alerts'),
@@ -186,6 +189,7 @@ export class WarehouseDashboardComponent implements OnInit {
       .subscribe({
         next: () => {
           this.notifications.success('Alert dismissed successfully');
+          this.alertState.refresh();
           this.load();
         },
         error: () => this.notifications.error('Unable to load alerts'),

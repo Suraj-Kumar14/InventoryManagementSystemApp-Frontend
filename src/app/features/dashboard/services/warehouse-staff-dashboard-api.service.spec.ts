@@ -1,14 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { TestBed, getTestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { BrowserDynamicTestingModule, platformBrowserDynamicTesting } from '@angular/platform-browser-dynamic/testing';
 import { AuthService } from '../../../core/auth/services/auth.service';
 import { ApiService } from '../../../core/http/api.service';
 import { AlertApiService } from '../../alerts/services/alert-api.service';
 import { WarehouseStaffDashboardApiService } from './warehouse-staff-dashboard-api.service';
-
-getTestBed().initTestEnvironment(BrowserDynamicTestingModule, platformBrowserDynamicTesting());
 
 describe('WarehouseStaffDashboardApiService', () => {
   let service: WarehouseStaffDashboardApiService;

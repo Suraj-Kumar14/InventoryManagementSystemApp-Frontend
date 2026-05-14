@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, of, throwError } from 'rxjs';
+import { ApiService } from '../../../core/http/api.service';
 import { PurchaseService } from '../../../core/services/purchase.service';
 import { ReportService } from '../../../core/services/report.service';
 import { WarehouseService } from '../../../core/services/warehouse.service';
@@ -13,8 +14,11 @@ describe('InventoryManagerDashboardApiService', () => {
 
   const reportServiceStub = {
     getMyDashboard: vi.fn(),
-    getInventoryValuation: vi.fn(),
     getStockSummary: vi.fn(),
+  };
+
+  const apiServiceStub = {
+    get: vi.fn(),
   };
 
   const productApiServiceStub = {
@@ -51,6 +55,7 @@ describe('InventoryManagerDashboardApiService', () => {
     TestBed.configureTestingModule({
       providers: [
         InventoryManagerDashboardApiService,
+        { provide: ApiService, useValue: apiServiceStub },
         { provide: ReportService, useValue: reportServiceStub },
         { provide: ProductApiService, useValue: productApiServiceStub },
         { provide: WarehouseService, useValue: warehouseServiceStub },
@@ -82,7 +87,7 @@ describe('InventoryManagerDashboardApiService', () => {
       purchaseTrend: [],
       unavailableSections: [],
     }));
-    reportServiceStub.getInventoryValuation.mockReturnValue(of({
+    apiServiceStub.get.mockReturnValue(of({
       totalInventoryValue: 250000,
       totalQuantity: 1200,
       totalProducts: 50,

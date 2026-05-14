@@ -1,15 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { TestBed, getTestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
-import { BrowserDynamicTestingModule, platformBrowserDynamicTesting } from '@angular/platform-browser-dynamic/testing';
 import { of, throwError } from 'rxjs';
 import { AuthService } from '../../../../core/auth/services/auth.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { WarehouseStaffDashboardApiService } from '../../services/warehouse-staff-dashboard-api.service';
 import { WarehouseDashboardComponent } from './warehouse-dashboard.component';
-
-getTestBed().initTestEnvironment(BrowserDynamicTestingModule, platformBrowserDynamicTesting());
-
 describe('WarehouseDashboardComponent', () => {
   const dashboardApiStub = {
     refreshDashboard: vi.fn(),

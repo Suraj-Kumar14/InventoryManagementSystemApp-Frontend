@@ -7,6 +7,7 @@ import { AuthService } from '../../../../core/auth/services/auth.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { ButtonComponent } from '../../../../shared/components/button/button.component';
 import { SkeletonLoaderComponent } from '../../../../shared/components/skeleton-loader/skeleton-loader.component';
+import { AlertStateService } from '../../../alerts/services/alert-state.service';
 import { ReportEmptyStateComponent } from '../../../reports/components/report-empty-state.component';
 import { ReportKpiCardComponent } from '../../../reports/components/report-kpi-card.component';
 import { InventoryManagerDashboardApiService } from '../../services/inventory-manager-dashboard-api.service';
@@ -26,6 +27,7 @@ export class InventoryDashboardComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly alertState = inject(AlertStateService);
 
   loading = true;
   refreshing = false;
@@ -130,6 +132,7 @@ export class InventoryDashboardComponent implements OnInit {
       .subscribe({
         next: () => {
           this.notifications.success('Alert acknowledged successfully');
+          this.alertState.refresh();
           this.load();
         },
         error: () => this.notifications.error('Unable to acknowledge alert'),

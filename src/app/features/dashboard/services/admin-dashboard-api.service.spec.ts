@@ -1,7 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { of, throwError, firstValueFrom } from 'rxjs';
 import { AdminUserService } from '../../../core/services/admin-user.service';
-import { PaymentService } from '../../../core/services/payment.service';
 import { PurchaseService } from '../../../core/services/purchase.service';
 import { ReportService } from '../../../core/services/report.service';
 import { WarehouseService } from '../../../core/services/warehouse.service';
@@ -16,6 +15,7 @@ describe('AdminDashboardApiService', () => {
 
   const reportServiceStub = {
     getExecutiveDashboard: vi.fn(),
+    getPaymentSummaryReport: vi.fn(),
   };
 
   const alertApiServiceStub = {
@@ -45,10 +45,6 @@ describe('AdminDashboardApiService', () => {
     getProductSummary: vi.fn(),
   };
 
-  const paymentServiceStub = {
-    getPaymentSummary: vi.fn(),
-  };
-
   beforeEach(() => {
     vi.clearAllMocks();
     TestBed.configureTestingModule({
@@ -61,7 +57,6 @@ describe('AdminDashboardApiService', () => {
         { provide: PurchaseService, useValue: purchaseServiceStub },
         { provide: WarehouseService, useValue: warehouseServiceStub },
         { provide: ProductApiService, useValue: productApiServiceStub },
-        { provide: PaymentService, useValue: paymentServiceStub },
       ],
     });
     service = TestBed.inject(AdminDashboardApiService);
@@ -123,13 +118,14 @@ describe('AdminDashboardApiService', () => {
       categoriesCount: 4,
       brandsCount: 8,
     }));
-    paymentServiceStub.getPaymentSummary.mockReturnValue(of({
+    reportServiceStub.getPaymentSummaryReport.mockReturnValue(of({
       totalPayments: 5,
+      pendingCount: 1,
       paidCount: 4,
-      pendingApprovalCount: 1,
       cancelledCount: 0,
       totalPaidAmount: 56000,
-      pendingPaymentAmount: 12000,
+      pendingAmount: 12000,
+      supplierPayments: [],
     }));
     movementApiServiceStub.getMovementSummary.mockReturnValue(of({
       totalMovements: 12,
@@ -174,13 +170,14 @@ describe('AdminDashboardApiService', () => {
     authServiceStub.getUsers.mockReturnValue(of({ content: [], totalElements: 0, totalPages: 0, number: 0, size: 200, numberOfElements: 0, first: true, last: true, empty: true }));
     warehouseServiceStub.getWarehouseCount.mockReturnValue(of(0));
     productApiServiceStub.getProductSummary.mockReturnValue(of({ totalProducts: 0, activeProducts: 0, inactiveProducts: 0, categoriesCount: 0, brandsCount: 0 }));
-    paymentServiceStub.getPaymentSummary.mockReturnValue(of({
+    reportServiceStub.getPaymentSummaryReport.mockReturnValue(of({
       totalPayments: 0,
+      pendingCount: 0,
       paidCount: 0,
-      pendingApprovalCount: 0,
       cancelledCount: 0,
       totalPaidAmount: 0,
-      pendingPaymentAmount: 0,
+      pendingAmount: 0,
+      supplierPayments: [],
     }));
     movementApiServiceStub.getMovementSummary.mockReturnValue(of({
       totalMovements: 0,

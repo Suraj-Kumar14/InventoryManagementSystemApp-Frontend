@@ -87,15 +87,15 @@
         <div class="metric-list">
           <button type="button" class="metric-row metric-row--button" (click)="openRoute('/reports/inventory/low-stock')">
             <span>Low stock items</span>
-            <strong>{{ dashboard.executive?.lowStockCount ?? '-' }}</strong>
+            <strong>{{ lowStockItems }}</strong>
           </button>
           <button type="button" class="metric-row metric-row--button" (click)="openRoute('/reports/inventory/overstock')">
             <span>Overstock items</span>
-            <strong>{{ dashboard.executive?.overstockCount ?? '-' }}</strong>
+            <strong>{{ overstockItems }}</strong>
           </button>
           <article class="metric-row">
             <span>Total inventory value</span>
-            <strong>{{ dashboard.executive?.totalInventoryValue | currency:'INR':'symbol':'1.0-0' }}</strong>
+            <strong>{{ inventoryValue | currency:'INR':'symbol':'1.0-0' }}</strong>
           </article>
           <article class="metric-row">
             <span>Stock movement today</span>
@@ -121,7 +121,7 @@
         <div class="metric-list">
           <button type="button" class="metric-row metric-row--button" (click)="openRoute('/purchase-orders/approvals')">
             <span>Pending approvals</span>
-            <strong>{{ dashboard.executive?.pendingPurchaseApprovals ?? '-' }}</strong>
+            <strong>{{ pendingPoApprovals }}</strong>
           </button>
           <button type="button" class="metric-row metric-row--button" (click)="openRoute('/purchase-orders?overdueOnly=true')">
             <span>Overdue purchase orders</span>

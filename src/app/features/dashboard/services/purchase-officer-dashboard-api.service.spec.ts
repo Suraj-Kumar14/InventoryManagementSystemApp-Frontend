@@ -1,9 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, of, throwError } from 'rxjs';
+import { ApiService } from '../../../core/http/api.service';
 import { PaymentService } from '../../../core/services/payment.service';
 import { PurchaseService } from '../../../core/services/purchase.service';
 import { ReportService } from '../../../core/services/report.service';
 import { AlertApiService } from '../../alerts/services/alert-api.service';
+import { PurchaseOrderApiService } from '../../purchase-orders/services/purchase-order-api.service';
 import { SupplierApiService } from '../../suppliers/services/supplier-api.service';
 import { PurchaseOfficerDashboardApiService } from './purchase-officer-dashboard-api.service';
 
@@ -30,8 +32,15 @@ describe('PurchaseOfficerDashboardApiService', () => {
   };
 
   const paymentServiceStub = {
-    getPaymentSummary: vi.fn(),
     getPayments: vi.fn(),
+  };
+
+  const apiServiceStub = {
+    get: vi.fn(),
+  };
+
+  const purchaseOrderApiStub = {
+    getPurchaseOfficerSummary: vi.fn(),
   };
 
   const alertApiServiceStub = {
@@ -49,6 +58,8 @@ describe('PurchaseOfficerDashboardApiService', () => {
         { provide: SupplierApiService, useValue: supplierApiServiceStub },
         { provide: PaymentService, useValue: paymentServiceStub },
         { provide: AlertApiService, useValue: alertApiServiceStub },
+        { provide: ApiService, useValue: apiServiceStub },
+        { provide: PurchaseOrderApiService, useValue: purchaseOrderApiStub },
       ],
     });
 
@@ -84,6 +95,17 @@ describe('PurchaseOfficerDashboardApiService', () => {
       { poId: 99, purchaseOrderId: 99, poNumber: 'PO-99', supplierId: 3, supplierName: 'Gamma', warehouseId: 2, warehouseName: 'Overflow', createdById: 1, status: 'APPROVED', totalAmount: 9000, createdAt: '2026-04-20T11:00:00Z', expectedDeliveryDate: '2026-04-28', lineItems: [] },
     ]));
     reportServiceStub.getPurchaseSummaryReport.mockReturnValue(of({
+      totalPurchaseOrders: 4,
+      pendingApprovalCount: 1,
+      approvedCount: 1,
+      receivedCount: 1,
+      cancelledCount: 0,
+      overdueCount: 1,
+      totalPurchaseValue: 10000,
+      receivedPurchaseValue: 4000,
+      pendingPurchaseValue: 6000,
+    }));
+    purchaseOrderApiStub.getPurchaseOfficerSummary.mockReturnValue(of({
       totalPurchaseOrders: 4,
       pendingApprovalCount: 1,
       approvedCount: 1,
@@ -135,7 +157,7 @@ describe('PurchaseOfficerDashboardApiService', () => {
       last: true,
       empty: false,
     }));
-    reportServiceStub.getLowStockItems.mockReturnValue(of({
+    apiServiceStub.get.mockReturnValue(of({
       content: [
         { productId: 55, sku: 'SKU-55', productName: 'Cable', warehouseId: 1, warehouseName: 'Main', availableQuantity: 3, reorderLevel: 10, shortageQuantity: 7, severity: 'HIGH' },
       ],
@@ -147,20 +169,6 @@ describe('PurchaseOfficerDashboardApiService', () => {
       first: true,
       last: true,
       empty: false,
-    }));
-    paymentServiceStub.getPaymentSummary.mockReturnValue(of({
-      totalPayments: 5,
-      draftCount: 0,
-      pendingApprovalCount: 2,
-      approvedCount: 1,
-      partiallyPaidCount: 1,
-      paidCount: 1,
-      cancelledCount: 0,
-      rejectedCount: 0,
-      reversedCount: 0,
-      totalPaidAmount: 300000,
-      pendingPaymentAmount: 120000,
-      remainingPaymentAmount: 50000,
     }));
     reportServiceStub.getPaymentSummaryReport.mockReturnValue(of({
       totalPayments: 5,
@@ -226,7 +234,7 @@ describe('PurchaseOfficerDashboardApiService', () => {
 
   it('should return partial dashboard state when payment summary fails', async () => {
     seedHappyPath();
-    paymentServiceStub.getPaymentSummary.mockReturnValueOnce(throwError(() => new Error('payment down')));
+    reportServiceStub.getPaymentSummaryReport.mockReturnValueOnce(throwError(() => new Error('payment down')));
 
     const view = await firstValueFrom(service.refreshDashboard());
 

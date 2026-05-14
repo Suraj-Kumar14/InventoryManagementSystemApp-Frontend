@@ -206,7 +206,7 @@
         </div>
 
         <div class="metric-list" *ngIf="dashboard.overview as overview; else paymentEmpty">
-          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/payments/create')">
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/payments/pay')">
             <span>Pending payments</span>
             <strong>{{ overview.pendingPayments }}</strong>
           </button>
@@ -240,7 +240,7 @@
 
         <div class="shortcut-list">
           <a routerLink="/payments">Payments</a>
-          <a routerLink="/payments/create">Create Payment</a>
+          <a routerLink="/payments/pay">Create Payment</a>
           <a routerLink="/reports/payments/summary">Payment Reports</a>
         </div>
 
