@@ -4,7 +4,7 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs/operators';
 import { AuthService } from '../../../../core/auth/services/auth.service';
-import { MovementResponse, MovementSummaryResponse, PageResponse, ReverseMovementRequest } from '../../../../core/http/backend.models';
+import { BackendErrorResponse, MovementResponse, MovementSummaryResponse, PageResponse, ReverseMovementRequest } from '../../../../core/http/backend.models';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { UserRole } from '../../../../shared/config/app-config';
 import {
@@ -18,6 +18,19 @@ import { MovementDirectionBadgeComponent } from '../../components/movement-direc
 import { MovementReversalModalComponent } from '../../components/movement-reversal-modal/movement-reversal-modal.component';
 import { MovementSummaryCardsComponent } from '../../components/movement-summary-cards/movement-summary-cards.component';
 import { MovementTypeBadgeComponent } from '../../components/movement-type-badge/movement-type-badge.component';
+
+const DEFAULT_MOVEMENT_SUMMARY: MovementSummaryResponse = {
+  totalMovements: 0,
+  totalStockInQuantity: 0,
+  totalStockOutQuantity: 0,
+  totalTransferQuantity: 0,
+  totalAdjustmentQuantity: 0,
+  totalWriteOffQuantity: 0,
+  totalReturnQuantity: 0,
+  totalMovementValue: 0,
+  movementsToday: 0,
+  movementsThisMonth: 0,
+};
 
 @Component({
   selector: 'app-movement-list',
@@ -45,7 +58,9 @@ import { MovementTypeBadgeComponent } from '../../components/movement-type-badge
         </div>
       </header>
 
-      <app-movement-summary-cards [summary]="summary"></app-movement-summary-cards>
+      <ng-container *ngIf="summary as movementSummary">
+        <app-movement-summary-cards [summary]="movementSummary"></app-movement-summary-cards>
+      </ng-container>
 
       <form class="filters" [formGroup]="filtersForm" (ngSubmit)="applyFilters()">
         <input formControlName="keyword" placeholder="Search movement number, product, warehouse, notes" />
@@ -186,10 +201,11 @@ export class MovementListComponent implements OnInit {
   });
 
   movements: MovementResponse[] = [];
-  summary: MovementSummaryResponse | null = null;
+  summary: MovementSummaryResponse = DEFAULT_MOVEMENT_SUMMARY;
   pageData: PageResponse<MovementResponse> | null = null;
   query: MovementListQuery = { page: 0, size: 10, sortBy: 'movementDate', sortDir: 'desc' };
   loading = false;
+  isLoadingSummary = false;
   exporting = false;
   reversalOpen = false;
   selectedMovement: MovementResponse | null = null;
@@ -219,7 +235,6 @@ export class MovementListComponent implements OnInit {
       sortDir: this.query.sortDir ?? 'desc',
     };
     this.loadMovements();
-    this.loadSummary();
   }
 
   resetFilters(): void {
@@ -237,7 +252,6 @@ export class MovementListComponent implements OnInit {
     });
     this.query = { page: 0, size: 10, sortBy: 'movementDate', sortDir: 'desc' };
     this.loadMovements();
-    this.loadSummary();
   }
 
   changePage(page: number): void {
@@ -272,9 +286,8 @@ export class MovementListComponent implements OnInit {
       next: () => {
         this.notification.success('Movement reversal created successfully');
         this.loadMovements();
-        this.loadSummary();
       },
-      error: () => this.notification.error('Unable to reverse movement. Please try again.'),
+      error: (error) => this.notification.error(this.resolveReverseErrorMessage(error)),
     });
   }
 
@@ -313,10 +326,21 @@ export class MovementListComponent implements OnInit {
     if (!this.canExport) {
       return;
     }
+    this.isLoadingSummary = true;
     const raw = this.filtersForm.getRawValue();
     this.movementApi.getMovementSummary(raw.fromDate || undefined, raw.toDate || undefined).subscribe({
-      next: (summary) => (this.summary = summary),
-      error: () => (this.summary = null),
+      next: (summary) => {
+        queueMicrotask(() => {
+          this.summary = summary ?? DEFAULT_MOVEMENT_SUMMARY;
+          this.isLoadingSummary = false;
+        });
+      },
+      error: () => {
+        queueMicrotask(() => {
+          this.summary = DEFAULT_MOVEMENT_SUMMARY;
+          this.isLoadingSummary = false;
+        });
+      },
     });
   }
 
@@ -333,5 +357,10 @@ export class MovementListComponent implements OnInit {
       this.query.fromDate ||
       this.query.toDate
     );
+  }
+
+  private resolveReverseErrorMessage(error: unknown): string {
+    const backendError = (error as { error?: BackendErrorResponse })?.error;
+    return backendError?.message || 'Unable to reverse movement. Please try again.';
   }
 }

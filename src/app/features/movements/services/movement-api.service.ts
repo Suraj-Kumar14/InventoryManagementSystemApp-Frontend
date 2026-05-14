@@ -37,6 +37,14 @@ export class MovementApiService {
       .pipe(handleServiceError(this.serviceName, 'getMovements'));
   }
 
+  getRecentMovements(limit = 5): Observable<MovementResponse[]> {
+    return this.api
+      .get<MovementResponse[]>(API_ENDPOINTS.MOVEMENTS.RECENT, {
+        params: { limit },
+      })
+      .pipe(handleServiceError(this.serviceName, 'getRecentMovements'));
+  }
+
   searchMovements(query: MovementSearchRequest): Observable<PageResponse<MovementResponse>> {
     return this.api
       .get<PageResponse<MovementResponse>>(API_ENDPOINTS.MOVEMENTS.SEARCH, {
