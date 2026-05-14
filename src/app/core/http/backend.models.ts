@@ -806,6 +806,7 @@ export type AlertType =
   | 'PO_APPROVED'
   | 'PO_REJECTED'
   | 'PO_CANCELLED'
+  | 'OVERDUE_RECEIPT'
   | 'PO_OVERDUE_RECEIPT'
   | 'PO_RECEIVED'
   | 'GRN_STARTED'

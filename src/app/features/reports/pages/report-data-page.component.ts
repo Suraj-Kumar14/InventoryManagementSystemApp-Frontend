@@ -8,11 +8,15 @@ import {
   InventoryTurnoverReportResponse,
   InventoryValuationReportResponse,
   LowStockReportItem,
+  OverstockReportItem,
   PageResponse,
+  PaymentSummaryReportResponse,
   ProductMovementSummaryResponse,
   PurchaseSummaryReportResponse,
   ReportFilter,
   SlowMovingProductResponse,
+  StockMovementReportItem,
+  SupplierPerformanceReportResponse,
   TopMovingProductReportResponse,
   WarehouseValuationItem,
 } from '../../../core/http/backend.models';
@@ -268,12 +272,22 @@ export class ReportDataPageComponent implements OnInit {
         return this.reportService.getInventoryTurnoverReport(this.filters);
       case 'low-stock':
         return this.reportService.getLowStockItems(this.filters);
+      case 'overstock':
+        return this.reportService.getOverstockItems(this.filters);
+      case 'warehouse-stock':
+        return this.reportService.getWarehouseStockReport(this.filters);
+      case 'movements':
+        return this.reportService.getStockMovementReport(this.filters);
       case 'top-moving':
         return this.reportService.getTopMovingProductsReport(this.filters);
       case 'slow-moving':
         return this.reportService.getSlowMovingProductsReport(this.filters, this.slowMovingThreshold);
       case 'dead-stock':
         return this.reportService.getDeadStockReport(this.filters, this.deadStockDays);
+      case 'supplier-performance':
+        return this.reportService.getSupplierPerformanceReport(this.filters);
+      case 'payment-summary':
+        return this.reportService.getPaymentSummaryReport(this.filters);
       default:
         return this.reportService.getPurchaseSummaryReport(this.filters);
     }
@@ -299,6 +313,22 @@ export class ReportDataPageComponent implements OnInit {
           { key: 'severity', label: 'Severity' },
           { key: 'recommendedAction', label: 'Recommended Action' },
         ]);
+        break;
+      case 'overstock':
+        this.applyPage(data as PageResponse<OverstockReportItem>, [
+          { key: 'productName', label: 'Product' },
+          { key: 'warehouseName', label: 'Warehouse' },
+          { key: 'availableQuantity', label: 'Available', type: 'number' },
+          { key: 'maxStockLevel', label: 'Max Stock Level', type: 'number' },
+          { key: 'severity', label: 'Severity' },
+          { key: 'recommendedAction', label: 'Recommended Action' },
+        ]);
+        break;
+      case 'warehouse-stock':
+        this.applyWarehouseStockPage(data as PageResponse<WarehouseValuationItem>);
+        break;
+      case 'movements':
+        this.applyMovementPage(data as PageResponse<StockMovementReportItem>);
         break;
       case 'top-moving':
         this.applyRows(data as TopMovingProductReportResponse[], [
@@ -326,6 +356,12 @@ export class ReportDataPageComponent implements OnInit {
           { key: 'stockValue', label: 'Stock Value', type: 'currency' },
           { key: 'daysWithoutMovement', label: 'Days Without Movement', type: 'number' },
         ]);
+        break;
+      case 'supplier-performance':
+        this.applySupplierPerformancePage(data as PageResponse<SupplierPerformanceReportResponse>);
+        break;
+      case 'payment-summary':
+        this.applyPaymentSummary(data as PaymentSummaryReportResponse);
         break;
       default:
         this.applyPurchaseSummary(data as PurchaseSummaryReportResponse);
@@ -359,6 +395,22 @@ export class ReportDataPageComponent implements OnInit {
       },
     ];
     this.applyRows(rows, [
+      { key: 'warehouseName', label: 'Warehouse' },
+      { key: 'totalQuantity', label: 'Quantity', type: 'number' },
+      { key: 'stockValue', label: 'Stock Value', type: 'currency' },
+    ]);
+  }
+
+  private applyWarehouseStockPage(page: PageResponse<WarehouseValuationItem>): void {
+    const rows = page.content ?? [];
+    this.cards = [
+      { label: 'Warehouses', value: rows.length },
+      {
+        label: 'Total Warehouse Value',
+        value: this.formatCell(rows.reduce((sum, item) => sum + Number(item.stockValue ?? 0), 0), 'currency'),
+      },
+    ];
+    this.applyPage(page, [
       { key: 'warehouseName', label: 'Warehouse' },
       { key: 'totalQuantity', label: 'Quantity', type: 'number' },
       { key: 'stockValue', label: 'Stock Value', type: 'currency' },
@@ -399,6 +451,54 @@ export class ReportDataPageComponent implements OnInit {
       { key: 'supplierOrWarehouse', label: 'Supplier' },
       { key: 'poCount', label: 'PO Count', type: 'number' },
       { key: 'totalSpend', label: 'Total Spend', type: 'currency' },
+    ]);
+  }
+
+  private applyMovementPage(page: PageResponse<StockMovementReportItem>): void {
+    const rows = page.content ?? [];
+    this.cards = [
+      { label: 'Movements', value: rows.length },
+      { label: 'Total Value', value: this.formatCell(rows.reduce((sum, item) => sum + Number(item.totalValue ?? 0), 0), 'currency') },
+    ];
+    this.applyPage(page, [
+      { key: 'movementNumber', label: 'Movement' },
+      { key: 'productName', label: 'Product' },
+      { key: 'warehouseName', label: 'Warehouse' },
+      { key: 'movementType', label: 'Type' },
+      { key: 'direction', label: 'Direction' },
+      { key: 'quantity', label: 'Quantity', type: 'number' },
+      { key: 'movementDate', label: 'Date', type: 'date' },
+    ]);
+  }
+
+  private applySupplierPerformancePage(page: PageResponse<SupplierPerformanceReportResponse>): void {
+    const rows = page.content ?? [];
+    this.cards = [
+      { label: 'Suppliers', value: rows.length },
+      { label: 'Total Spend', value: this.formatCell(rows.reduce((sum, item) => sum + Number(item.totalSpend ?? 0), 0), 'currency') },
+    ];
+    this.applyPage(page, [
+      { key: 'supplierName', label: 'Supplier' },
+      { key: 'totalOrders', label: 'Orders', type: 'number' },
+      { key: 'receivedOrders', label: 'Received', type: 'number' },
+      { key: 'delayedOrders', label: 'Delayed', type: 'number' },
+      { key: 'totalSpend', label: 'Spend', type: 'currency' },
+      { key: 'averageLeadTimeDays', label: 'Avg Lead Time', type: 'number' },
+      { key: 'rating', label: 'Rating', type: 'number' },
+    ]);
+  }
+
+  private applyPaymentSummary(summary: PaymentSummaryReportResponse): void {
+    this.cards = [
+      { label: 'Total Payments', value: summary.totalPayments },
+      { label: 'Total Paid', value: this.formatCell(summary.totalPaidAmount, 'currency') },
+      { label: 'Pending Amount', value: this.formatCell(summary.pendingAmount, 'currency') },
+      { label: 'Razorpay Amount', value: this.formatCell(summary.razorpayAmount, 'currency') },
+    ];
+    this.applyRows(summary.supplierBreakdown, [
+      { key: 'supplierName', label: 'Supplier' },
+      { key: 'paymentCount', label: 'Payments', type: 'number' },
+      { key: 'totalPaid', label: 'Total Paid', type: 'currency' },
     ]);
   }
 

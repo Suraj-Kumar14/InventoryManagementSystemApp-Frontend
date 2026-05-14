@@ -12,6 +12,12 @@ export const reportsRoutes: Routes = [
     data: { roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.OFFICER, UserRole.STAFF] },
   },
   {
+    path: 'executive',
+    component: ReportDashboardComponent,
+    canActivate: [roleGuard],
+    data: { roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.OFFICER, UserRole.STAFF] },
+  },
+  {
     path: 'inventory/valuation',
     component: ReportDataPageComponent,
     canActivate: [roleGuard],
@@ -56,6 +62,33 @@ export const reportsRoutes: Routes = [
     },
   },
   {
+    path: 'inventory/overstock',
+    component: ReportDataPageComponent,
+    canActivate: [roleGuard],
+    data: {
+      roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF],
+      kind: 'overstock',
+      title: 'Overstock Report',
+      subtitle: 'Identify products above the recommended max stock level.',
+    },
+  },
+  {
+    path: 'inventory/warehouse-stock',
+    redirectTo: '/reports/warehouse/reports',
+    pathMatch: 'full',
+  },
+  {
+    path: 'warehouse/reports',
+    component: ReportDataPageComponent,
+    canActivate: [roleGuard],
+    data: {
+      roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF],
+      kind: 'warehouse-stock',
+      title: 'Warehouse Reports',
+      subtitle: 'Readonly warehouse stock valuation and warehouse-level operational summary.',
+    },
+  },
+  {
     path: 'inventory/top-moving',
     component: ReportDataPageComponent,
     canActivate: [roleGuard],
@@ -89,6 +122,17 @@ export const reportsRoutes: Routes = [
     },
   },
   {
+    path: 'movements',
+    component: ReportDataPageComponent,
+    canActivate: [roleGuard],
+    data: {
+      roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF],
+      kind: 'movements',
+      title: 'Stock Movement Report',
+      subtitle: 'Review warehouse stock movement history and operational flow.',
+    },
+  },
+  {
     path: 'purchase/summary',
     component: ReportDataPageComponent,
     canActivate: [roleGuard],
@@ -97,6 +141,28 @@ export const reportsRoutes: Routes = [
       kind: 'po-summary',
       title: 'Purchase Order Summary',
       subtitle: 'Review total spend and PO distribution by supplier and warehouse.',
+    },
+  },
+  {
+    path: 'suppliers/performance',
+    component: ReportDataPageComponent,
+    canActivate: [roleGuard],
+    data: {
+      roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.OFFICER],
+      kind: 'supplier-performance',
+      title: 'Supplier Performance',
+      subtitle: 'Lead time, fulfillment, delayed orders, and rating by supplier.',
+    },
+  },
+  {
+    path: 'payments/summary',
+    component: ReportDataPageComponent,
+    canActivate: [roleGuard],
+    data: {
+      roles: [UserRole.ADMIN, UserRole.OFFICER],
+      kind: 'payment-summary',
+      title: 'Payment Summary',
+      subtitle: 'Paid, pending, and supplier disbursement summary.',
     },
   },
 ];
