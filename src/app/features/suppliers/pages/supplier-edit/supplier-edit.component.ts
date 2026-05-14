@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs/operators';
@@ -23,6 +24,7 @@ export class SupplierEditComponent implements OnInit {
   supplier: SupplierResponse | null = null;
   loading = false;
   saving = false;
+  backendFieldErrors: Record<string, string> | null = null;
 
   ngOnInit(): void {
     this.loading = true;
@@ -37,14 +39,19 @@ export class SupplierEditComponent implements OnInit {
     if (!this.supplier || this.saving) {
       return;
     }
+
     this.saving = true;
+    this.backendFieldErrors = null;
     this.supplierApi.updateSupplier(this.supplier.supplierId, request).pipe(finalize(() => (this.saving = false))).subscribe({
       next: (supplier) => {
         this.notifications.success('Supplier updated successfully');
         void this.router.navigate(['/suppliers', supplier.supplierId]);
       },
-      error: () => {
-        this.notifications.error('Failed to save supplier. Please try again.');
+      error: (error) => {
+        this.backendFieldErrors = error instanceof HttpErrorResponse ? error.error?.fieldErrors ?? null : null;
+        this.notifications.error(
+          error instanceof HttpErrorResponse ? (error.error?.message ?? 'Failed to save supplier. Please try again.') : 'Failed to save supplier. Please try again.'
+        );
       },
     });
   }

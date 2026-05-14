@@ -12,13 +12,10 @@
 
     <div class="grid">
       <label>
-        <span>Supplier Code</span>
-        <input formControlName="supplierCode" type="text" placeholder="Auto-generated if left blank" />
-      </label>
-      <label>
         <span>Supplier Name</span>
         <input formControlName="name" type="text" placeholder="Supplier legal name" />
         <small *ngIf="form.controls.name.touched && form.controls.name.invalid">Supplier name is required.</small>
+        <small *ngIf="backendFieldErrors?.['name']">{{ backendFieldErrors?.['name'] }}</small>
       </label>
       <label>
         <span>Contact Person</span>
@@ -28,11 +25,13 @@
         <span>Email</span>
         <input formControlName="email" type="email" placeholder="contact@supplier.com" />
         <small *ngIf="form.controls.email.touched && form.controls.email.hasError('email')">Invalid email address.</small>
+        <small *ngIf="backendFieldErrors?.['email']">{{ backendFieldErrors?.['email'] }}</small>
       </label>
       <label>
         <span>Phone</span>
         <input formControlName="phone" type="text" placeholder="+919999999999" />
         <small *ngIf="form.controls.phone.touched && form.controls.phone.invalid">Invalid phone number.</small>
+        <small *ngIf="backendFieldErrors?.['phone']">{{ backendFieldErrors?.['phone'] }}</small>
       </label>
       <label>
         <span>Alternate Phone</span>
@@ -61,10 +60,12 @@
       <label>
         <span>Tax Number</span>
         <input formControlName="taxNumber" type="text" />
+        <small *ngIf="backendFieldErrors?.['taxNumber']">{{ backendFieldErrors?.['taxNumber'] }}</small>
       </label>
       <label>
         <span>GST Number</span>
         <input formControlName="gstNumber" type="text" />
+        <small *ngIf="backendFieldErrors?.['gstNumber']">{{ backendFieldErrors?.['gstNumber'] }}</small>
       </label>
       <label>
         <span>Payment Terms</span>

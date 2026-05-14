@@ -17,11 +17,11 @@ export class SupplierFormComponent implements OnChanges {
   @Input() loading = false;
   @Input() mode: 'create' | 'edit' = 'create';
   @Input() readOnly = false;
+  @Input() backendFieldErrors: Record<string, string> | null = null;
   @Output() submitted = new EventEmitter<CreateSupplierRequest | UpdateSupplierRequest>();
   @Output() cancelled = new EventEmitter<void>();
 
   readonly form = this.fb.nonNullable.group({
-    supplierCode: [''],
     name: ['', [Validators.required, Validators.maxLength(200)]],
     contactPerson: ['', Validators.maxLength(200)],
     email: ['', Validators.email],
@@ -68,7 +68,6 @@ export class SupplierFormComponent implements OnChanges {
 
     const raw = this.form.getRawValue();
     const payload: UpdateSupplierRequest = {
-      supplierCode: raw.supplierCode || null,
       name: raw.name.trim(),
       contactPerson: raw.contactPerson || null,
       email: raw.email || null,
@@ -100,7 +99,6 @@ export class SupplierFormComponent implements OnChanges {
   private patchForm(): void {
     if (!this.supplier) {
       this.form.reset({
-        supplierCode: '',
         name: '',
         contactPerson: '',
         email: '',
@@ -124,7 +122,6 @@ export class SupplierFormComponent implements OnChanges {
     }
 
     this.form.patchValue({
-      supplierCode: this.supplier.supplierCode ?? '',
       name: this.supplier.name,
       contactPerson: this.supplier.contactPerson ?? '',
       email: this.supplier.email ?? '',

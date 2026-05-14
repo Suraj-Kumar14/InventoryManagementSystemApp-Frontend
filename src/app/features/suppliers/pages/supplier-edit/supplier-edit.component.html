@@ -14,6 +14,7 @@
     mode="edit"
     [supplier]="supplier"
     [loading]="saving"
+    [backendFieldErrors]="backendFieldErrors"
     (submitted)="save($event)"
     (cancelled)="router.navigate(['/suppliers', supplier?.supplierId])">
   </app-supplier-form>
