@@ -155,7 +155,7 @@ export class WarehouseDashboardComponent implements OnInit {
   }
 
   openReports(): void {
-    this.navigateWithLoading('reports', '/reports/inventory/warehouse-stock');
+    this.navigateWithLoading('reports', '/reports/warehouse/reports');
   }
 
   openRoute(route: string | undefined): void {

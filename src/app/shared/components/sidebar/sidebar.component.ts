@@ -154,7 +154,7 @@ export class SidebarComponent {
     },
     {
       label: 'Warehouse Reports',
-      route: '/reports/inventory/warehouse-stock',
+      route: '/reports/warehouse/reports',
       roles: [UserRole.STAFF],
       iconClass: 'bi bi-file-earmark-bar-graph',
     },

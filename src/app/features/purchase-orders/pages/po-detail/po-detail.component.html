@@ -119,8 +119,8 @@
     <div class="detail-table__header">
       <h2>Line Items</h2>
       <div class="detail-actions">
-        <button *ngIf="showSubmitForApprovalAction" type="button" class="btn btn-secondary" [disabled]="paymentProcessing" (click)="submitForApproval()">
-          {{ paymentProcessing ? 'Submitting...' : 'Submit for Approval' }}
+        <button *ngIf="showSubmitForApprovalAction" type="button" class="btn btn-secondary" [disabled]="approvalSubmitting || paymentProcessing" (click)="submitForApproval()">
+          {{ approvalSubmitting ? 'Submitting...' : 'Submit for Approval' }}
         </button>
         <button *ngIf="showSubmitForPaymentAction" type="button" class="btn btn-primary" [disabled]="paymentProcessing" (click)="submitForPayment(order)">
           {{ paymentProcessing ? 'Requesting...' : 'Submit for Payment' }}

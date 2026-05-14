@@ -2,6 +2,7 @@ import { CommonModule, CurrencyPipe } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { environment } from '../../../../../environments/environment';
+import { finalize } from 'rxjs/operators';
 import { AuthService } from '../../../../core/auth/services/auth.service';
 import { PurchaseOrderResponse } from '../../../../core/http/backend.models';
 import { NotificationService } from '../../../../core/services/notification.service';
@@ -38,6 +39,7 @@ export class PoDetailComponent implements OnInit {
   latestPayment: PaymentResponse | null = null;
   paymentLoading = false;
   paymentProcessing = false;
+  approvalSubmitting = false;
 
   readonly canManageDraft = this.authService.hasRole([UserRole.ADMIN, UserRole.OFFICER]);
   readonly canApprove = this.authService.hasRole([UserRole.ADMIN, UserRole.MANAGER]);
@@ -108,7 +110,7 @@ export class PoDetailComponent implements OnInit {
   }
 
   get showSubmitForApprovalAction(): boolean {
-    return this.canManageDraft && this.purchaseOrder?.status === 'DRAFT' && !this.paymentProcessing;
+    return this.canManageDraft && this.purchaseOrder?.status === 'DRAFT' && !this.paymentProcessing && !this.approvalSubmitting;
   }
 
   get showSubmitForPaymentAction(): boolean {
@@ -317,19 +319,24 @@ export class PoDetailComponent implements OnInit {
       return;
     }
 
-    this.paymentProcessing = true;
-    this.purchaseApi.submitPurchaseOrder(poId, {}).subscribe({
-      next: (order) => {
-        this.paymentProcessing = false;
-        this.purchaseOrder = order;
-        this.notifications.success('Purchase order submitted for approval.');
-      },
-      error: (error) => {
-        this.paymentProcessing = false;
-        this.debugLog('submit_for_approval_failed', { poId, error });
-        this.notifications.error(error?.error?.message || 'Unable to submit purchase order for approval.');
-      },
-    });
+    if (this.approvalSubmitting) {
+      return;
+    }
+
+    this.approvalSubmitting = true;
+    this.purchaseApi
+      .submitPurchaseOrder(poId, {})
+      .pipe(finalize(() => (this.approvalSubmitting = false)))
+      .subscribe({
+        next: (order) => {
+          this.purchaseOrder = order;
+          this.notifications.success('Purchase order submitted for approval.');
+        },
+        error: (error) => {
+          this.debugLog('submit_for_approval_failed', { poId, error });
+          this.notifications.error(error?.error?.message || 'Unable to submit purchase order for approval.');
+        },
+      });
   }
 
   private startRazorpayPayment(order: PurchaseOrderResponse): void {
