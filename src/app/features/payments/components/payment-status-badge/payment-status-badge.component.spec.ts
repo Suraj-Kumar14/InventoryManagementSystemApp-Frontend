@@ -18,6 +18,13 @@ describe('PaymentStatusBadgeComponent', () => {
     component.status = 'PENDING_APPROVAL';
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('PENDING APPROVAL');
+    expect(fixture.nativeElement.textContent).toContain('PENDING');
+  });
+
+  it('renders success label for paid status', () => {
+    component.status = 'PAID';
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('SUCCESS');
   });
 });

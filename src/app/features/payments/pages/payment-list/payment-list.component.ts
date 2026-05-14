@@ -1,11 +1,15 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
-import { finalize } from 'rxjs';
+import { Router, RouterLink } from '@angular/router';
+import { forkJoin, of } from 'rxjs';
+import { catchError, finalize } from 'rxjs/operators';
+import { AuthService } from '../../../../core/auth/services/auth.service';
+import { NotificationService } from '../../../../core/services/notification.service';
 import { PaymentService } from '../../../../core/services/payment.service';
+import { UserRole } from '../../../../shared/config/app-config';
 import { PaymentMethodBadgeComponent } from '../../components/payment-method-badge/payment-method-badge.component';
 import { PaymentStatusBadgeComponent } from '../../components/payment-status-badge/payment-status-badge.component';
-import { PaymentResponse } from '../../models/payment.model';
+import { PaymentResponse, PaymentStatus, RemainingAmountResponse } from '../../models/payment.model';
 
 @Component({
   selector: 'app-payment-list',
@@ -20,7 +24,7 @@ import { PaymentResponse } from '../../models/payment.model';
           <p class="subtitle">All Razorpay payments for approved purchase orders.</p>
         </div>
         <div class="hero-actions">
-          <a routerLink="/payments/pay" class="btn-pay">⚡ Make a Payment</a>
+          <a routerLink="/payments/pay" class="btn-pay">Make a Payment</a>
         </div>
       </header>
 
@@ -36,27 +40,32 @@ import { PaymentResponse } from '../../models/payment.model';
               <th>Status</th>
               <th>Method</th>
               <th>Amount</th>
+              <th>Remaining</th>
               <th>Razorpay ID</th>
               <th>Paid At</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let p of payments">
+            <tr *ngFor="let payment of payments">
               <td>
-                <strong>{{ p.paymentNumber }}</strong>
-                <div class="muted">{{ p.createdAt | date:'mediumDate' }}</div>
+                <strong>{{ payment.paymentNumber }}</strong>
+                <div class="muted">{{ payment.createdAt | date:'mediumDate' }}</div>
               </td>
-              <td>{{ p.poNumber || ('PO #' + p.purchaseOrderId) }}</td>
-              <td>{{ p.supplierName || ('Supplier #' + p.supplierId) }}</td>
-              <td><app-payment-status-badge [status]="p.status ?? 'PENDING_APPROVAL'"></app-payment-status-badge></td>
-              <td><app-payment-method-badge [method]="p.paymentMethod ?? 'RAZORPAY'"></app-payment-method-badge></td>
-              <td>{{ (p.paymentAmount ?? 0) | currency:'INR':'symbol':'1.0-2' }}</td>
-              <td class="mono-text">{{ p.razorpayPaymentId || '—' }}</td>
-              <td>{{ p.paidAt | date:'mediumDate' }}</td>
+              <td>{{ payment.poNumber || ('PO #' + payment.purchaseOrderId) }}</td>
+              <td>{{ payment.supplierName || ('Supplier #' + payment.supplierId) }}</td>
+              <td><app-payment-status-badge [status]="getDisplayStatus(payment)"></app-payment-status-badge></td>
+              <td><app-payment-method-badge [method]="payment.paymentMethod ?? 'RAZORPAY'"></app-payment-method-badge></td>
+              <td>{{ (payment.paymentAmount ?? 0) | currency:'INR':'symbol':'1.0-2' }}</td>
+              <td>{{ getRemainingAmount(payment) | currency:'INR':'symbol':'1.0-2' }}</td>
+              <td class="mono-text">{{ payment.razorpayPaymentId || '-' }}</td>
+              <td>{{ payment.paidAt | date:'mediumDate' }}</td>
               <td class="actions">
-                <a [routerLink]="['/payments', p.paymentId]" class="table-link">View</a>
-                <a [routerLink]="['/purchase-orders', p.purchaseOrderId]" class="table-link">PO</a>
+                <button *ngIf="canShowPaymentAction(payment)" type="button" class="table-link table-link--primary" (click)="openPaymentAction(payment)">
+                  {{ getPaymentActionLabel(payment) }}
+                </button>
+                <button type="button" class="table-link" (click)="openPaymentDetail(payment)">View</button>
+                <button type="button" class="table-link" (click)="openPurchaseOrder(payment)">PO</button>
               </td>
             </tr>
           </tbody>
@@ -116,8 +125,9 @@ import { PaymentResponse } from '../../models/payment.model';
     th { color:#64748b; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.08em; }
     .muted { color:#64748b; font-size:0.8rem; margin-top:0.3rem; }
     .mono-text { font-family:monospace; font-size:0.82rem; color:#475569; }
-    .actions { display:flex; gap:0.4rem; }
+    .actions { display:flex; gap:0.4rem; flex-wrap:wrap; }
     .table-link { border:none; background:#e2e8f0; color:#0f172a; border-radius:999px; padding:0.4rem 0.8rem; font-size:0.78rem; text-decoration:none; cursor:pointer; }
+    .table-link--primary { background:#dbeafe; color:#1d4ed8; }
     .state { padding:2rem; color:#64748b; text-align:center; }
     .pagination { display:flex; justify-content:center; align-items:center; gap:1rem; padding:1rem; }
     .pagination button { border:none; background:#e2e8f0; border-radius:999px; padding:0.5rem 1rem; cursor:pointer; }
@@ -143,9 +153,19 @@ import { PaymentResponse } from '../../models/payment.model';
 })
 export class PaymentListComponent implements OnInit {
   private readonly paymentService = inject(PaymentService);
+  private readonly router = inject(Router);
+  private readonly notifications = inject(NotificationService);
+  private readonly authService = inject(AuthService);
+
+  readonly canExecutePayments = this.authService.hasRole([
+    UserRole.ADMIN,
+    UserRole.PURCHASE_OFFICER,
+    UserRole.INVENTORY_MANAGER,
+  ]);
 
   payments: PaymentResponse[] = [];
-  loading = false;
+  remainingAmountMap: Record<number, RemainingAmountResponse | null> = {};
+  loading = true;
   page = 0;
   totalPages = 1;
 
@@ -158,16 +178,118 @@ export class PaymentListComponent implements OnInit {
     this.paymentService.getPayments({ page: this.page, size: 20, sortBy: 'createdAt', sortDir: 'desc' })
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
-        next: (res) => {
-          this.payments = res.content ?? [];
-          this.totalPages = res.totalPages ?? 1;
+        next: (response) => {
+          this.payments = response.content ?? [];
+          this.totalPages = response.totalPages ?? 1;
+          this.loadRemainingAmounts();
         },
-        error: () => (this.payments = []),
+        error: () => {
+          this.payments = [];
+          this.remainingAmountMap = {};
+        },
       });
   }
 
   changePage(newPage: number): void {
     this.page = newPage;
     this.load();
+  }
+
+  openPaymentDetail(payment: PaymentResponse): void {
+    if (!this.isValidId(payment.paymentId)) {
+      this.notifications.error('Payment record is missing. Please refresh the payment queue.');
+      return;
+    }
+    void this.router.navigate(['/payments', payment.paymentId]);
+  }
+
+  openPurchaseOrder(payment: PaymentResponse): void {
+    if (!this.isValidId(payment.purchaseOrderId)) {
+      this.notifications.error('Payment record is missing. Please refresh the payment queue.');
+      return;
+    }
+    void this.router.navigate(['/purchase-orders', payment.purchaseOrderId]);
+  }
+
+  openPaymentAction(payment: PaymentResponse): void {
+    if (!this.isValidId(payment.purchaseOrderId)) {
+      this.notifications.error('Purchase order is missing. Please refresh payment queue.');
+      return;
+    }
+    void this.router.navigate(['/payments/pay'], { queryParams: { purchaseOrderId: payment.purchaseOrderId } });
+  }
+
+  canShowPaymentAction(payment: PaymentResponse): boolean {
+    if (!this.canExecutePayments || !this.isLatestPaymentForPurchaseOrder(payment) || !this.isValidId(payment.purchaseOrderId)) {
+      return false;
+    }
+
+    if (this.getRemainingAmount(payment) <= 0) {
+      return false;
+    }
+
+    return ['INITIATED', 'PENDING', 'PENDING_APPROVAL', 'APPROVED', 'PARTIALLY_PAID'].includes(this.getDisplayStatus(payment));
+  }
+
+  getPaymentActionLabel(payment: PaymentResponse): string {
+    const remainingSummary = this.getRemainingSummary(payment);
+    const status = this.getDisplayStatus(payment);
+    const remainingAmount = remainingSummary?.remainingAmount ?? payment.remainingAmount ?? 0;
+    const maxAllowedAmount = remainingSummary?.maxAllowedAmount ?? Number.MAX_SAFE_INTEGER;
+
+    if (status === 'PARTIALLY_PAID') {
+      return remainingAmount > maxAllowedAmount ? 'Split Payment' : 'Pay Remaining';
+    }
+
+    return remainingAmount > maxAllowedAmount ? 'Split Payment' : 'Pay with Razorpay';
+  }
+
+  getDisplayStatus(payment: PaymentResponse): PaymentStatus {
+    return this.getRemainingSummary(payment)?.status ?? payment.status ?? 'PENDING_APPROVAL';
+  }
+
+  getRemainingAmount(payment: PaymentResponse): number {
+    return this.getRemainingSummary(payment)?.remainingAmount ?? payment.remainingAmount ?? 0;
+  }
+
+  private loadRemainingAmounts(): void {
+    const purchaseOrderIds = [...new Set(
+      this.payments
+        .map((payment) => payment.purchaseOrderId)
+        .filter((purchaseOrderId): purchaseOrderId is number => this.isValidId(purchaseOrderId))
+    )];
+
+    if (purchaseOrderIds.length === 0) {
+      this.remainingAmountMap = {};
+      return;
+    }
+
+    forkJoin(
+      purchaseOrderIds.map((purchaseOrderId) =>
+        this.paymentService.getRemainingAmountDetails(purchaseOrderId).pipe(catchError(() => of(null)))
+      )
+    ).subscribe((summaries) => {
+      this.remainingAmountMap = purchaseOrderIds.reduce<Record<number, RemainingAmountResponse | null>>((acc, purchaseOrderId, index) => {
+        acc[purchaseOrderId] = summaries[index];
+        return acc;
+      }, {});
+    });
+  }
+
+  private isLatestPaymentForPurchaseOrder(payment: PaymentResponse): boolean {
+    if (!this.isValidId(payment.purchaseOrderId)) {
+      return false;
+    }
+
+    const latestPayment = this.payments.find((candidate) => candidate.purchaseOrderId === payment.purchaseOrderId);
+    return latestPayment?.paymentId === payment.paymentId;
+  }
+
+  private getRemainingSummary(payment: PaymentResponse): RemainingAmountResponse | null {
+    return this.isValidId(payment.purchaseOrderId) ? this.remainingAmountMap[payment.purchaseOrderId] ?? null : null;
+  }
+
+  private isValidId(value: number | null | undefined): value is number {
+    return typeof value === 'number' && Number.isFinite(value) && value > 0;
   }
 }

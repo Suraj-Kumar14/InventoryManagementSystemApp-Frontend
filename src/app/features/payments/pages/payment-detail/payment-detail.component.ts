@@ -1,6 +1,7 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, inject } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { Component, OnInit, inject } from '@angular/core';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { NotificationService } from '../../../../core/services/notification.service';
 import { PaymentService } from '../../../../core/services/payment.service';
 import { PaymentMethodBadgeComponent } from '../../components/payment-method-badge/payment-method-badge.component';
 import { PaymentStatusBadgeComponent } from '../../components/payment-status-badge/payment-status-badge.component';
@@ -99,19 +100,34 @@ import { PaymentResponse } from '../../models/payment.model';
     }
   `],
 })
-export class PaymentDetailComponent {
+export class PaymentDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly paymentService = inject(PaymentService);
+  private readonly notifications = inject(NotificationService);
 
   payment: PaymentResponse | null = null;
-  loading = false;
+  loading = true;
 
-  constructor() {
-    const id = Number(this.route.snapshot.paramMap.get('id'));
-    this.loading = true;
-    this.paymentService.getPaymentById(id).subscribe({
-      next: (p) => { this.payment = p; this.loading = false; },
-      error: () => { this.loading = false; },
+  ngOnInit(): void {
+    const paymentId = Number(this.route.snapshot.paramMap.get('paymentId'));
+    if (!Number.isFinite(paymentId) || paymentId <= 0) {
+      this.loading = false;
+      this.notifications.error('Payment record is missing. Please refresh the payment queue.');
+      void this.router.navigate(['/payments']);
+      return;
+    }
+
+    this.paymentService.getPaymentById(paymentId).subscribe({
+      next: (payment) => {
+        this.payment = payment;
+        this.loading = false;
+      },
+      error: (error: { message?: string } | null | undefined) => {
+        this.loading = false;
+        this.notifications.error(error?.message || 'Payment record is missing. Please refresh the payment queue.');
+        void this.router.navigate(['/payments']);
+      },
     });
   }
 }

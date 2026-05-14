@@ -1,9 +1,15 @@
 // Payment Status
 export type PaymentStatus =
+  | 'PENDING'
+  | 'INITIATED'
   | 'PENDING_APPROVAL'
+  | 'APPROVED'
   | 'PAID'
   | 'PARTIALLY_PAID'
-  | 'CANCELLED';
+  | 'FAILED'
+  | 'CANCELLED'
+  | 'REJECTED'
+  | 'REVERSED';
 
 // Payment Method
 export type PaymentMethod = 'RAZORPAY';
@@ -48,12 +54,19 @@ export interface PaymentListQuery {
 
 export interface RazorpayInitiateRequest {
   purchaseOrderId: number;
+  paymentAmount?: number | null;
 }
 
 export interface RazorpayVerifyRequest {
   razorpayOrderId: string;
   razorpayPaymentId: string;
   razorpaySignature: string;
+}
+
+export interface RazorpayPaymentStatusUpdateRequest {
+  razorpayOrderId: string;
+  razorpayPaymentId?: string | null;
+  failureReason?: string | null;
 }
 
 export interface RazorpayOrderResponse {
@@ -71,5 +84,31 @@ export interface RemainingAmountResponse {
   totalAmount: number;
   paidAmount: number;
   remainingAmount: number;
+  status: PaymentStatus;
+  maxAllowedAmount: number;
   currency: string;
+}
+
+export interface SplitPaymentPlanRequest {
+  purchaseOrderId: number;
+  requestedAmount: number;
+}
+
+export interface SplitPaymentPlanResponse {
+  purchaseOrderId: number;
+  totalAmount: number;
+  requestedAmount: number;
+  remainingAmount: number;
+  maxAllowedAmount: number;
+  suggestedSplits: number[];
+}
+
+export interface PaymentLimitExceededResponse {
+  status: number;
+  errorCode: 'PAYMENT_LIMIT_EXCEEDED';
+  message: string;
+  requestedAmount: number;
+  maxAllowedAmount: number;
+  remainingAmount: number;
+  splitAllowed: boolean;
 }

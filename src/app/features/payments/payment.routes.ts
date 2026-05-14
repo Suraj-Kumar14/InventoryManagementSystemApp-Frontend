@@ -19,7 +19,13 @@ export const paymentRoutes: Routes = [
     data: { roles: [UserRole.ADMIN, UserRole.OFFICER, UserRole.MANAGER] },
   },
   {
-    path: ':id',
+    path: 'create',
+    component: PaymentCreateComponent,
+    canActivate: [roleGuard],
+    data: { roles: [UserRole.ADMIN, UserRole.OFFICER, UserRole.MANAGER] },
+  },
+  {
+    path: ':paymentId',
     component: PaymentDetailComponent,
     canActivate: [roleGuard],
     data: { roles: [UserRole.ADMIN, UserRole.OFFICER, UserRole.MANAGER, UserRole.STAFF] },
