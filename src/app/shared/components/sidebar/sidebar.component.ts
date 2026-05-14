@@ -32,7 +32,6 @@ export class SidebarComponent {
     { label: 'Dashboard', route: '/dashboard/staff', roles: [UserRole.STAFF], iconClass: 'bi bi-building' },
     { label: 'Users', route: '/admin/users', roles: [UserRole.ADMIN], iconClass: 'bi bi-people' },
     { label: 'Warehouses', route: '/admin/warehouses', roles: [UserRole.ADMIN], iconClass: 'bi bi-building' },
-    { label: 'Audit Logs', route: '/admin/logs', roles: [UserRole.ADMIN], iconClass: 'bi bi-file-earmark-text' },
     {
       label: 'Products',
       route: '/products',
@@ -112,12 +111,6 @@ export class SidebarComponent {
       iconClass: 'bi bi-cash-coin',
     },
     {
-      label: 'Payment Approvals',
-      route: '/payments/approvals',
-      roles: [UserRole.ADMIN],
-      iconClass: 'bi bi-check2-square',
-    },
-    {
       label: 'Movements',
       route: '/movements',
       roles: [UserRole.ADMIN, UserRole.MANAGER],
@@ -142,12 +135,6 @@ export class SidebarComponent {
       iconClass: 'bi bi-download',
     },
     {
-      label: 'Bin Locations',
-      route: '/warehouse/bins',
-      roles: [UserRole.ADMIN],
-      iconClass: 'bi bi-box2',
-    },
-    {
       label: 'Reports',
       route: '/reports',
       roles: [UserRole.ADMIN, UserRole.MANAGER, UserRole.OFFICER],
@@ -170,12 +157,6 @@ export class SidebarComponent {
       route: '/reports/inventory/warehouse-stock',
       roles: [UserRole.STAFF],
       iconClass: 'bi bi-file-earmark-bar-graph',
-    },
-    {
-      label: 'Purchase Reports',
-      route: '/reports/purchase/summary',
-      roles: [UserRole.OFFICER],
-      iconClass: 'bi bi-receipt',
     },
   ];
 
