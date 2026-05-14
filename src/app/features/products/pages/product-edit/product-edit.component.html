@@ -1,17 +1,14 @@
-<section class="page">
-  <div class="page-header">
-    <h1 class="page-header__title">Edit Product</h1>
-    <p class="page-header__subtitle">Update product details while keeping SKU immutable.</p>
-  </div>
-
-  <app-loading-spinner *ngIf="loading" [message]="'Loading product details...'" />
-
+<ng-container *ngIf="!loading && product; else loadingState">
   <app-product-form
-    *ngIf="!loading && product"
     mode="edit"
     [initialProduct]="product"
     [loading]="saving"
+    [backendFieldErrors]="backendFieldErrors"
     (submitted)="updateProduct($event)"
     (cancelled)="goBack()"
   />
-</section>
+</ng-container>
+
+<ng-template #loadingState>
+  <app-loading-spinner></app-loading-spinner>
+</ng-template>

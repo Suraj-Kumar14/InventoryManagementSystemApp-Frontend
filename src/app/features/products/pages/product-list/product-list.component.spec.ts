@@ -25,10 +25,6 @@ describe('ProductListComponent', () => {
         leadTimeDays: 7,
         barcode: 'BAR-001',
         isActive: true,
-        createdByUserId: 10,
-        createdByName: 'Manager A',
-        createdByEmail: 'manager.a@test.com',
-        canModify: true,
       },
     ],
     totalElements: 1,
@@ -142,18 +138,12 @@ describe('ProductListComponent', () => {
     expect(component.canDelete).toBe(false);
   });
 
-  it('should show view only for products the manager cannot modify', () => {
-    productApiStub.getProducts.mockReturnValue(
-      of({
-        ...productPage,
-        content: [{ ...productPage.content[0], canModify: false, createdByUserId: 20 }],
-      })
-    );
+  it('should not show management actions to staff users', () => {
+    createComponent(UserRole.STAFF);
 
-    createComponent(UserRole.MANAGER);
-
-    expect(component.canModifyProduct(component.products[0])).toBe(false);
-    expect(fixture.nativeElement.textContent).toContain('View only');
+    const text = fixture.nativeElement.textContent;
+    expect(text).not.toContain('Edit');
+    expect(text).not.toContain('Deactivate');
   });
 
   it('should show empty state', () => {

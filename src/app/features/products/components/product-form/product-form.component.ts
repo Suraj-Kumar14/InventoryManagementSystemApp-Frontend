@@ -4,6 +4,7 @@ import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Va
 import { CreateProductRequest, Product, UpdateProductRequest } from '../../../../core/http/backend.models';
 
 export type ProductFormPayload = CreateProductRequest | UpdateProductRequest;
+const SKU_REGEX = /^[A-Z]{3}-[A-Z]{3}-[0-9]{3}$/;
 
 @Component({
   selector: 'app-product-form',
@@ -18,12 +19,13 @@ export class ProductFormComponent implements OnChanges {
   @Input() mode: 'create' | 'edit' = 'create';
   @Input() initialProduct: Product | null = null;
   @Input() loading = false;
+  @Input() backendFieldErrors: Record<string, string> | null = null;
   @Output() submitted = new EventEmitter<ProductFormPayload>();
   @Output() cancelled = new EventEmitter<void>();
 
   readonly form = this.fb.group(
     {
-      sku: ['', [Validators.required, Validators.maxLength(50)]],
+      sku: ['', [Validators.required, Validators.maxLength(50), Validators.pattern(SKU_REGEX)]],
       name: ['', [Validators.required, Validators.maxLength(200)]],
       description: ['', [Validators.maxLength(1000)]],
       category: ['', [Validators.required, Validators.maxLength(100)]],
@@ -59,6 +61,19 @@ export class ProductFormComponent implements OnChanges {
     return !!control && control.invalid && (control.touched || control.dirty);
   }
 
+  fieldError(controlName: string, fallback: string): string {
+    const backendError = this.backendFieldErrors?.[controlName];
+    if (backendError) {
+      return backendError;
+    }
+
+    const control = this.form.get(controlName);
+    if (controlName === 'sku' && control?.hasError('pattern')) {
+      return 'SKU must be valid format like CAN-INK-001';
+    }
+    return fallback;
+  }
+
   submit(): void {
     if (this.loading) {
       return;
@@ -73,11 +88,11 @@ export class ProductFormComponent implements OnChanges {
     if (this.mode === 'create') {
       this.submitted.emit({
         sku: requiredText(raw.sku),
-        name: requiredText(raw.name),
+        name: raw.name?.trim() ?? '',
         description: normalizeOptional(raw.description),
-        category: requiredText(raw.category),
+        category: raw.category?.trim() ?? '',
         brand: normalizeOptional(raw.brand),
-        unitOfMeasure: requiredText(raw.unitOfMeasure),
+        unitOfMeasure: raw.unitOfMeasure?.trim() ?? '',
         costPrice: Number(raw.costPrice),
         sellingPrice: Number(raw.sellingPrice),
         reorderLevel: Number(raw.reorderLevel),
@@ -90,11 +105,11 @@ export class ProductFormComponent implements OnChanges {
     }
 
     this.submitted.emit({
-      name: requiredText(raw.name),
+      name: raw.name?.trim() ?? '',
       description: normalizeOptional(raw.description),
-      category: requiredText(raw.category),
+      category: raw.category?.trim() ?? '',
       brand: normalizeOptional(raw.brand),
-      unitOfMeasure: requiredText(raw.unitOfMeasure),
+      unitOfMeasure: raw.unitOfMeasure?.trim() ?? '',
       costPrice: Number(raw.costPrice),
       sellingPrice: Number(raw.sellingPrice),
       reorderLevel: Number(raw.reorderLevel),
@@ -158,7 +173,7 @@ function normalizeOptional(value: string | null | undefined): string | null {
 }
 
 function requiredText(value: string | null | undefined): string {
-  return value?.trim() ?? '';
+  return value?.trim().toUpperCase() ?? '';
 }
 
 function stockLevelValidator(): ValidatorFn {

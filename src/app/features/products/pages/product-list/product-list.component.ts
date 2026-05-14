@@ -28,7 +28,7 @@ export class ProductListComponent implements OnInit {
   private readonly router = inject(Router);
 
   readonly canManage = this.authService.hasRole([UserRole.ADMIN, UserRole.MANAGER]);
-  readonly canDelete = this.authService.hasRole(UserRole.ADMIN);
+  readonly canDelete = this.authService.hasRole([UserRole.ADMIN, UserRole.MANAGER]);
   readonly canViewSummary = this.authService.hasRole([UserRole.ADMIN, UserRole.MANAGER]);
 
   products: Product[] = [];
@@ -127,6 +127,10 @@ export class ProductListComponent implements OnInit {
 
   deleteProduct(product: Product): void {
     if (!this.canDelete) {
+      return;
+    }
+
+    if (!window.confirm('Delete product? This will mark it inactive.')) {
       return;
     }
 
@@ -292,3 +296,5 @@ export class ProductListComponent implements OnInit {
     this.cdr.detectChanges();
   }
 }
+
+

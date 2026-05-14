@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs/operators';
@@ -19,6 +20,7 @@ export class ProductCreateComponent {
   private readonly router = inject(Router);
 
   saving = false;
+  backendFieldErrors: Record<string, string> | null = null;
 
   createProduct(payload: ProductFormPayload): void {
     if (!('sku' in payload)) {
@@ -26,18 +28,23 @@ export class ProductCreateComponent {
     }
 
     this.saving = true;
+    this.backendFieldErrors = null;
     this.productApi
       .createProduct(payload)
       .pipe(finalize(() => (this.saving = false)))
       .subscribe({
         next: (product) => {
           this.notifications.success('Product created successfully');
-          this.router.navigate(['/products', product.productId]);
+          void this.router.navigate(['/products', product.productId]);
+        },
+        error: (error) => {
+          this.backendFieldErrors = error instanceof HttpErrorResponse ? error.error?.fieldErrors ?? null : null;
+          this.notifications.error(error instanceof HttpErrorResponse ? (error.error?.message ?? 'Failed to create product') : 'Failed to create product');
         },
       });
   }
 
   goBack(): void {
-    this.router.navigate(['/products']);
+    void this.router.navigate(['/products']);
   }
 }
