@@ -150,7 +150,12 @@ class OrdersPageComponent {
   }
 
   pay(order: PurchaseOrderResponse): void {
-    this.router.navigate(['/payments/create'], { queryParams: { purchaseOrderId: order.poId } });
+    const purchaseOrderId = order.purchaseOrderId ?? order.poId;
+    if (!purchaseOrderId) {
+      this.notifications.error('Purchase order is missing. Please reopen payment from approved purchase order.');
+      return;
+    }
+    this.router.navigate(['/payments/pay'], { queryParams: { purchaseOrderId } });
   }
 
   getPaymentStatus(order: PurchaseOrderResponse): string {

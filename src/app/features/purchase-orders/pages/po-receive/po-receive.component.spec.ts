@@ -28,7 +28,7 @@ describe('PoReceiveComponent', () => {
     supplierId: 1,
     warehouseId: 2,
     createdById: 3,
-    status: 'APPROVED',
+    status: 'PAID',
     totalAmount: 1000,
     lineItems: [
       {
@@ -112,13 +112,18 @@ describe('PoReceiveComponent', () => {
   });
 
   it('should not load when route id is invalid', async () => {
+    const invalidPurchaseApiStub = {
+      getPurchaseOrderById: vi.fn().mockReturnValue(of(order)),
+      receivePurchaseOrder: vi.fn().mockReturnValue(of({ ...order, status: 'PARTIALLY_RECEIVED' })),
+    };
+
     await TestBed.resetTestingModule();
     await TestBed.configureTestingModule({
       imports: [PoReceiveComponent],
       providers: [
         provideRouter([]),
         { provide: Router, useValue: routerStub },
-        { provide: PurchaseOrderApiService, useValue: purchaseApiStub },
+        { provide: PurchaseOrderApiService, useValue: invalidPurchaseApiStub },
         { provide: NotificationService, useValue: notificationStub },
         {
           provide: ActivatedRoute,
@@ -137,7 +142,7 @@ describe('PoReceiveComponent', () => {
     invalidFixture.detectChanges();
 
     expect(notificationStub.error).toHaveBeenCalled();
-    expect(purchaseApiStub.getPurchaseOrderById).not.toHaveBeenCalled();
+    expect(invalidPurchaseApiStub.getPurchaseOrderById).not.toHaveBeenCalled();
   });
 
   it('should show loading state while submitting', async () => {
