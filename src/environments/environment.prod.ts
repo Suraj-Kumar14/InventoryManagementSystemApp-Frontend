@@ -1,7 +1,7 @@
 export const environment = {
   production: true,
-  apiGatewayUrl: 'http://localhost:8080',
-  apiUrl: 'http://localhost:8080',
+  apiGatewayUrl: 'http://35.154.94.182:8080',
+  apiUrl: 'http://35.154.94.182:8080',
   razorpay: {
     checkoutUrl: 'https://checkout.razorpay.com/v1/checkout.js',
     companyName: 'StockPro',
@@ -15,4 +15,3 @@ export const environment = {
     tokenExpiration: 3600,
   },
 };
-
