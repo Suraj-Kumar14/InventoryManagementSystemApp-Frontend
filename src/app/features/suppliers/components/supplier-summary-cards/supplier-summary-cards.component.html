@@ -1,0 +1,22 @@
+<section class="summary-grid">
+  <article class="summary-card">
+    <p>Total Suppliers</p>
+    <strong>{{ summary.totalSuppliers }}</strong>
+  </article>
+  <article class="summary-card">
+    <p>Active</p>
+    <strong>{{ summary.activeSuppliers }}</strong>
+  </article>
+  <article class="summary-card">
+    <p>Blacklisted</p>
+    <strong>{{ summary.blacklistedSuppliers }}</strong>
+  </article>
+  <article class="summary-card">
+    <p>Average Rating</p>
+    <strong>{{ summary.averageRating | number:'1.1-1' }}</strong>
+  </article>
+  <article class="summary-card">
+    <p>Average Lead Time</p>
+    <strong>{{ summary.averageLeadTimeDays | number:'1.0-0' }} days</strong>
+  </article>
+</section>

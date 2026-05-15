@@ -1,0 +1,116 @@
+<section class="purchase-page">
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Purchase Operations</p>
+      <h1>Purchase Orders</h1>
+      <p class="hero__subtitle">Track drafts, approvals, receiving, and overdue supplier deliveries from one premium workflow.</p>
+    </div>
+    <div class="hero__actions">
+      <a *ngIf="canCreate" routerLink="/purchase-orders/create" class="btn btn-primary">Create PO</a>
+      <a *ngIf="canApprove" routerLink="/purchase-orders/approvals" class="btn btn-secondary">Pending Approvals</a>
+      <a *ngIf="canViewAnalytics" routerLink="/purchase-orders/analytics" class="btn btn-secondary">Analytics</a>
+      <a *ngIf="canViewAnalytics" routerLink="/purchase-orders/overdue" class="btn btn-secondary">Overdue</a>
+    </div>
+  </header>
+
+  <app-po-summary-cards *ngIf="canViewAnalytics" [summary]="summary"></app-po-summary-cards>
+  <div *ngIf="summaryError" class="inline-error">{{ summaryError }}</div>
+  <div *ngIf="lookupError" class="inline-info">{{ lookupError }}</div>
+
+  <section class="panel panel--filters" [formGroup]="filtersForm">
+    <div class="filters-grid">
+      <input formControlName="keyword" type="text" placeholder="Search by PO number" />
+      <select formControlName="supplierId">
+        <option [ngValue]="null">All suppliers</option>
+        <option *ngFor="let supplier of suppliers" [ngValue]="supplier.supplierId">{{ supplier.name }}</option>
+      </select>
+      <select formControlName="warehouseId">
+        <option [ngValue]="null">All warehouses</option>
+        <option *ngFor="let warehouse of warehouses" [ngValue]="warehouse.warehouseId">{{ warehouse.name }}</option>
+      </select>
+      <select formControlName="status">
+        <option [ngValue]="null">All statuses</option>
+        <option *ngFor="let status of statuses" [ngValue]="status">{{ status.replace('_', ' ') }}</option>
+      </select>
+      <input formControlName="fromDate" type="date" />
+      <input formControlName="toDate" type="date" />
+      <label class="checkbox">
+        <input formControlName="overdueOnly" type="checkbox" />
+        <span>Overdue only</span>
+      </label>
+    </div>
+    <div class="hero__actions">
+      <button type="button" class="btn btn-primary" (click)="onSearch()" [disabled]="loading">{{ loading ? 'Searching...' : 'Search' }}</button>
+      <button type="button" class="btn btn-secondary" (click)="resetFilters()">Reset</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div *ngIf="loading" class="empty-state">Loading purchase orders...</div>
+    <div *ngIf="!loading && loadError" class="empty-state">
+      <p>{{ loadError }}</p>
+      <button type="button" class="btn btn-secondary" (click)="retryLoad()">Retry</button>
+    </div>
+    <div *ngIf="!loading && !loadError && purchaseOrders.length === 0" class="empty-state">No purchase orders matched the current filters.</div>
+
+    <div *ngIf="!loading && !loadError && purchaseOrders.length > 0" class="table-shell">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th (click)="sortBy('poNumber')">PO Number {{ getSortMarker('poNumber') }}</th>
+            <th>Supplier</th>
+            <th>Warehouse</th>
+            <th>Status</th>
+            <th (click)="sortBy('expectedDate')">Expected Delivery {{ getSortMarker('expectedDate') }}</th>
+            <th (click)="sortBy('totalAmount')">Total {{ getSortMarker('totalAmount') }}</th>
+            <th>Created By</th>
+            <th (click)="sortBy('createdAt')">Created {{ getSortMarker('createdAt') }}</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let order of purchaseOrders">
+            <td>
+              <div class="order-cell">
+                <strong>{{ order.poNumber || ('PO #' + getOrderId(order)) }}</strong>
+                <span *ngIf="order.notes">{{ order.notes }}</span>
+              </div>
+            </td>
+            <td>{{ order.supplierName || ('Supplier #' + order.supplierId) }}</td>
+            <td>{{ order.warehouseName || ('Warehouse #' + order.warehouseId) }}</td>
+            <td><app-po-status-badge [status]="order.status" [overdue]="!!order.isOverdue"></app-po-status-badge></td>
+            <td>{{ order.expectedDeliveryDate || order.expectedDate | date:'mediumDate' }}</td>
+            <td>{{ order.totalAmount | currency:'INR':'symbol':'1.0-2' }}</td>
+            <td>{{ order.createdByName || ('User #' + (order.createdBy || order.createdById)) }}</td>
+            <td>{{ order.createdAt | date:'mediumDate' }}</td>
+            <td>
+              <div class="actions">
+                <a [routerLink]="['/purchase-orders', getOrderId(order)]" class="btn-link">View</a>
+                <a *ngIf="canEdit(order)" [routerLink]="['/purchase-orders', getOrderId(order), 'edit']" class="btn-link">Edit</a>
+                <button *ngIf="canSubmit(order)" type="button" class="btn-link" (click)="submitPurchaseOrder(order)" [disabled]="isActionLoading(getOrderId(order)) || order.status !== 'DRAFT'">
+                  {{ isActionLoading(getOrderId(order)) ? actionLabel : 'Submit' }}
+                </button>
+                <button *ngIf="canShowApprove(order)" type="button" class="btn-link" (click)="approvePurchaseOrder(order)" [disabled]="isActionLoading(getOrderId(order))">
+                  {{ isActionLoading(getOrderId(order)) ? actionLabel : 'Approve' }}
+                </button>
+                <button *ngIf="canShowApprove(order)" type="button" class="btn-link btn-link--danger" (click)="rejectPurchaseOrder(order)" [disabled]="isActionLoading(getOrderId(order))">
+                  {{ isActionLoading(getOrderId(order)) ? actionLabel : 'Reject' }}
+                </button>
+                <a *ngIf="canShowReceive(order)" [routerLink]="['/purchase-orders', getOrderId(order), 'receive']" class="btn-link">Receive</a>
+                <button *ngIf="canCancel(order)" type="button" class="btn-link btn-link--danger" (click)="cancelPurchaseOrder(order)" [disabled]="isActionLoading(getOrderId(order))">
+                  {{ isActionLoading(getOrderId(order)) ? actionLabel : 'Cancel' }}
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="pageData && pageData.totalPages > 1" class="pagination">
+      <button type="button" class="btn btn-secondary" (click)="changePage(pageData.number - 1)" [disabled]="pageData.first">Previous</button>
+      <span>Page {{ pageData.number + 1 }} of {{ pageData.totalPages }}</span>
+      <button type="button" class="btn btn-secondary" (click)="changePage(pageData.number + 1)" [disabled]="pageData.last">Next</button>
+    </div>
+  </section>
+</section>

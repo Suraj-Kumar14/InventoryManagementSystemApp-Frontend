@@ -1,0 +1,21 @@
+<section class="page">
+  <div class="page-header">
+    <h1 class="page-header__title">Barcode Lookup</h1>
+    <p class="page-header__subtitle">Quick warehouse-friendly lookup for finding product details from a barcode scan or manual entry.</p>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="lookup()" class="filter-card">
+    <input formControlName="barcode" class="page-input" placeholder="Enter barcode" />
+    <div class="page-actions">
+      <button type="submit" class="btn-primary" [disabled]="loading">{{ loading ? 'Searching...' : 'Lookup Product' }}</button>
+    </div>
+  </form>
+
+  <app-loading-spinner *ngIf="loading" [message]="'Looking up product...'" />
+
+  <app-product-card *ngIf="!loading && product" [product]="product" />
+
+  <div *ngIf="searched && !loading && !product" class="page-empty">
+    No product was found for that barcode.
+  </div>
+</section>

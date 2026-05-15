@@ -1,0 +1,358 @@
+<section class="users-page">
+  <div class="users-header">
+    <div>
+      <p class="users-header__eyebrow">Admin Console</p>
+      <h1 class="users-header__title">User Management</h1>
+      <p class="users-header__subtitle">Manage users, access, roles, activation, and login activity from one place.</p>
+    </div>
+
+    <div class="hero-actions">
+      <app-button
+        label="Create User"
+        [disabled]="loading || searching || refreshing"
+        variant="secondary"
+        (clicked)="openCreateModal()"
+      />
+      <app-button
+        [label]="refreshing ? 'Refreshing...' : 'Refresh'"
+        [isLoading]="refreshing"
+        [disabled]="loading || searching || refreshing"
+        (clicked)="onRefresh()"
+      />
+    </div>
+  </div>
+
+  <div class="summary-grid">
+    <article class="summary-card">
+      <span>Total Users</span>
+      <strong>{{ summary.totalUsers }}</strong>
+    </article>
+    <article class="summary-card summary-card--success">
+      <span>Active Users</span>
+      <strong>{{ summary.activeUsers }}</strong>
+    </article>
+    <article class="summary-card summary-card--danger">
+      <span>Inactive Users</span>
+      <strong>{{ summary.inactiveUsers }}</strong>
+    </article>
+    <article class="summary-card">
+      <span>Admins</span>
+      <strong>{{ getRoleCount(roleEnum.ADMIN) }}</strong>
+    </article>
+    <article class="summary-card">
+      <span>Inventory Managers</span>
+      <strong>{{ getRoleCount(roleEnum.MANAGER) }}</strong>
+    </article>
+    <article class="summary-card">
+      <span>Purchase Officers</span>
+      <strong>{{ getRoleCount(roleEnum.OFFICER) }}</strong>
+    </article>
+    <article class="summary-card">
+      <span>Warehouse Staff</span>
+      <strong>{{ getRoleCount(roleEnum.STAFF) }}</strong>
+    </article>
+  </div>
+
+  <form class="filter-card" [formGroup]="filtersForm" (ngSubmit)="onSearch()">
+    <div class="filter-grid">
+      <label class="field">
+        <span>Search users</span>
+        <input type="text" formControlName="search" placeholder="Search by name, email, phone, or department" />
+      </label>
+
+      <label class="field">
+        <span>Role</span>
+        <select formControlName="role">
+          <option value="ALL">All roles</option>
+          <option *ngFor="let role of roleOptions" [value]="role.value">{{ role.label }}</option>
+        </select>
+      </label>
+
+      <label class="field">
+        <span>Status</span>
+        <select formControlName="status">
+          <option value="ALL">All status</option>
+          <option value="ACTIVE">Active</option>
+          <option value="INACTIVE">Inactive</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="filter-actions">
+      <app-button
+        [label]="searching ? 'Searching...' : 'Search'"
+        [isLoading]="searching"
+        [disabled]="loading || searching || refreshing"
+        (clicked)="onSearch()"
+      />
+      <app-button
+        label="Clear Filters"
+        [disabled]="loading || searching || refreshing"
+        variant="secondary"
+        (clicked)="onClearFilters()"
+      />
+      <app-button
+        [label]="refreshing ? 'Refreshing...' : 'Refresh'"
+        [isLoading]="refreshing"
+        [disabled]="loading || searching || refreshing"
+        variant="secondary"
+        (clicked)="onRefresh()"
+      />
+    </div>
+  </form>
+
+  <div *ngIf="loading" class="table-card">
+    <div class="skeleton-header"></div>
+    <div *ngFor="let i of [1, 2, 3, 4, 5]" class="skeleton-row">
+      <div class="skeleton skeleton-cell skeleton-cell--sm"></div>
+      <div class="skeleton skeleton-cell skeleton-cell--md"></div>
+      <div class="skeleton skeleton-cell skeleton-cell--lg"></div>
+      <div class="skeleton skeleton-cell skeleton-cell--md"></div>
+      <div class="skeleton skeleton-cell skeleton-cell--sm"></div>
+      <div class="skeleton skeleton-cell skeleton-cell--sm"></div>
+    </div>
+  </div>
+
+  <div *ngIf="!loading && loadError" class="error-banner">
+    <svg xmlns="http://www.w3.org/2000/svg" class="error-banner__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <span>{{ loadError }}</span>
+    <button type="button" class="error-banner__retry" (click)="loadUsers('refresh')">Retry</button>
+  </div>
+
+  <div *ngIf="!loading && !loadError && users.length === 0" class="empty-state">
+    <svg xmlns="http://www.w3.org/2000/svg" class="empty-state__icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="1.5"
+        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+      />
+    </svg>
+    No users matched the current query.
+  </div>
+
+  <div *ngIf="!loading && !loadError && users.length > 0" class="table-card">
+    <div class="stats-bar">
+      <span class="stats-bar__item">Visible: <strong>{{ users.length }}</strong></span>
+      <span class="stats-bar__item">Total: <strong>{{ totalUsers }}</strong></span>
+      <span class="stats-bar__item stats-bar__item--success">Active: <strong>{{ summary.activeUsers }}</strong></span>
+      <span class="stats-bar__item stats-bar__item--danger">Inactive: <strong>{{ summary.inactiveUsers }}</strong></span>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="users-table">
+        <thead class="users-table__head">
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Role</th>
+            <th>Department</th>
+            <th>Status</th>
+            <th>Last Login</th>
+            <th>Created At</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let user of users; let i = index; trackBy: trackByUserId" class="users-table__row">
+            <td class="cell-index">{{ i + 1 }}</td>
+            <td class="cell-name">{{ user.name }}</td>
+            <td class="cell-email">{{ user.email }}</td>
+            <td class="cell-meta">{{ user.phone || '-' }}</td>
+            <td>
+              <span class="badge badge--role">{{ getRoleLabel(user.role) }}</span>
+            </td>
+            <td class="cell-dept">{{ user.department || '-' }}</td>
+            <td>
+              <span class="badge" [class.badge--active]="user.isActive !== false" [class.badge--inactive]="user.isActive === false">
+                <span class="badge__dot" [class.badge__dot--active]="user.isActive !== false" [class.badge__dot--inactive]="user.isActive === false"></span>
+                {{ user.isActive !== false ? 'Active' : 'Inactive' }}
+              </span>
+            </td>
+            <td class="cell-meta">{{ user.lastLoginAt ? (user.lastLoginAt | date: 'medium') : 'Never' }}</td>
+            <td class="cell-meta">{{ user.createdAt ? (user.createdAt | date: 'mediumDate') : '-' }}</td>
+            <td class="cell-actions">
+              <div class="action-group">
+                <button type="button" class="btn-action" (click)="openUserDetails(user)">View</button>
+                <button type="button" class="btn-action" (click)="openEditModal(user)">Edit</button>
+                <button type="button" class="btn-action" [disabled]="isCurrentUser(user)" (click)="openRoleModal(user)">
+                  Change Role
+                </button>
+                <button
+                  type="button"
+                  [id]="'user-action-btn-' + user.userId"
+                  (click)="openConfirmModal(user)"
+                  [disabled]="actionUserId === user.userId || (isCurrentUser(user) && user.isActive !== false)"
+                  class="btn-action"
+                  [class.btn-action--danger]="user.isActive !== false"
+                  [class.btn-action--success]="user.isActive === false"
+                >
+                  {{
+                    actionUserId === user.userId
+                      ? (user.isActive !== false ? 'Deactivating...' : 'Activating...')
+                      : (user.isActive !== false ? 'Deactivate' : 'Activate')
+                  }}
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<div *ngIf="createEditModal.visible" class="modal-overlay">
+  <div class="modal-box modal-box--wide">
+    <div class="modal-header">
+      <h3 class="modal-title">{{ isCreateMode ? 'Create User' : 'Edit User' }}</h3>
+    </div>
+
+    <form class="user-form" [formGroup]="userForm" (ngSubmit)="saveUser()">
+      <div class="modal-grid">
+        <label class="field">
+          <span>Full Name</span>
+          <input type="text" formControlName="name" placeholder="Enter full name" />
+        </label>
+
+        <label class="field">
+          <span>Email</span>
+          <input type="email" formControlName="email" placeholder="Enter email address" />
+        </label>
+
+        <label class="field">
+          <span>Phone</span>
+          <input type="text" formControlName="phone" placeholder="Enter phone number" />
+        </label>
+
+        <label class="field">
+          <span>Role</span>
+          <select formControlName="role">
+            <option *ngFor="let role of roleOptions" [value]="role.value">{{ role.label }}</option>
+          </select>
+        </label>
+
+        <label class="field field--wide">
+          <span>Department</span>
+          <input type="text" formControlName="department" placeholder="Enter department" />
+        </label>
+
+        <label class="checkbox-field">
+          <input type="checkbox" formControlName="isActive" />
+          <span>User is active</span>
+        </label>
+
+        <ng-container *ngIf="isCreateMode">
+          <label class="field">
+            <span>Password</span>
+            <input type="password" formControlName="password" placeholder="Create a secure password" />
+          </label>
+
+          <label class="field">
+            <span>Confirm Password</span>
+            <input type="password" formControlName="confirmPassword" placeholder="Confirm password" />
+          </label>
+        </ng-container>
+      </div>
+
+      <p *ngIf="userForm.hasError('passwordMismatch')" class="form-error">Confirm password must match the password.</p>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" (click)="closeCreateEditModal()" [disabled]="createEditSubmitting">Cancel</button>
+        <button type="submit" class="btn-confirm btn-confirm--primary" [disabled]="createEditSubmitting">
+          {{ createEditSubmitting ? (isCreateMode ? 'Creating...' : 'Saving...') : (isCreateMode ? 'Create User' : 'Save Changes') }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div *ngIf="roleModal.visible" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 class="modal-title">Change Role</h3>
+    </div>
+
+    <form [formGroup]="roleForm" (ngSubmit)="submitRoleChange()">
+      <label class="field">
+        <span>Role</span>
+        <select formControlName="role">
+          <option *ngFor="let role of roleOptions" [value]="role.value">{{ role.label }}</option>
+        </select>
+      </label>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" (click)="closeRoleModal()" [disabled]="roleSubmitting">Cancel</button>
+        <button type="submit" class="btn-confirm btn-confirm--primary" [disabled]="roleSubmitting">
+          {{ roleSubmitting ? 'Updating...' : 'Update Role' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div *ngIf="confirmModal.visible" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-icon" [class.modal-icon--danger]="confirmModal.action === 'deactivate'" [class.modal-icon--success]="confirmModal.action === 'activate'">
+        <svg *ngIf="confirmModal.action === 'deactivate'" xmlns="http://www.w3.org/2000/svg" class="modal-icon__svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 11-12.728 12.728A9 9 0 0118.364 5.636z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 9.172l5.656 5.656M14.828 9.172l-5.656 5.656" />
+        </svg>
+        <svg *ngIf="confirmModal.action === 'activate'" xmlns="http://www.w3.org/2000/svg" class="modal-icon__svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
+      <h3 class="modal-title">{{ confirmModal.action === 'deactivate' ? 'Deactivate User' : 'Activate User' }}</h3>
+    </div>
+
+    <p class="modal-body">
+      {{ confirmModal.action === 'deactivate' ? 'Are you sure you want to deactivate this user?' : 'Are you sure you want to activate this user?' }}
+      <span class="modal-body__name">{{ confirmModal.userName }}</span>.
+    </p>
+
+    <div class="modal-footer">
+      <button type="button" class="btn-cancel" (click)="closeConfirmModal()" [disabled]="confirmModal.loading">Cancel</button>
+      <button
+        type="button"
+        class="btn-confirm"
+        [class.btn-confirm--danger]="confirmModal.action === 'deactivate'"
+        [class.btn-confirm--success]="confirmModal.action === 'activate'"
+        (click)="confirmAction()"
+        [disabled]="confirmModal.loading"
+      >
+        {{ confirmModal.loading ? (confirmModal.action === 'deactivate' ? 'Deactivating...' : 'Activating...') : (confirmModal.action === 'deactivate' ? 'Deactivate' : 'Activate') }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="selectedUser" class="modal-overlay modal-overlay--panel">
+  <aside class="detail-panel">
+    <div class="detail-panel__header">
+      <div>
+        <p class="users-header__eyebrow">User Detail</p>
+        <h2>{{ selectedUser.name }}</h2>
+      </div>
+      <button type="button" class="detail-panel__close" (click)="closeUserDetails()">Close</button>
+    </div>
+
+    <div *ngIf="detailLoading" class="detail-panel__state">Loading user details...</div>
+    <div *ngIf="!detailLoading && detailError" class="detail-panel__state detail-panel__state--error">{{ detailError }}</div>
+
+    <div *ngIf="!detailLoading && !detailError" class="detail-grid">
+      <div class="detail-item"><span>Name</span><strong>{{ selectedUser.name }}</strong></div>
+      <div class="detail-item"><span>Email</span><strong>{{ selectedUser.email }}</strong></div>
+      <div class="detail-item"><span>Phone</span><strong>{{ selectedUser.phone || '-' }}</strong></div>
+      <div class="detail-item"><span>Role</span><strong>{{ getRoleLabel(selectedUser.role) }}</strong></div>
+      <div class="detail-item"><span>Department</span><strong>{{ selectedUser.department || '-' }}</strong></div>
+      <div class="detail-item"><span>Status</span><strong>{{ selectedUser.isActive !== false ? 'Active' : 'Inactive' }}</strong></div>
+      <div class="detail-item"><span>Created At</span><strong>{{ selectedUser.createdAt ? (selectedUser.createdAt | date: 'medium') : '-' }}</strong></div>
+      <div class="detail-item"><span>Last Login</span><strong>{{ selectedUser.lastLoginAt ? (selectedUser.lastLoginAt | date: 'medium') : 'Never' }}</strong></div>
+    </div>
+  </aside>
+</div>

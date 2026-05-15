@@ -1,0 +1,26 @@
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.summary-card {
+  padding: 1.1rem 1.15rem;
+  border-radius: 1.15rem;
+  background: linear-gradient(155deg, #ffffff, #f4f8fc);
+  border: 1px solid #dce6f2;
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.06);
+}
+
+.summary-card p {
+  margin: 0 0 0.35rem;
+  font-size: 0.8rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.summary-card strong {
+  font-size: 1.7rem;
+  color: #0f172a;
+}

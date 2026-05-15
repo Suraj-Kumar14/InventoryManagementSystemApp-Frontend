@@ -1,0 +1,45 @@
+.purchase-shell {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.header,
+.loading-card {
+  padding: 1.3rem;
+  border-radius: 1.2rem;
+  background: linear-gradient(145deg, #ffffff, #f8fbff);
+  border: 1px solid #dbe4f0;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.06);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #2563eb;
+  font-weight: 800;
+  font-size: 0.8rem;
+}
+
+.header h1,
+.header p {
+  margin: 0;
+}
+
+.header p {
+  margin-top: 0.45rem;
+  color: #64748b;
+}
+
+.back-link {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 700;
+}

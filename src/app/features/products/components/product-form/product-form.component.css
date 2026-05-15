@@ -1,0 +1,27 @@
+@import '../../../../shared/styles/page-common.css';
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.field-label {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.field-required,
+.field-error {
+  color: var(--color-danger);
+}
+
+.field-error {
+  font-size: 0.78rem;
+}
+
+.page-input--error {
+  border-color: #e39aa7;
+  box-shadow: 0 0 0 4px rgba(193, 62, 79, 0.1);
+}

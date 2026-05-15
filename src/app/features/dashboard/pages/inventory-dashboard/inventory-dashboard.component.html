@@ -1,0 +1,457 @@
+<section class="inventory-dashboard">
+  <header class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">StockPro Inventory Operations</p>
+      <h1>Welcome back, {{ greetingName }}</h1>
+      <p class="subtitle">
+        Inventory Manager command center for stock health, product readiness, warehouse utilization,
+        approvals, and movement activity.
+      </p>
+      <p class="timestamp" *ngIf="view?.generatedAt">
+        Last refreshed {{ view?.generatedAt | date: 'medium' }}
+      </p>
+    </div>
+
+    <div class="hero-actions">
+      <app-button
+        [label]="refreshing ? 'Refreshing...' : 'Refresh'"
+        [isLoading]="refreshing"
+        [disabled]="loading || refreshing"
+        (clicked)="load()"
+      />
+      <app-button
+        [label]="actionLoading === 'reports' ? 'Loading...' : 'View Inventory Reports'"
+        [isLoading]="actionLoading === 'reports'"
+        [disabled]="loading || actionLoading !== null"
+        variant="secondary"
+        (clicked)="openInventoryReports()"
+      />
+      <app-button
+        [label]="actionLoading === 'alerts' ? 'Loading...' : 'View Alerts'"
+        [isLoading]="actionLoading === 'alerts'"
+        [disabled]="loading || actionLoading !== null"
+        variant="success"
+        (clicked)="openAlerts()"
+      />
+    </div>
+  </header>
+
+  <section *ngIf="loading" class="loading-shell">
+    <app-skeleton-loader [rows]="2" [cols]="4" />
+  </section>
+
+  <ng-container *ngIf="!loading && view as dashboard; else unavailableState">
+    <section class="kpi-section">
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">Inventory KPIs</p>
+          <h2>Operational snapshot</h2>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <button
+          type="button"
+          class="kpi-button"
+          *ngFor="let card of kpis; trackBy: trackByTitle"
+          [class.kpi-button--warning]="card.severity === 'warning'"
+          [class.kpi-button--critical]="card.severity === 'critical'"
+          (click)="openRoute(card.route)"
+        >
+          <app-report-kpi-card [label]="card.title" [value]="card.value" [meta]="card.subtitle" />
+        </button>
+      </div>
+
+      <div class="section-error" *ngIf="sectionError('dashboard')">
+        {{ sectionError('dashboard') }}
+      </div>
+    </section>
+
+    <div class="panel-grid">
+      <section class="panel">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Stock Health</p>
+            <h2>Threshold monitoring</h2>
+          </div>
+        </div>
+
+        <div class="metric-list" *ngIf="dashboard.overview as overview; else stockEmpty">
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/reports/inventory/low-stock')">
+            <span>Low stock items</span>
+            <strong>{{ overview.lowStockCount }}</strong>
+          </button>
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/reports/inventory/overstock')">
+            <span>Overstock items</span>
+            <strong>{{ overview.overstockCount }}</strong>
+          </button>
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/reports/inventory/product-stock?filter=out-of-stock')">
+            <span>Out of stock items</span>
+            <strong>{{ overview.outOfStockCount }}</strong>
+          </button>
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/alerts?severity=CRITICAL&quick=critical')">
+            <span>Critical stock alerts</span>
+            <strong>{{ overview.criticalAlerts }}</strong>
+          </button>
+        </div>
+
+        <div class="shortcut-list">
+          <a routerLink="/reports/inventory/low-stock">Low Stock Report</a>
+          <a routerLink="/reports/inventory/overstock">Overstock Report</a>
+          <a routerLink="/reports/inventory/product-stock">Product Stock Report</a>
+        </div>
+
+        <div class="section-error" *ngIf="sectionError('stock')">{{ sectionError('stock') }}</div>
+      </section>
+
+      <section class="panel">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Product Management</p>
+            <h2>Catalog oversight</h2>
+          </div>
+        </div>
+
+        <div class="metric-list" *ngIf="dashboard.productSummary as products; else productsEmpty">
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/products?status=active')">
+            <span>Active products</span>
+            <strong>{{ products.activeProducts }}</strong>
+          </button>
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/products?status=inactive')">
+            <span>Inactive products</span>
+            <strong>{{ products.inactiveProducts }}</strong>
+          </button>
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/products?view=categories&sortBy=category')">
+            <span>Categories</span>
+            <strong>{{ products.categoriesCount }}</strong>
+          </button>
+        </div>
+
+        <div class="list compact-list" *ngIf="false && dashboard.recentProducts.length">
+          <article class="list-item" *ngFor="let product of dashboard.recentProducts">
+            <div>
+              <strong>{{ product.name }}</strong>
+              <p>{{ product.category }} • {{ product.sku }}</p>
+            </div>
+            <div class="list-meta">
+              <small>{{ product.updatedAt || product.createdAt | date: 'short' }}</small>
+            </div>
+          </article>
+        </div>
+
+        <div class="product-action-grid">
+          <a
+            class="action-shortcut-card"
+            *ngFor="let shortcut of productShortcuts"
+            [routerLink]="shortcut.route"
+          >
+            <strong>{{ shortcut.title }}</strong>
+            <span>{{ shortcut.description }}</span>
+          </a>
+        </div>
+
+        <div class="section-error" *ngIf="sectionError('products')">
+          {{ sectionError('products') }}
+        </div>
+      </section>
+
+      <section class="panel panel--wide">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Warehouse & Stock</p>
+            <h2>Capacity and availability</h2>
+          </div>
+        </div>
+
+        <div class="metrics-inline" *ngIf="dashboard.overview as overview">
+          <article>
+            <span>Total stock</span>
+            <strong>{{ overview.totalStockQuantity }}</strong>
+          </article>
+          <article>
+            <span>Available</span>
+            <strong>{{ overview.availableQuantity }}</strong>
+          </article>
+          <article>
+            <span>Reserved</span>
+            <strong>{{ overview.reservedQuantity }}</strong>
+          </article>
+          <article>
+            <span>Warehouses</span>
+            <strong>{{ overview.totalWarehouses }}</strong>
+          </article>
+        </div>
+
+        <div
+          class="warehouse-grid"
+          *ngIf="dashboard.warehouseUtilization.length; else warehouseEmpty"
+        >
+          <article class="warehouse-card" *ngFor="let warehouse of dashboard.warehouseUtilization">
+            <div class="warehouse-card__head">
+              <strong>{{ warehouse.warehouseName }}</strong>
+              <span>{{ warehouse.utilizationPercent | number: '1.0-0' }}%</span>
+            </div>
+            <p>
+              {{ warehouse.usedCapacity | number: '1.0-0' }} /
+              {{ warehouse.capacity | number: '1.0-0' }} capacity used
+            </p>
+            <div class="progress">
+              <div class="progress__bar" [style.width.%]="warehouse.utilizationPercent"></div>
+            </div>
+          </article>
+        </div>
+
+        <div class="shortcut-list">
+          <a routerLink="/warehouses">View Warehouses</a>
+          <a routerLink="/inventory/stock">View Stock</a>
+          <a routerLink="/inventory/stock">Transfer Stock</a>
+          <a routerLink="/inventory/stock">Stock Adjustment</a>
+        </div>
+
+        <div class="section-error" *ngIf="sectionError('warehouse')">
+          {{ sectionError('warehouse') }}
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Purchase Approvals</p>
+            <h2>Inbound readiness</h2>
+          </div>
+        </div>
+
+        <div class="metric-list" *ngIf="dashboard.purchaseSummary as purchase; else purchaseEmpty">
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/purchase-orders/approvals')">
+            <span>Pending PO approvals</span>
+            <strong>{{ purchase.pendingPurchaseApprovals }}</strong>
+          </button>
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/purchase-orders?overdueOnly=true')">
+            <span>Overdue purchase orders</span>
+            <strong>{{ purchase.overduePurchaseOrders }}</strong>
+          </button>
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/purchase-orders?status=APPROVED')">
+            <span>Approved awaiting receipt</span>
+            <strong>{{ purchase.approvedAwaitingReceipt }}</strong>
+          </button>
+        </div>
+
+        <div class="shortcut-list">
+          <a routerLink="/purchase-orders/approvals">Pending Approvals</a>
+          <a routerLink="/purchase-orders/overdue">Overdue POs</a>
+          <a routerLink="/reports/purchase/summary">Purchase Summary Report</a>
+        </div>
+
+        <div class="section-error" *ngIf="sectionError('purchase')">
+          {{ sectionError('purchase') }}
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Inventory Alerts</p>
+            <h2>Actionable signals</h2>
+          </div>
+        </div>
+
+        <div class="metric-list" *ngIf="dashboard.alertSummary as alerts; else alertsEmpty">
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/alerts?quick=unread')">
+            <span>Unread alerts</span>
+            <strong>{{ alerts.unreadCount }}</strong>
+          </button>
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/alerts?severity=CRITICAL&quick=critical')">
+            <span>Critical alerts</span>
+            <strong>{{ alerts.criticalCount }}</strong>
+          </button>
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/alerts?type=LOW_STOCK')">
+            <span>Low stock alerts</span>
+            <strong>{{ alerts.lowStockCount }}</strong>
+          </button>
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/alerts?type=OVERSTOCK')">
+            <span>Overstock alerts</span>
+            <strong>{{ alerts.overstockCount }}</strong>
+          </button>
+        </div>
+
+        <div class="list compact-list" *ngIf="criticalAlerts.length">
+          <article class="list-item" *ngFor="let alert of criticalAlerts">
+            <div>
+              <strong>{{ alert.title }}</strong>
+              <p>{{ alert.type.replaceAll('_', ' ') }}</p>
+            </div>
+            <div class="list-meta">
+              <span class="badge badge--critical">{{ alert.severity }}</span>
+              <small>{{ alert.createdAt | date: 'short' }}</small>
+            </div>
+          </article>
+        </div>
+
+        <div class="section-actions">
+          <app-button
+            *ngIf="primaryAlertActionable"
+            [label]="
+              actionLoading === 'acknowledge' ? 'Acknowledging...' : 'Acknowledge Latest Alert'
+            "
+            [isLoading]="actionLoading === 'acknowledge'"
+            [disabled]="loading || actionLoading !== null"
+            variant="secondary"
+            (clicked)="acknowledgePrimaryAlert()"
+          />
+        </div>
+
+        <div class="shortcut-list">
+          <a routerLink="/alerts">Alert Center</a>
+          <a routerLink="/alerts/analytics">Acknowledge Alerts</a>
+        </div>
+
+        <div class="section-error" *ngIf="sectionError('alerts')">{{ sectionError('alerts') }}</div>
+      </section>
+
+      <section class="panel panel--wide">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Movement Audit</p>
+            <h2>Recent flow and adjustments</h2>
+          </div>
+        </div>
+
+        <div class="metrics-inline" *ngIf="dashboard.overview as overview">
+          <article>
+            <span>Movements today</span>
+            <strong>{{ overview.stockMovementToday }}</strong>
+          </article>
+          <article>
+            <span>Adjustments today</span>
+            <strong>{{ overview.adjustmentCountToday }}</strong>
+          </article>
+          <article>
+            <span>Write-offs today</span>
+            <strong>{{ overview.writeOffCountToday }}</strong>
+          </article>
+        </div>
+
+        <div class="list" *ngIf="dashboard.recentMovements.length; else movementEmpty">
+          <article class="list-item" *ngFor="let movement of dashboard.recentMovements">
+            <div>
+              <span class="mini-label">{{ movement.movementType }}</span>
+              <strong>{{ movement.productName }}</strong>
+              <p>{{ movement.warehouseName }} • {{ movement.movementNumber }}</p>
+            </div>
+            <div class="list-meta">
+              <strong>{{ movement.quantity }}</strong>
+              <small>{{ movement.movementDate | date: 'short' }}</small>
+            </div>
+          </article>
+        </div>
+
+        <div class="shortcut-list">
+          <a routerLink="/movements">Movement History</a>
+          <a routerLink="/movements/analytics">Movement Analytics</a>
+          <a routerLink="/movements/export">Export Movement Report</a>
+        </div>
+
+        <div class="section-error" *ngIf="sectionError('movement')">
+          {{ sectionError('movement') }}
+        </div>
+      </section>
+
+      <section class="panel panel--wide">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Reports</p>
+            <h2>Inventory report shortcuts</h2>
+          </div>
+        </div>
+
+        <div class="shortcut-card-grid">
+          <a class="shortcut-card" routerLink="/reports/inventory/valuation">
+            <strong>Inventory Valuation</strong>
+            <span>Warehouse and category value exposure</span>
+          </a>
+          <a class="shortcut-card" routerLink="/reports/inventory/stock-summary">
+            <strong>Stock Summary</strong>
+            <span>Availability, reserved stock, and coverage</span>
+          </a>
+          <a class="shortcut-card" routerLink="/reports/inventory/low-stock">
+            <strong>Low Stock</strong>
+            <span>Items below reorder thresholds</span>
+          </a>
+          <a class="shortcut-card" routerLink="/reports/inventory/overstock">
+            <strong>Overstock</strong>
+            <span>Capital locked in excess stock</span>
+          </a>
+          <a class="shortcut-card" routerLink="/reports/movements">
+            <strong>Movement Report</strong>
+            <span>Trace movement history and anomalies</span>
+          </a>
+          <a class="shortcut-card" routerLink="/reports/movements/turnover">
+            <strong>Turnover Report</strong>
+            <span>Rate of movement versus holding levels</span>
+          </a>
+          <a class="shortcut-card" routerLink="/reports/movements/slow-moving">
+            <strong>Slow Moving Stock</strong>
+            <span>Inventory drifting below target motion</span>
+          </a>
+          <a class="shortcut-card" routerLink="/reports/movements/dead-stock">
+            <strong>Dead Stock</strong>
+            <span>Products with no meaningful movement</span>
+          </a>
+          <a class="shortcut-card" routerLink="/reports/purchase/summary">
+            <strong>Purchase Summary</strong>
+            <span>Approval backlog and inbound purchase value</span>
+          </a>
+        </div>
+      </section>
+    </div>
+  </ng-container>
+
+  <ng-template #stockEmpty>
+    <app-report-empty-state
+      title="Stock health unavailable"
+      message="Unable to load stock health data right now."
+    />
+  </ng-template>
+
+  <ng-template #productsEmpty>
+    <app-report-empty-state
+      title="Product summary unavailable"
+      message="Unable to load product summary right now."
+    />
+  </ng-template>
+
+  <ng-template #warehouseEmpty>
+    <app-report-empty-state
+      title="Warehouse utilization unavailable"
+      message="Warehouse utilization has not been configured yet."
+    />
+  </ng-template>
+
+  <ng-template #purchaseEmpty>
+    <app-report-empty-state
+      title="Purchase approvals unavailable"
+      message="Unable to load purchase approval data right now."
+    />
+  </ng-template>
+
+  <ng-template #movementEmpty>
+    <app-report-empty-state
+      title="No recent movements"
+      message="Recent movement activity is not available right now."
+    />
+  </ng-template>
+
+  <ng-template #alertsEmpty>
+    <app-report-empty-state
+      title="Alerts unavailable"
+      message="Unable to load inventory alerts right now."
+    />
+  </ng-template>
+
+  <ng-template #unavailableState>
+    <app-report-empty-state
+      title="Dashboard unavailable"
+      message="Unable to load dashboard summary. Please try again."
+    />
+  </ng-template>
+</section>

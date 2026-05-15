@@ -1,0 +1,39 @@
+<section class="simple-page">
+  <header class="panel panel--header">
+    <div>
+      <p class="eyebrow">Approval Desk</p>
+      <h1>Pending Purchase Order Approvals</h1>
+      <p>Review each pending order, add remarks, and move it into the approved or rejected lane.</p>
+    </div>
+    <a routerLink="/purchase-orders" class="btn btn-secondary">Back to List</a>
+  </header>
+
+  <section class="panel">
+    <div *ngIf="loading" class="empty-state">Loading pending approvals...</div>
+    <div *ngIf="!loading && purchaseOrders.length === 0" class="empty-state">There are no pending purchase orders right now.</div>
+
+    <div *ngIf="!loading && purchaseOrders.length > 0" class="approval-list">
+      <article *ngFor="let order of purchaseOrders" class="approval-card">
+        <div>
+          <div class="approval-card__top">
+            <strong>{{ order.poNumber || ('PO #' + (order.purchaseOrderId ?? order.poId)) }}</strong>
+            <app-po-status-badge [status]="order.status"></app-po-status-badge>
+          </div>
+          <p>{{ order.supplierName || ('Supplier #' + order.supplierId) }} | {{ order.warehouseName || ('Warehouse #' + order.warehouseId) }}</p>
+          <p><strong>Payment:</strong> {{ paymentReadyLabel(order) }}</p>
+          <p>Expected {{ order.expectedDeliveryDate || order.expectedDate | date:'mediumDate' }}</p>
+          <p>Total {{ order.totalAmount | currency:'INR':'symbol':'1.0-2' }}</p>
+        </div>
+        <div class="approval-card__actions">
+          <a [routerLink]="['/purchase-orders', order.purchaseOrderId ?? order.poId]" class="btn btn-secondary">View</a>
+          <button type="button" class="btn btn-primary" (click)="approve(order)" [disabled]="actionLoadingId === (order.purchaseOrderId ?? order.poId)">
+            {{ actionLoadingId === (order.purchaseOrderId ?? order.poId) ? 'Approving...' : 'Approve' }}
+          </button>
+          <button type="button" class="btn btn-danger" (click)="reject(order)" [disabled]="actionLoadingId === (order.purchaseOrderId ?? order.poId)">
+            {{ actionLoadingId === (order.purchaseOrderId ?? order.poId) ? 'Rejecting...' : 'Reject' }}
+          </button>
+        </div>
+      </article>
+    </div>
+  </section>
+</section>

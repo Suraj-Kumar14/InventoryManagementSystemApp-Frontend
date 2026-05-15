@@ -1,0 +1,115 @@
+<section class="supplier-page">
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Supplier Command Center</p>
+      <h1>Suppliers</h1>
+      <p class="hero__subtitle">Search, onboard, assess, and control supplier lifecycle from one responsive workspace.</p>
+    </div>
+    <div class="hero__actions">
+      <a *ngIf="canCreate" routerLink="/suppliers/create" class="btn btn-primary">Create Supplier</a>
+      <a *ngIf="canViewAnalytics" routerLink="/suppliers/analytics" class="btn btn-secondary">Analytics</a>
+    </div>
+  </header>
+
+  <app-supplier-summary-cards *ngIf="canViewAnalytics" [summary]="summary"></app-supplier-summary-cards>
+  <div *ngIf="summaryError" class="inline-error">{{ summaryError }}</div>
+
+  <section class="panel panel--filters" [formGroup]="filtersForm">
+    <div class="filters-grid">
+      <input formControlName="keyword" type="text" placeholder="Search by code, name, email, phone, contact" />
+      <select formControlName="status">
+        <option [ngValue]="null">All statuses</option>
+        <option value="ACTIVE">ACTIVE</option>
+        <option value="INACTIVE">INACTIVE</option>
+        <option value="BLACKLISTED">BLACKLISTED</option>
+        <option value="PENDING_REVIEW">PENDING REVIEW</option>
+      </select>
+      <select formControlName="isActive">
+        <option value="all">All activity states</option>
+        <option value="true">Active only</option>
+        <option value="false">Inactive only</option>
+      </select>
+      <input formControlName="city" type="text" placeholder="City" />
+      <input formControlName="country" type="text" placeholder="Country" />
+      <input formControlName="minRating" type="number" min="0" max="5" step="0.1" placeholder="Min rating" />
+      <input formControlName="maxLeadTimeDays" type="number" min="0" placeholder="Max lead time days" />
+    </div>
+    <div class="hero__actions">
+      <button type="button" class="btn btn-primary" (click)="onSearch()" [disabled]="loading">{{ loading ? 'Searching...' : 'Search' }}</button>
+      <button type="button" class="btn btn-secondary" (click)="resetFilters()">Reset</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div *ngIf="loading" class="empty-state">Loading suppliers...</div>
+    <div *ngIf="!loading && suppliers.length === 0" class="empty-state">No suppliers matched the current filters.</div>
+
+    <div *ngIf="!loading && suppliers.length > 0" class="table-shell">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th (click)="sortBy('supplierCode')">Code {{ getSortMarker('supplierCode') }}</th>
+            <th (click)="sortBy('name')">Supplier {{ getSortMarker('name') }}</th>
+            <th>Contact</th>
+            <th (click)="sortBy('city')">Location {{ getSortMarker('city') }}</th>
+            <th (click)="sortBy('leadTimeDays')">Lead Time {{ getSortMarker('leadTimeDays') }}</th>
+            <th (click)="sortBy('rating')">Rating {{ getSortMarker('rating') }}</th>
+            <th>Status</th>
+            <th (click)="sortBy('createdAt')">Created {{ getSortMarker('createdAt') }}</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let supplier of suppliers">
+            <td>{{ supplier.supplierCode || ('SUP #' + supplier.supplierId) }}</td>
+            <td>
+              <div class="name-cell">
+                <strong>{{ supplier.name }}</strong>
+                <span>{{ supplier.paymentTerms || 'Payment terms pending' }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="stack-cell">
+                <span>{{ supplier.contactPerson || 'No contact person' }}</span>
+                <span>{{ supplier.email || supplier.phone || 'No direct contact' }}</span>
+              </div>
+            </td>
+            <td>{{ supplier.city || 'N/A' }}, {{ supplier.country || 'N/A' }}</td>
+            <td>{{ supplier.leadTimeDays }} days</td>
+            <td><app-supplier-rating [rating]="supplier.rating"></app-supplier-rating></td>
+            <td><app-supplier-status-badge [status]="supplier.status ?? 'ACTIVE'" [isActive]="supplier.isActive"></app-supplier-status-badge></td>
+            <td>{{ supplier.createdAt | date:'mediumDate' }}</td>
+            <td>
+              <div class="actions">
+                <a [routerLink]="['/suppliers', supplier.supplierId]" class="btn-link">View</a>
+                <a *ngIf="canEdit" [routerLink]="['/suppliers', supplier.supplierId, 'edit']" class="btn-link">Edit</a>
+                <a *ngIf="canViewAnalytics" [routerLink]="['/suppliers', supplier.supplierId, 'performance']" class="btn-link">Performance</a>
+                <button *ngIf="canRate" type="button" class="btn-link" (click)="updateRating(supplier)" [disabled]="actionLoadingId === supplier.supplierId">
+                  {{ actionLoadingId === supplier.supplierId ? actionLabel : 'Rate' }}
+                </button>
+                <button *ngIf="canDeactivate && supplier.isActive" type="button" class="btn-link" (click)="deactivateSupplier(supplier)" [disabled]="actionLoadingId === supplier.supplierId">
+                  {{ actionLoadingId === supplier.supplierId ? actionLabel : 'Deactivate' }}
+                </button>
+                <button *ngIf="canDeactivate && !supplier.isActive && supplier.status !== 'BLACKLISTED'" type="button" class="btn-link" (click)="activateSupplier(supplier)" [disabled]="actionLoadingId === supplier.supplierId">
+                  {{ actionLoadingId === supplier.supplierId ? actionLabel : 'Activate' }}
+                </button>
+                <button *ngIf="canBlacklist" type="button" class="btn-link btn-link--danger" (click)="blacklistSupplier(supplier)" [disabled]="actionLoadingId === supplier.supplierId">
+                  {{ actionLoadingId === supplier.supplierId ? actionLabel : 'Blacklist' }}
+                </button>
+                <button *ngIf="canBlacklist" type="button" class="btn-link btn-link--danger" (click)="deleteSupplier(supplier)" [disabled]="actionLoadingId === supplier.supplierId">
+                  {{ actionLoadingId === supplier.supplierId ? actionLabel : 'Delete' }}
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="pageData && pageData.totalPages > 1" class="pagination">
+      <button type="button" class="btn btn-secondary" (click)="changePage(pageData.number - 1)" [disabled]="pageData.first">Previous</button>
+      <span>Page {{ pageData.number + 1 }} of {{ pageData.totalPages }}</span>
+      <button type="button" class="btn btn-secondary" (click)="changePage(pageData.number + 1)" [disabled]="pageData.last">Next</button>
+    </div>
+  </section>
+</section>

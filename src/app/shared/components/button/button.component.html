@@ -1,0 +1,13 @@
+<button
+  type="button"
+  (click)="onClick()"
+  [disabled]="isLoading || disabled"
+  class="app-btn"
+  [class.app-btn--primary]="variant === 'primary'"
+  [class.app-btn--secondary]="variant === 'secondary'"
+  [class.app-btn--danger]="variant === 'danger'"
+  [class.app-btn--success]="variant === 'success'"
+>
+  <span *ngIf="isLoading" class="app-btn__spinner"></span>
+  <span>{{ label }}</span>
+</button>

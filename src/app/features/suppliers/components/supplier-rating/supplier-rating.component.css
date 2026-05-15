@@ -1,0 +1,29 @@
+.rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.rating--excellent {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.rating--good {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.rating--watch {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.rating--critical {
+  background: #fee2e2;
+  color: #b91c1c;
+}

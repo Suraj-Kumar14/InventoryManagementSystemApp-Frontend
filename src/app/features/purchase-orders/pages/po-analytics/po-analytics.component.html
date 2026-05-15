@@ -1,0 +1,56 @@
+<section class="analytics-page">
+  <header class="panel panel--header">
+    <div>
+      <p class="eyebrow">Purchase Analytics</p>
+      <h1>Spend, Approvals, and Supplier Momentum</h1>
+      <p>Use summary metrics and focused lists to spot pending approvals, late receipts, and supplier concentration.</p>
+    </div>
+    <a routerLink="/purchase-orders" class="btn btn-secondary">Back to List</a>
+  </header>
+
+  <section class="panel" [formGroup]="form">
+    <div class="filter-row">
+      <input formControlName="fromDate" type="date" />
+      <input formControlName="toDate" type="date" />
+      <button type="button" class="btn btn-primary" (click)="loadAnalytics()" [disabled]="loading">
+        {{ loading ? 'Loading...' : 'Refresh Analytics' }}
+      </button>
+    </div>
+  </section>
+
+  <app-po-summary-cards *ngIf="summary" [summary]="summary"></app-po-summary-cards>
+
+  <section *ngIf="analytics" class="analytics-grid">
+    <article class="panel">
+      <h2>Spend Snapshot</h2>
+      <div class="metric-list">
+        <div><span>Total Spend</span><strong>{{ analytics.totalSpend | currency:'INR':'symbol':'1.0-2' }}</strong></div>
+        <div><span>Monthly Spend</span><strong>{{ analytics.monthlySpend | currency:'INR':'symbol':'1.0-2' }}</strong></div>
+        <div><span>Pending Approvals</span><strong>{{ analytics.pendingApprovals }}</strong></div>
+        <div><span>Overdue Receipts</span><strong>{{ analytics.overdueReceipts }}</strong></div>
+      </div>
+    </article>
+
+    <article class="panel">
+      <h2>Cycle Time</h2>
+      <div class="metric-list">
+        <div><span>Average Approval Time</span><strong>{{ analytics.averageApprovalTime }} hrs</strong></div>
+        <div><span>Average Delivery Delay</span><strong>{{ analytics.averageDeliveryDelay }} days</strong></div>
+      </div>
+    </article>
+
+    <article class="panel">
+      <h2>Top Suppliers</h2>
+      <ul>
+        <li *ngFor="let supplier of analytics.topSuppliers">{{ supplier }}</li>
+      </ul>
+    </article>
+
+    <article class="panel">
+      <h2>Top Purchased Products</h2>
+      <ul>
+        <li *ngFor="let product of analytics.topPurchasedProducts">{{ product }}</li>
+      </ul>
+    </article>
+  </section>
+</section>

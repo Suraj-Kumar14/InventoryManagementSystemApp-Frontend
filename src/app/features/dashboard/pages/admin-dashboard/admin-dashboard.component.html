@@ -1,0 +1,314 @@
+<section class="admin-dashboard">
+  <header class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">StockPro Control Center</p>
+      <h1>Welcome back, {{ greetingName }}</h1>
+      <p class="subtitle">
+        Executive oversight for users, inventory health, alerts, approvals, and reporting across the platform.
+      </p>
+      <p class="timestamp" *ngIf="view?.generatedAt">Last refreshed {{ view?.generatedAt | date:'medium' }}</p>
+    </div>
+
+    <div class="hero-actions">
+      <app-button
+        [label]="refreshing ? 'Refreshing...' : 'Refresh'"
+        [isLoading]="refreshing"
+        [disabled]="loading || refreshing"
+        (clicked)="load()"
+      />
+      <app-button
+        [label]="actionLoading === 'broadcast' ? 'Opening...' : 'Broadcast Alert'"
+        [isLoading]="actionLoading === 'broadcast'"
+        [disabled]="loading || actionLoading !== null"
+        variant="secondary"
+        (clicked)="openBroadcastAlert()"
+      />
+      <app-button
+        [label]="actionLoading === 'reports' ? 'Loading...' : 'View Executive Reports'"
+        [isLoading]="actionLoading === 'reports'"
+        [disabled]="loading || actionLoading !== null"
+        variant="success"
+        (clicked)="openExecutiveReports()"
+      />
+    </div>
+  </header>
+
+  <section *ngIf="loading" class="loading-shell">
+    <app-skeleton-loader [rows]="2" [cols]="4" />
+  </section>
+
+  <ng-container *ngIf="!loading && view as dashboard; else unavailableState">
+    <section class="kpi-section">
+      <div class="section-head">
+        <div>
+          <p class="section-kicker">Executive KPIs</p>
+          <h2>Platform snapshot</h2>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <button
+          type="button"
+          class="kpi-button"
+          *ngFor="let card of kpis; trackBy: trackByTitle"
+          [class.kpi-button--warning]="card.severity === 'warning'"
+          (click)="openRoute(card.route)"
+        >
+          <app-report-kpi-card [label]="card.title" [value]="card.value" [meta]="card.subtitle" />
+        </button>
+      </div>
+
+      <div class="section-error" *ngIf="sectionError('executive')">{{ sectionError('executive') }}</div>
+    </section>
+
+    <div class="panel-grid">
+      <section class="panel">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">System Health</p>
+            <h2>Service visibility</h2>
+          </div>
+        </div>
+
+        <div class="placeholder-card">
+          <strong>Service health monitoring is not configured yet.</strong>
+          <p>Expose gateway-safe health endpoints later if you want live API Gateway and microservice status on this dashboard.</p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Inventory Health</p>
+            <h2>Stock posture</h2>
+          </div>
+        </div>
+
+        <div class="metric-list">
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/reports/inventory/low-stock')">
+            <span>Low stock items</span>
+            <strong>{{ lowStockItems }}</strong>
+          </button>
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/reports/inventory/overstock')">
+            <span>Overstock items</span>
+            <strong>{{ overstockItems }}</strong>
+          </button>
+          <article class="metric-row">
+            <span>Total inventory value</span>
+            <strong>{{ inventoryValue | currency:'INR':'symbol':'1.0-0' }}</strong>
+          </article>
+          <article class="metric-row">
+            <span>Stock movement today</span>
+            <strong>{{ dashboard.movementSummary?.movementsToday ?? dashboard.executive?.stockMovementToday ?? '-' }}</strong>
+          </article>
+        </div>
+
+        <div class="shortcut-list">
+          <a routerLink="/reports/inventory/low-stock">View Low Stock</a>
+          <a routerLink="/reports/inventory/overstock">View Overstock</a>
+          <a routerLink="/reports/inventory/valuation">Inventory Valuation Report</a>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Purchase & Payments</p>
+            <h2>Approval and spend</h2>
+          </div>
+        </div>
+
+        <div class="metric-list">
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/purchase-orders/approvals')">
+            <span>Pending approvals</span>
+            <strong>{{ pendingPoApprovals }}</strong>
+          </button>
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/purchase-orders?overdueOnly=true')">
+            <span>Overdue purchase orders</span>
+            <strong>{{ dashboard.executive?.overduePurchaseOrders ?? '-' }}</strong>
+          </button>
+          <article class="metric-row">
+            <span>Total purchase value</span>
+            <strong>{{ dashboard.executive?.totalPurchaseValue | currency:'INR':'symbol':'1.0-0' }}</strong>
+          </article>
+          <button type="button" class="metric-row metric-row--button" *ngIf="hasPaymentSection" (click)="openRoute('/payments?status=PENDING_APPROVAL')">
+            <span>Pending payments</span>
+            <strong>{{ dashboard.paymentSummary?.pendingAmount | currency:'INR':'symbol':'1.0-0' }}</strong>
+          </button>
+          <button type="button" class="metric-row metric-row--button" *ngIf="hasPaymentSection" (click)="openRoute('/payments?status=PAID')">
+            <span>Total paid amount</span>
+            <strong>{{ dashboard.paymentSummary?.totalPaidAmount | currency:'INR':'symbol':'1.0-0' }}</strong>
+          </button>
+        </div>
+
+        <div class="section-error" *ngIf="sectionError('payments')">{{ sectionError('payments') }}</div>
+
+        <div class="shortcut-list">
+          <a routerLink="/purchase-orders">Pending PO Approvals</a>
+          <a routerLink="/reports/purchase/summary">Purchase Reports</a>
+          <a *ngIf="hasPaymentSection" routerLink="/payments">Payment Reports</a>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">User & Access</p>
+            <h2>User management</h2>
+          </div>
+        </div>
+
+        <div class="metric-list" *ngIf="dashboard.userSummary as users; else userSummaryEmpty">
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/admin/users?status=ACTIVE')">
+            <span>Active users</span>
+            <strong>{{ users.activeUsers }}</strong>
+          </button>
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/admin/users?status=INACTIVE')">
+            <span>Inactive users</span>
+            <strong>{{ users.inactiveUsers }}</strong>
+          </button>
+          <button type="button" class="metric-row metric-row--button" (click)="openRoute('/admin/users')">
+            <span>Total users</span>
+            <strong>{{ users.totalUsers }}</strong>
+          </button>
+        </div>
+
+        <div class="roles-grid" *ngIf="userRoleBreakdown.length">
+          <div class="role-chip" *ngFor="let role of userRoleBreakdown">
+            <span>{{ role[0] }}</span>
+            <strong>{{ role[1] }}</strong>
+          </div>
+        </div>
+
+        <div class="user-management-card">
+          <div>
+            <strong>User Management</strong>
+            <p>Manage users, roles, activation, and account status from one place.</p>
+          </div>
+          <a routerLink="/admin/users" class="user-management-card__action">Open Users</a>
+        </div>
+
+        <div class="section-error" *ngIf="sectionError('users')">{{ sectionError('users') }}</div>
+
+        <ng-template #userSummaryEmpty>
+          <app-report-empty-state title="User summary unavailable" message="Unable to load user summary." />
+        </ng-template>
+      </section>
+
+      <section class="panel">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Alerts & Broadcast</p>
+            <h2>Urgent issues</h2>
+          </div>
+        </div>
+
+        <div class="alert-stats">
+          <button type="button" class="metric-row metric-row--button alert-stat-button" (click)="openRoute('/alerts?severity=CRITICAL&quick=critical')">
+            <span>Critical alerts</span>
+            <strong>{{ dashboard.executive?.criticalAlerts ?? dashboard.alertSummary?.criticalCount ?? 0 }}</strong>
+          </button>
+          <button type="button" class="metric-row metric-row--button alert-stat-button" (click)="openRoute('/alerts?quick=unread')">
+            <span>Unread system alerts</span>
+            <strong>{{ dashboard.unreadAlertCount ?? dashboard.alertSummary?.unreadCount ?? 0 }}</strong>
+          </button>
+        </div>
+
+        <div class="list" *ngIf="dashboard.recentAlerts.length; else noRecentAlerts">
+          <article class="list-item" *ngFor="let alert of dashboard.recentAlerts">
+            <div>
+              <strong>{{ alert.title }}</strong>
+              <p>{{ alert.message }}</p>
+            </div>
+            <div class="list-meta">
+              <span class="badge" [class.badge--critical]="alert.severity === 'CRITICAL'">{{ alert.severity }}</span>
+              <small>{{ alert.createdAt | date:'short' }}</small>
+            </div>
+          </article>
+        </div>
+
+        <div class="shortcut-list">
+          <a routerLink="/alerts/broadcast">Broadcast Alert</a>
+          <a routerLink="/alerts">Alert Center</a>
+        </div>
+
+        <div class="section-error" *ngIf="sectionError('alerts')">{{ sectionError('alerts') }}</div>
+      </section>
+
+      <section class="panel panel--wide">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Audit & Recent Activity</p>
+            <h2>Latest platform actions</h2>
+          </div>
+        </div>
+
+        <p class="panel-note">{{ dashboardApi.getDefaultActivityMessage() }}</p>
+
+        <div class="list" *ngIf="dashboard.recentActivities.length; else noRecentActivity">
+          <article class="list-item" *ngFor="let activity of dashboard.recentActivities">
+            <div>
+              <span class="mini-label">{{ activity.type }}</span>
+              <strong>{{ activity.title }}</strong>
+              <p>{{ activity.description }}</p>
+            </div>
+            <div class="list-meta">
+              <small *ngIf="activity.actor">{{ activity.actor }}</small>
+              <small>{{ activity.createdAt | date:'short' }}</small>
+            </div>
+          </article>
+        </div>
+
+        <div class="section-error" *ngIf="sectionError('activity')">{{ sectionError('activity') }}</div>
+      </section>
+
+      <section class="panel panel--wide">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">Reports</p>
+            <h2>Executive shortcuts</h2>
+          </div>
+        </div>
+
+        <div class="shortcut-card-grid">
+          <a class="shortcut-card" routerLink="/reports/executive">
+            <strong>Executive Dashboard</strong>
+            <span>System-wide analytics and KPIs</span>
+          </a>
+          <a class="shortcut-card" routerLink="/reports/inventory/valuation">
+            <strong>Inventory Valuation</strong>
+            <span>Current inventory worth and allocation</span>
+          </a>
+          <a class="shortcut-card" routerLink="/reports/movements">
+            <strong>Stock Movement Report</strong>
+            <span>Operational movement visibility</span>
+          </a>
+          <a class="shortcut-card" routerLink="/reports/purchase/summary">
+            <strong>Purchase Summary</strong>
+            <span>Approvals, overdue POs, and spend</span>
+          </a>
+          <a class="shortcut-card" routerLink="/reports/suppliers/performance">
+            <strong>Supplier Performance</strong>
+            <span>Lead time and fulfillment health</span>
+          </a>
+          <a class="shortcut-card" routerLink="/reports/payments/summary">
+            <strong>Payment Summary</strong>
+            <span>Paid, pending, and supplier disbursements</span>
+          </a>
+        </div>
+      </section>
+    </div>
+  </ng-container>
+
+  <ng-template #noRecentAlerts>
+    <app-report-empty-state title="No recent alerts" message="There are no recent system alerts to review right now." />
+  </ng-template>
+
+  <ng-template #noRecentActivity>
+    <app-report-empty-state title="No recent activity" message="Recent activity is not available yet for this dashboard." />
+  </ng-template>
+
+  <ng-template #unavailableState>
+    <app-report-empty-state title="Dashboard unavailable" message="Unable to load dashboard summary. Please try again." />
+  </ng-template>
+</section>

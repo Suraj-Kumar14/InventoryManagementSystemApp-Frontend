@@ -1,0 +1,14 @@
+<ng-container *ngIf="!loading && product; else loadingState">
+  <app-product-form
+    mode="edit"
+    [initialProduct]="product"
+    [loading]="saving"
+    [backendFieldErrors]="backendFieldErrors"
+    (submitted)="updateProduct($event)"
+    (cancelled)="goBack()"
+  />
+</ng-container>
+
+<ng-template #loadingState>
+  <app-loading-spinner></app-loading-spinner>
+</ng-template>

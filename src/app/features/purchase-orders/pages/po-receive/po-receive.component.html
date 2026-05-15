@@ -1,0 +1,46 @@
+<section class="receive-page" *ngIf="purchaseOrder as order">
+  <header class="panel panel--hero">
+    <div>
+      <p class="eyebrow">Warehouse Receipt</p>
+      <h1>Receive Goods for {{ order.poNumber || ('PO #' + (order.purchaseOrderId ?? order.poId)) }}</h1>
+      <p>Only pending quantities are receivable. Partial receiving is fully supported.</p>
+    </div>
+    <a [routerLink]="['/purchase-orders', order.purchaseOrderId ?? order.poId]" class="btn btn-secondary">Back to Detail</a>
+  </header>
+
+  <form [formGroup]="form" class="panel" (ngSubmit)="submit()">
+    <div class="header-grid">
+      <input formControlName="receiptReference" type="text" placeholder="Receipt reference / GRN number" />
+      <input formControlName="receivedDate" type="date" />
+      <input formControlName="notes" type="text" placeholder="Receiving notes" />
+    </div>
+
+    <div class="receive-table">
+      <div class="receive-row receive-row--header">
+        <span>Product</span>
+        <span>Ordered</span>
+        <span>Received</span>
+        <span>Pending</span>
+        <span>Receive Now</span>
+      </div>
+
+      <div *ngFor="let item of order.lineItems; let i = index" [formGroup]="lineItemGroup(i)" class="receive-row">
+        <span>{{ item.productName || ('Product #' + item.productId) }}</span>
+        <span>{{ item.orderedQuantity || item.quantity }}</span>
+        <span>{{ item.receivedQuantity ?? item.receivedQty }}</span>
+        <span>{{ item.pendingQuantity }}</span>
+        <span><input type="number" min="0" [max]="item.pendingQuantity || 0" formControlName="receivedQuantity" /></span>
+      </div>
+    </div>
+
+    <p *ngIf="purchaseOrder && !canSubmitReceipt" class="field-hint">
+      Receive goods is available only after payment is completed.
+    </p>
+
+    <button type="submit" class="btn btn-primary" [disabled]="!canSubmitReceipt">
+      {{ submitting ? 'Receiving...' : 'Receive Goods' }}
+    </button>
+  </form>
+</section>
+
+<div *ngIf="loading" class="panel">Loading purchase order receipt details...</div>

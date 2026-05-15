@@ -1,0 +1,7 @@
+<app-product-form
+  mode="create"
+  [loading]="saving"
+  [backendFieldErrors]="backendFieldErrors"
+  (submitted)="createProduct($event)"
+  (cancelled)="goBack()"
+/>

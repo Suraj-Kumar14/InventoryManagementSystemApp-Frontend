@@ -1,0 +1,341 @@
+.admin-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+  padding: 1rem;
+  min-height: 100%;
+  background:
+    radial-gradient(circle at top left, rgba(30, 79, 174, 0.12), transparent 24%),
+    radial-gradient(circle at top right, rgba(13, 116, 184, 0.08), transparent 20%),
+    linear-gradient(180deg, #f7faff 0%, #eef4fb 100%);
+  border-radius: var(--radius-xl);
+}
+
+.hero,
+.panel,
+.kpi-section,
+.loading-shell {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+}
+
+.hero {
+  padding: 1.55rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.hero-copy h1,
+.section-head h2 {
+  margin: 0;
+  color: var(--color-text);
+}
+
+.hero-copy h1 {
+  font-size: clamp(1.8rem, 2vw, 2.4rem);
+}
+
+.subtitle,
+.timestamp,
+.panel-note,
+.placeholder-card p,
+.list-item p {
+  color: var(--color-text-muted);
+}
+
+.eyebrow,
+.section-kicker,
+.mini-label {
+  margin: 0 0 0.35rem;
+  color: var(--color-primary);
+  font-size: 0.74rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+
+.timestamp,
+.panel-note {
+  margin-top: 0.8rem;
+  font-size: 0.9rem;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.loading-shell,
+.kpi-section,
+.panel {
+  padding: 1.25rem;
+}
+
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.kpi-grid,
+.roles-grid,
+.shortcut-card-grid {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.kpi-grid,
+.shortcut-card-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.kpi-button {
+  padding: 0;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 18px;
+}
+
+.kpi-button article {
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.kpi-button:hover article {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.kpi-button--warning {
+  box-shadow: 0 0 0 2px rgba(185, 115, 22, 0.12);
+}
+
+.panel-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.panel {
+  grid-column: span 6;
+}
+
+.panel--wide {
+  grid-column: span 12;
+}
+
+.metric-list,
+.list,
+.shortcut-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.metric-row,
+.list-item,
+.placeholder-card,
+.role-chip,
+.shortcut-card,
+.alert-stats > div,
+.user-management-card {
+  border-radius: 18px;
+  border: 1px solid #e1eaf5;
+  background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
+}
+
+.metric-row,
+.list-item {
+  padding: 0.95rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.metric-row--button,
+.alert-stat-button {
+  width: 100%;
+  cursor: pointer;
+  text-align: left;
+  transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.metric-row--button:hover,
+.metric-row--button:focus-visible,
+.shortcut-card:focus-visible,
+.kpi-button:focus-visible,
+.user-management-card__action:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(30, 79, 174, 0.28);
+  box-shadow: var(--shadow-sm);
+  outline: none;
+}
+
+.metric-row span,
+.list-meta small {
+  color: var(--color-text-muted);
+}
+
+.metric-row strong,
+.list-item strong,
+.role-chip strong {
+  color: var(--color-text);
+}
+
+.shortcut-list {
+  margin-top: 0.95rem;
+}
+
+.shortcut-list a,
+.shortcut-card {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.shortcut-card {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.shortcut-card span {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.roles-grid {
+  margin-top: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+}
+
+.user-management-card {
+  margin-top: 0.95rem;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.user-management-card p {
+  margin: 0.35rem 0 0;
+  color: var(--color-text-muted);
+}
+
+.user-management-card__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0.7rem 1rem;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-navy) 100%);
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.role-chip {
+  padding: 0.85rem 0.95rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.alert-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.alert-stats > div {
+  padding: 1rem;
+}
+
+.alert-stats span {
+  display: block;
+  color: var(--color-text-muted);
+  margin-bottom: 0.3rem;
+}
+
+.alert-stats strong {
+  color: var(--color-text);
+  font-size: 1.3rem;
+}
+
+.list-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.28rem 0.6rem;
+  border-radius: 999px;
+  background: var(--color-success-soft);
+  color: var(--color-success);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.badge--critical {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.section-error {
+  margin-top: 1rem;
+}
+
+.placeholder-card {
+  padding: 1rem;
+}
+
+@media (max-width: 1100px) {
+  .panel {
+    grid-column: span 12;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-dashboard {
+    padding: 0.75rem;
+  }
+
+  .hero,
+  .metric-row,
+  .list-item,
+  .user-management-card {
+    flex-direction: column;
+  }
+
+  .hero-actions,
+  .list-meta {
+    width: 100%;
+  }
+
+  .list-meta {
+    align-items: flex-start;
+  }
+
+  .alert-stats {
+    grid-template-columns: 1fr;
+  }
+}

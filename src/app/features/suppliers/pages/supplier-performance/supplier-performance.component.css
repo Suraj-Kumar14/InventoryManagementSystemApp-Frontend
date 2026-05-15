@@ -1,0 +1,25 @@
+@import '../supplier-list/supplier-list.component.css';
+
+.performance-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.metric-card {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.metric-card p {
+  margin: 0;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.8rem;
+}
+
+.metric-card strong {
+  font-size: 1.9rem;
+  color: #0f172a;
+}

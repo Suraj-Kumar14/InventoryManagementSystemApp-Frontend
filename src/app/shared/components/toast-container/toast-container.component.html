@@ -1,0 +1,13 @@
+<section class="toast-stack" *ngIf="notifications.toasts$ | async as toasts" aria-live="polite" aria-atomic="true">
+  <article class="toast" *ngFor="let toast of toasts" [class.toast--success]="toast.type === 'success'"
+    [class.toast--error]="toast.type === 'error'" [class.toast--warning]="toast.type === 'warning'"
+    [class.toast--info]="toast.type === 'info'">
+    <div class="toast__content">
+      <strong>{{ toast.title }}</strong>
+      <p>{{ toast.message }}</p>
+    </div>
+    <button type="button" class="toast__close" (click)="notifications.remove(toast.id)" aria-label="Dismiss notification">
+      ×
+    </button>
+  </article>
+</section>

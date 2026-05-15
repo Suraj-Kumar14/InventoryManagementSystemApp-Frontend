@@ -1,0 +1,54 @@
+@import '../supplier-list/supplier-list.component.css';
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.detail-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.detail-card h2 {
+  margin: 0;
+}
+
+.detail-list,
+.metric-grid {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.detail-list div,
+.metric-grid div,
+.metric-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.detail-list span,
+.metric-grid span,
+.metric-row span {
+  color: #64748b;
+}
+
+.notes {
+  margin-top: 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 1rem;
+  background: #f8fafc;
+  color: #334155;
+}
+
+.inline-link {
+  color: #2563eb;
+  font-weight: 700;
+}

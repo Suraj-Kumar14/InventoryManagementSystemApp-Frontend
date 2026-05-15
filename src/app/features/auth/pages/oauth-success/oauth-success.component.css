@@ -1,0 +1,5 @@
+@import '../../auth-shared.css';
+
+.auth-card--center {
+  text-align: center;
+}

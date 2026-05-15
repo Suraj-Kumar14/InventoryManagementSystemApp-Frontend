@@ -1,0 +1,81 @@
+<section class="landing-page">
+  <div class="landing-page__backdrop"></div>
+
+  <header class="landing-shell landing-header">
+    <a routerLink="/" class="landing-brand" aria-label="StockPro home">
+      <span class="landing-brand__mark">SP</span>
+      <span class="landing-brand__text">
+        <strong>StockPro</strong>
+        <small>Inventory Management System</small>
+      </span>
+    </a>
+
+    <nav class="landing-header__actions" aria-label="Authentication actions">
+      <a routerLink="/login" class="btn-secondary landing-header__button">Login</a>
+      <a routerLink="/register" class="btn-primary landing-header__button">Register</a>
+    </nav>
+  </header>
+
+  <main class="landing-shell landing-hero">
+    <section class="landing-hero__content">
+      <p class="landing-eyebrow">Connected inventory operations</p>
+      <h1>StockPro Inventory Management System</h1>
+      <p class="landing-hero__summary">
+        Track stock, manage warehouses, streamline purchase orders, monitor suppliers, and
+        make smarter inventory decisions from one secure platform.
+      </p>
+
+      <div class="landing-hero__actions">
+        <a routerLink="/login" class="btn-primary landing-cta">Login</a>
+        <a routerLink="/register" class="btn-secondary landing-cta">Register</a>
+      </div>
+
+      <ul class="landing-hero__highlights">
+        <li *ngFor="let item of capabilityHighlights">{{ item }}</li>
+      </ul>
+    </section>
+
+    <aside class="landing-hero__panel" aria-label="Platform overview">
+      <div class="landing-panel__card landing-panel__card--primary">
+        <span class="landing-panel__label">Operations overview</span>
+        <strong>One workspace for stock, purchasing, warehouses, and supplier coordination</strong>
+        <p>
+          Built for inventory teams that need clear workflows, fast visibility, and reliable
+          reporting without hopping between disconnected tools.
+        </p>
+      </div>
+
+      <div class="landing-panel__metrics">
+        <article class="landing-metric">
+          <span>Stock Tracking</span>
+          <strong>Catalog visibility</strong>
+        </article>
+        <article class="landing-metric">
+          <span>Warehouse Management</span>
+          <strong>Location-aware control</strong>
+        </article>
+        <article class="landing-metric">
+          <span>Inventory Alerts</span>
+          <strong>Actionable monitoring</strong>
+        </article>
+      </div>
+    </aside>
+  </main>
+
+  <section class="landing-shell landing-capabilities">
+    <article class="landing-capability">
+      <h2>Core Modules</h2>
+      <p>
+        StockPro supports stock tracking, warehouse management, purchase order management,
+        supplier management, inventory alerts, and analytics and reports in a single business workflow.
+      </p>
+    </article>
+
+    <article class="landing-capability-grid" aria-label="StockPro feature list">
+      <div *ngFor="let feature of features" class="landing-feature-card">
+        <span class="landing-feature-card__icon"></span>
+        <h3>{{ feature }}</h3>
+      </div>
+    </article>
+  </section>
+</section>

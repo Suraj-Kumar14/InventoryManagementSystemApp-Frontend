@@ -1,0 +1,61 @@
+<div class="auth-page">
+  <div class="auth-container">
+    <div class="auth-header">
+      <h1 class="auth-header__title">StockPro</h1>
+      <p class="auth-header__subtitle">Create your account</p>
+    </div>
+
+    <div class="auth-card">
+      <h2 class="auth-card__title">Sign Up</h2>
+
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="auth-form">
+        <div class="form-group">
+          <input type="text" formControlName="name" placeholder="Full name" class="form-input" />
+          <p *ngIf="showError('name')" class="form-error">Name must be at least 2 characters.</p>
+        </div>
+
+        <div class="form-group">
+          <input type="email" formControlName="email" placeholder="user@example.com" class="form-input" />
+          <p *ngIf="showError('email')" class="form-error">Invalid email.</p>
+        </div>
+
+        <div class="form-group">
+          <select formControlName="role" class="form-input">
+            <option value="">Select your role</option>
+            <option *ngFor="let role of allowedRoles" [value]="role">{{ getRoleLabel(role) }}</option>
+          </select>
+          <p *ngIf="showError('role')" class="form-error">Please select a role.</p>
+        </div>
+
+        <div class="form-group">
+          <input type="password" formControlName="password" placeholder="Password" class="form-input" />
+          <p *ngIf="showError('password')" class="form-error">
+            Password must contain uppercase, lowercase, number, and special character.
+          </p>
+        </div>
+
+        <div class="form-group">
+          <input type="tel" formControlName="phone"
+                 placeholder="Phone (optional, e.g. 9876543210)" class="form-input" />
+          <p *ngIf="showError('phone')" class="form-error">
+            Enter a valid 10-digit Indian mobile number (starts with 6–9).
+          </p>
+        </div>
+
+        <input type="text" formControlName="department"
+               placeholder="Department (optional)" class="form-input" />
+
+        <p *ngIf="serverError" class="form-server-error">{{ serverError }}</p>
+
+        <button type="submit" [disabled]="registerForm.invalid || isLoading" class="btn-primary">
+          {{ isLoading ? 'Sending OTP...' : 'Continue' }}
+        </button>
+      </form>
+
+      <p class="auth-footer">
+        Already have an account?
+        <a routerLink="/login" class="auth-link">Sign In</a>
+      </p>
+    </div>
+  </div>
+</div>

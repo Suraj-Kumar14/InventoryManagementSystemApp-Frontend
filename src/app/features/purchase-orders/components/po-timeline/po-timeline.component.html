@@ -1,0 +1,23 @@
+<section class="timeline-card">
+  <header class="timeline-card__header">
+    <h3>Lifecycle Timeline</h3>
+    <p>Every purchase order transition is recorded here.</p>
+  </header>
+
+  <div *ngIf="history.length === 0" class="timeline-empty">No timeline entries are available yet.</div>
+
+  <ol *ngIf="history.length > 0" class="timeline">
+    <li *ngFor="let item of history" class="timeline__item">
+      <span class="timeline__dot"></span>
+      <div class="timeline__content">
+        <strong>{{ item.action.replace('_', ' ') }}</strong>
+        <p>
+          {{ item.oldStatus || 'N/A' }} -> {{ item.newStatus || 'N/A' }}
+          <span *ngIf="item.actorId">by user #{{ item.actorId }}</span>
+        </p>
+        <small>{{ item.actionAt | date:'medium' }}</small>
+        <div *ngIf="item.remarks" class="timeline__remarks">{{ item.remarks }}</div>
+      </div>
+    </li>
+  </ol>
+</section>

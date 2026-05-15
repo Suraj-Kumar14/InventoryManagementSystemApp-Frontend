@@ -1,0 +1,24 @@
+<div class="app-shell">
+  <app-navbar (toggleSidebar)="toggleSidebar()"></app-navbar>
+  <app-toast-container></app-toast-container>
+  <div class="app-body">
+    <button
+      *ngIf="isMobile() && sidebarOpen()"
+      type="button"
+      class="app-overlay"
+      aria-label="Close sidebar"
+      (click)="closeSidebar()"></button>
+    <app-sidebar
+      [isCollapsed]="sidebarCollapsed()"
+      [isMobile]="isMobile()"
+      [isOpen]="sidebarOpen()"
+      (navigate)="closeSidebar()"></app-sidebar>
+    <main class="main-shell">
+      <div class="page-content">
+        <div class="main-content-inner">
+          <router-outlet></router-outlet>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>

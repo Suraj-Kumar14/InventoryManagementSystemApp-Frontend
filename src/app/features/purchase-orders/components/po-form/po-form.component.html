@@ -1,0 +1,123 @@
+<form [formGroup]="form" class="po-form" [attr.aria-busy]="loading || submitting">
+  <section class="po-form__section">
+    <div class="field-grid">
+      <label>
+        <span>Supplier</span>
+        <select formControlName="supplierId">
+          <option [ngValue]="0">Select supplier</option>
+          <option *ngFor="let supplier of suppliers" [ngValue]="supplier.supplierId">{{ supplier.name }}</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Destination Warehouse</span>
+        <select formControlName="warehouseId">
+          <option [ngValue]="0">Select warehouse</option>
+          <option *ngFor="let warehouse of warehouses" [ngValue]="getWarehouseId(warehouse)">{{ getWarehouseLabel(warehouse) }}</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Expected Delivery Date</span>
+        <input type="date" formControlName="expectedDeliveryDate" />
+      </label>
+
+      <label>
+        <span>Payment Terms</span>
+        <input type="text" formControlName="paymentTerms" placeholder="Net 30 / Advance / COD" />
+      </label>
+    </div>
+
+    <label class="field-block">
+      <span>Notes</span>
+      <textarea rows="3" formControlName="notes" placeholder="Add delivery notes, packaging guidance, or supplier instructions"></textarea>
+    </label>
+  </section>
+
+  <section class="po-form__section">
+    <div class="section-title">
+      <div>
+        <h3>Line Items</h3>
+        <p>Add one or more products with ordered quantity and unit cost.</p>
+      </div>
+      <button type="button" class="btn btn-secondary" (click)="addLineItem()">Add Line</button>
+    </div>
+
+    <div formArrayName="lineItems" class="line-items">
+      <article *ngFor="let lineItem of lineItems.controls; let i = index" [formGroupName]="i" class="line-item">
+        <div class="line-item__grid">
+          <label>
+            <span>Product</span>
+            <select formControlName="productId">
+              <option [ngValue]="0">Select product</option>
+              <option *ngFor="let product of products" [ngValue]="product.productId">
+                {{ product.name }} ({{ product.sku }})
+              </option>
+            </select>
+          </label>
+
+          <label>
+            <span>Quantity</span>
+            <input type="number" min="1" formControlName="orderedQuantity" />
+          </label>
+
+          <label>
+            <span>Unit Cost</span>
+            <input type="number" min="0" step="0.01" formControlName="unitCost" />
+          </label>
+
+          <label>
+            <span>Line Total</span>
+            <input type="text" [value]="getLineTotal(i) | currency:'INR':'symbol':'1.0-2'" readonly />
+          </label>
+        </div>
+
+        <div class="line-item__footer">
+          <textarea rows="2" formControlName="notes" placeholder="Optional line-level notes"></textarea>
+          <button type="button" class="btn btn-danger btn-danger--ghost" (click)="removeLineItem(i)" [disabled]="lineItems.length === 1">
+            Remove
+          </button>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section class="po-form__section">
+    <div class="field-grid">
+      <label>
+        <span>Tax Amount</span>
+        <input type="number" min="0" step="0.01" formControlName="taxAmount" [readonly]="chargeFieldsReadOnly" />
+      </label>
+
+      <label>
+        <span>Discount Amount</span>
+        <input type="number" min="0" step="0.01" formControlName="discountAmount" [readonly]="chargeFieldsReadOnly" />
+      </label>
+
+      <label>
+        <span>Shipping Amount</span>
+        <input type="number" min="0" step="0.01" formControlName="shippingAmount" [readonly]="chargeFieldsReadOnly" />
+      </label>
+
+      <div class="totals-card">
+        <p>Subtotal <strong>{{ subtotal | currency:'INR':'symbol':'1.0-2' }}</strong></p>
+        <p>Grand Total <strong>{{ grandTotal | currency:'INR':'symbol':'1.0-2' }}</strong></p>
+      </div>
+    </div>
+  </section>
+
+  <div class="po-form__actions">
+    <button type="button" class="btn btn-primary" [disabled]="disableActions" (click)="submit(false)">
+      {{ loading ? submitLabel + '...' : submitLabel }}
+    </button>
+    <button
+      *ngIf="showSubmitAndApprove"
+      type="button"
+      class="btn btn-accent"
+      [disabled]="disableActions"
+      (click)="submit(true)"
+    >
+      {{ submitting ? 'Submitting...' : 'Save and Submit' }}
+    </button>
+  </div>
+</form>

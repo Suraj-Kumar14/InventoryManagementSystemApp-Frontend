@@ -1,0 +1,95 @@
+<section class="supplier-page" *ngIf="supplier as currentSupplier">
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Supplier Profile</p>
+      <h1>{{ currentSupplier.name }}</h1>
+      <p class="hero__subtitle">Supplier code {{ currentSupplier.supplierCode || ('SUP #' + currentSupplier.supplierId) }} with lifecycle, contact, and payment readiness context.</p>
+    </div>
+    <div class="hero__actions">
+      <a routerLink="/suppliers" class="btn btn-secondary">Back</a>
+      <a *ngIf="canEdit" [routerLink]="['/suppliers', currentSupplier.supplierId, 'edit']" class="btn btn-primary">Edit Supplier</a>
+      <a *ngIf="canViewPerformance" [routerLink]="['/suppliers', currentSupplier.supplierId, 'performance']" class="btn btn-secondary">Performance</a>
+    </div>
+  </header>
+
+  <div *ngIf="loading" class="panel empty-state">Loading supplier details...</div>
+
+  <div *ngIf="!loading" class="detail-grid">
+    <article class="panel detail-card">
+      <div class="detail-card__header">
+        <div>
+          <p class="eyebrow">Lifecycle</p>
+          <h2>Commercial status</h2>
+        </div>
+        <app-supplier-status-badge [status]="currentSupplier.status ?? 'ACTIVE'" [isActive]="currentSupplier.isActive"></app-supplier-status-badge>
+      </div>
+      <div class="metric-row">
+        <span>Rating</span>
+        <app-supplier-rating [rating]="currentSupplier.rating"></app-supplier-rating>
+      </div>
+      <div class="metric-row">
+        <span>Lead Time</span>
+        <strong>{{ currentSupplier.leadTimeDays }} days</strong>
+      </div>
+      <div class="metric-row">
+        <span>Payment Terms</span>
+        <strong>{{ currentSupplier.paymentTerms || 'Not set' }}</strong>
+      </div>
+      <div class="metric-row">
+        <span>PO Context</span>
+        <a routerLink="/purchase-orders" class="inline-link">Open purchase orders</a>
+      </div>
+      <p *ngIf="currentSupplier.notes" class="notes">{{ currentSupplier.notes }}</p>
+    </article>
+
+    <article class="panel detail-card">
+      <p class="eyebrow">Primary Contact</p>
+      <h2>Communication</h2>
+      <div class="detail-list">
+        <div><span>Contact Person</span><strong>{{ currentSupplier.contactPerson || 'Not assigned' }}</strong></div>
+        <div><span>Email</span><strong>{{ currentSupplier.email || 'Not provided' }}</strong></div>
+        <div><span>Phone</span><strong>{{ currentSupplier.phone || 'Not provided' }}</strong></div>
+        <div><span>Alternate</span><strong>{{ currentSupplier.alternatePhone || 'Not provided' }}</strong></div>
+      </div>
+    </article>
+
+    <article class="panel detail-card">
+      <p class="eyebrow">Location</p>
+      <h2>Address</h2>
+      <div class="detail-list">
+        <div><span>Address</span><strong>{{ currentSupplier.address || 'Not provided' }}</strong></div>
+        <div><span>City</span><strong>{{ currentSupplier.city || 'Not provided' }}</strong></div>
+        <div><span>State</span><strong>{{ currentSupplier.state || 'Not provided' }}</strong></div>
+        <div><span>Country</span><strong>{{ currentSupplier.country || 'Not provided' }}</strong></div>
+        <div><span>Postal Code</span><strong>{{ currentSupplier.postalCode || 'Not provided' }}</strong></div>
+      </div>
+    </article>
+
+    <article class="panel detail-card">
+      <p class="eyebrow">Compliance</p>
+      <h2>Tax & audit details</h2>
+      <div class="detail-list">
+        <div><span>Tax Number</span><strong>{{ currentSupplier.taxNumber || currentSupplier.taxId || 'Not provided' }}</strong></div>
+        <div><span>GST Number</span><strong>{{ currentSupplier.gstNumber || 'Not provided' }}</strong></div>
+        <div><span>Created</span><strong>{{ currentSupplier.createdAt | date:'medium' }}</strong></div>
+        <div><span>Last Updated</span><strong>{{ currentSupplier.updatedAt | date:'medium' }}</strong></div>
+      </div>
+    </article>
+  </div>
+
+  <section *ngIf="performance" class="panel performance-panel">
+    <div class="detail-card__header">
+      <div>
+        <p class="eyebrow">Performance</p>
+        <h2>Operational snapshot</h2>
+      </div>
+      <a [routerLink]="['/suppliers', currentSupplier.supplierId, 'performance']" class="inline-link">Open full performance view</a>
+    </div>
+    <div class="metric-grid">
+      <div><span>Total Orders</span><strong>{{ performance.totalOrders }}</strong></div>
+      <div><span>Completed</span><strong>{{ performance.completedOrders }}</strong></div>
+      <div><span>Delayed</span><strong>{{ performance.delayedOrders }}</strong></div>
+      <div><span>Total Spend</span><strong>{{ performance.totalSpend | currency:'INR':'symbol':'1.0-2' }}</strong></div>
+    </div>
+  </section>
+</section>
